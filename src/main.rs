@@ -5,7 +5,7 @@ use std::{panic, str};
 #[derive(Debug)]
 enum Expression {
     Literal(String),
-    Heading(Box<Expression>),
+    Heading(Box<Expression>, u8),
     Bold(Box<Expression>),
     Italic(Box<Expression>),
     // this enables composition, forming the tree
@@ -20,7 +20,13 @@ impl Display for Expression {
             Expression::Literal(s) => write!(f, "{}", s),
             Expression::Bold(b_exp) => write!(f, "\\textbf{{{}}}", b_exp),
             Expression::Italic(b_exp) => write!(f, "\\textit{{{}}}", b_exp),
-            Expression::Heading(b_exp) => write!(f, "\\section{{{}}}", b_exp),
+            Expression::Heading(b_exp, level) => {
+                let section = match(level){
+                    1 => "subsection",
+                    _ => "section"
+                };
+                write!(f, "\\{}{{{}}}", section, b_exp)
+            },
             Expression::Concat(b_exp1, b_exp2) => write!(f, "{}{}", b_exp1, b_exp2),
             Expression::Empty() => write!(f, ""),
         }
@@ -60,10 +66,20 @@ fn parse_bold(input: &[u8], start: usize) -> (Expression, usize) {
     }
 }
 
+fn parse_heading_level(input: &[u8], start: usize, level: u8) -> (usize, u8){
+    match input[start] {
+        b'#' => parse_heading_level(input, start + 1, level + 1),
+        b' ' => (start + 1, level),
+        _ => (start, level)
+    }
+}
+
 fn parse_heading(input: &[u8], start: usize) -> (Expression, usize) {
+    let (start, level) = parse_heading_level(input, start, 0);
+    println!("start {}, level {}", start, level);
     let (literal, current) = parse_literal(input, start, "\n".as_bytes());
     match input[current] {
-        b'\n' => (Expression::Heading(Box::new(literal)), current),
+        b'\n' => (Expression::Heading(Box::new(literal), level), current),
         _ => panic!("expected \\n at {}", current),
     }
 }
@@ -77,7 +93,7 @@ fn parse(input: &[u8], start: usize) -> Expression {
             b'#' => parse_heading(input, current + 1),
             b'*' => parse_bold(input, current + 1),
             b'_' => parse_italic(input, current + 1),
-            _ => parse_literal(input, current, "_*".as_bytes()),
+            _ => parse_literal(input, current, "_*#".as_bytes()),
         };
         expression = Expression::Concat(Box::new(expression), Box::new(expr));
         current = next_pos;
@@ -86,7 +102,13 @@ fn parse(input: &[u8], start: usize) -> Expression {
 }
 
 fn main() {
-    let literal = "# titel\nhallo _kursive_ welt *i*\nhallo nächste zeile\n__";
+    let literal = "\
+# titel
+hallo _kursive_ welt *i*
+
+## untertitel
+hallo nächste zeile
+__";
     let input = literal.as_bytes();
     let result = parse(input, 0);
     println!("{:?}", result);
@@ -94,7 +116,7 @@ fn main() {
 }
 
 mod tests {
-    use super::*;
+    use crate::Expression;
 
     #[test]
     fn literal() {
