@@ -1,5 +1,5 @@
 use std::fmt::Display;
-use std::{panic, str};
+use std::{env,panic, str};
 
 // Expressions are the building blocks of the abstract syntax tree
 #[derive(Debug)]
@@ -8,6 +8,7 @@ enum Expression {
     Heading(Box<Expression>, u8),
     Bold(Box<Expression>),
     Italic(Box<Expression>),
+    Quote(Box<Expression>),
     // this enables composition, forming the tree
     Concat(Box<Expression>, Box<Expression>),
     // this is a neutral element, yielding no ouput
@@ -21,12 +22,14 @@ impl Display for Expression {
             Expression::Bold(b_exp) => write!(f, "\\textbf{{{}}}", b_exp),
             Expression::Italic(b_exp) => write!(f, "\\textit{{{}}}", b_exp),
             Expression::Heading(b_exp, level) => {
-                let section = match(level){
+                let section = match level{
+                    2 => "subsubsection",
                     1 => "subsection",
                     _ => "section"
                 };
                 write!(f, "\\{}{{{}}}", section, b_exp)
             },
+            Expression::Quote(b_exp) => write!(f, "\"`{}\"'", b_exp),
             Expression::Concat(b_exp1, b_exp2) => write!(f, "{}{}", b_exp1, b_exp2),
             Expression::Empty() => write!(f, ""),
         }
@@ -65,6 +68,13 @@ fn parse_bold(input: &[u8], start: usize) -> (Expression, usize) {
         _ => panic!("expected * at {}", current),
     }
 }
+fn parse_quote(input: &[u8], start: usize) -> (Expression, usize) {
+    let (literal, current) = parse_literal(input, start, "\"".as_bytes());
+    match input[current] {
+        b'"' => (Expression::Quote(Box::new(literal)), current+1),
+        _ => panic!("expected \" at {}", current),
+    }
+}
 
 fn parse_heading_level(input: &[u8], start: usize, level: u8) -> (usize, u8){
     match input[start] {
@@ -76,7 +86,6 @@ fn parse_heading_level(input: &[u8], start: usize, level: u8) -> (usize, u8){
 
 fn parse_heading(input: &[u8], start: usize) -> (Expression, usize) {
     let (start, level) = parse_heading_level(input, start, 0);
-    println!("start {}, level {}", start, level);
     let (literal, current) = parse_literal(input, start, "\n".as_bytes());
     match input[current] {
         b'\n' => (Expression::Heading(Box::new(literal), level), current),
@@ -93,7 +102,8 @@ fn parse(input: &[u8], start: usize) -> Expression {
             b'#' => parse_heading(input, current + 1),
             b'*' => parse_bold(input, current + 1),
             b'_' => parse_italic(input, current + 1),
-            _ => parse_literal(input, current, "_*#".as_bytes()),
+            b'"' => parse_quote(input, current + 1),
+            _ => parse_literal(input, current, "_*#\"".as_bytes()),
         };
         expression = Expression::Concat(Box::new(expression), Box::new(expr));
         current = next_pos;
@@ -102,17 +112,11 @@ fn parse(input: &[u8], start: usize) -> Expression {
 }
 
 fn main() {
-    let literal = "\
-# titel
-hallo _kursive_ welt *i*
-
-## untertitel
-hallo nächste zeile
-__";
-    let input = literal.as_bytes();
-    let result = parse(input, 0);
-    println!("{:?}", result);
-    println!("{}", result);
+    for file in env::args().skip(1) {
+        let input = std::fs::read_to_string(file).unwrap();
+        let result = parse(input.as_bytes(), 0);
+        println!("{}", result);
+    }
 }
 
 mod tests {
