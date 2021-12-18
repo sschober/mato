@@ -3,25 +3,25 @@ use std::{env, panic, str};
 
 // Expressions are the building blocks of the abstract syntax tree
 #[derive(Debug)]
-enum Expression {
+enum Exp {
     Literal(String),
-    Heading(Box<Expression>, u8),
-    Bold(Box<Expression>),
-    Italic(Box<Expression>),
-    Quote(Box<Expression>),
+    Heading(Box<Exp>, u8),
+    Bold(Box<Exp>),
+    Italic(Box<Exp>),
+    Quote(Box<Exp>),
     // this enables composition, forming the tree
-    Concat(Box<Expression>, Box<Expression>),
+    Cat(Box<Exp>, Box<Exp>),
     // this is a neutral element, yielding no ouput
     Empty(),
 }
 
-impl Display for Expression {
+impl Display for Exp {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Expression::Literal(s) => write!(f, "{}", s),
-            Expression::Bold(b_exp) => write!(f, "\\textbf{{{}}}", b_exp),
-            Expression::Italic(b_exp) => write!(f, "\\textit{{{}}}", b_exp),
-            Expression::Heading(b_exp, level) => {
+            Exp::Literal(s) => write!(f, "{}", s),
+            Exp::Bold(b_exp) => write!(f, "\\textbf{{{}}}", b_exp),
+            Exp::Italic(b_exp) => write!(f, "\\textit{{{}}}", b_exp),
+            Exp::Heading(b_exp, level) => {
                 let section = match level {
                     2 => "subsubsection",
                     1 => "subsection",
@@ -29,14 +29,14 @@ impl Display for Expression {
                 };
                 write!(f, "\\{}{{{}}}", section, b_exp)
             }
-            Expression::Quote(b_exp) => write!(f, "\"`{}\"'", b_exp),
-            Expression::Concat(b_exp1, b_exp2) => write!(f, "{}{}", b_exp1, b_exp2),
-            Expression::Empty() => write!(f, ""),
+            Exp::Quote(b_exp) => write!(f, "\"`{}\"'", b_exp),
+            Exp::Cat(b_exp1, b_exp2) => write!(f, "{}{}", b_exp1, b_exp2),
+            Exp::Empty() => write!(f, ""),
         }
     }
 }
 
-fn parse_literal(input: &[u8], start: usize, break_chars: &[u8]) -> (Expression, usize) {
+fn parse_literal(input: &[u8], start: usize, break_chars: &[u8]) -> (Exp, usize) {
     let mut current: usize = start;
     while current < input.len() {
         let current_char = input[current];
@@ -46,40 +46,40 @@ fn parse_literal(input: &[u8], start: usize, break_chars: &[u8]) -> (Expression,
         current += 1;
     }
     (
-        Expression::Literal(str::from_utf8(&input[start..current]).unwrap().to_string()),
+        Exp::Literal(str::from_utf8(&input[start..current]).unwrap().to_string()),
         current,
     )
 }
 
-fn parse_italic(input: &[u8], start: usize) -> (Expression, usize) {
+fn parse_italic(input: &[u8], start: usize) -> (Exp, usize) {
     let (literal, current) = parse_literal(input, start, "_*".as_bytes());
     match input[current] {
-        b'_' => (Expression::Italic(Box::new(literal)), current + 1), // the +1 consumes the '_'
+        b'_' => (Exp::Italic(Box::new(literal)), current + 1), // the +1 consumes the '_'
         // having no arm for '*' means we cannot nest a '*' in a "_", like so '_*kursiv und fett*_'
         _ => panic!("expected _ at {}", current),
     }
 }
 
-fn parse_bold(input: &[u8], start: usize) -> (Expression, usize) {
+fn parse_bold(input: &[u8], start: usize) -> (Exp, usize) {
     let (literal, current) = parse_literal(input, start, "_*".as_bytes());
     if current == input.len(){
-        return (Expression::Bold(Box::new(literal)), current + 1);
+        return (Exp::Bold(Box::new(literal)), current + 1);
     } 
     match input[current] {
-        b'*' => (Expression::Bold(Box::new(literal)), current + 1), // the +1 consumes the '*'
+        b'*' => (Exp::Bold(Box::new(literal)), current + 1), // the +1 consumes the '*'
         b'_' => {
             let (italic, current) = parse_italic(input, current + 1);
-            (Expression::Bold(Box::new(Expression::Concat(Box::new(literal), Box::new(italic)))), current + 1)
+            (Exp::Bold(Box::new(Exp::Cat(Box::new(literal), Box::new(italic)))), current + 1)
         }
         // no nesting
         _ => panic!("expected * at {}", current),
     }
 }
 
-fn parse_quote(input: &[u8], start: usize) -> (Expression, usize) {
+fn parse_quote(input: &[u8], start: usize) -> (Exp, usize) {
     let (literal, current) = parse_literal(input, start, "\"".as_bytes());
     match input[current] {
-        b'"' => (Expression::Quote(Box::new(literal)), current + 1),
+        b'"' => (Exp::Quote(Box::new(literal)), current + 1),
         _ => panic!("expected \" at {}", current),
     }
 }
@@ -92,10 +92,10 @@ fn parse_heading_level(input: &[u8], start: usize, level: u8) -> (usize, u8) {
     }
 }
 
-fn parse_heading(input: &[u8], start: usize) -> (Expression, usize) {
+fn parse_heading(input: &[u8], start: usize) -> (Exp, usize) {
     let (start, level) = parse_heading_level(input, start, 0);
     let (literal, current) = parse_literal(input, start, "\n".as_bytes());
-    let result = (Expression::Heading(Box::new(literal), level), current);
+    let result = (Exp::Heading(Box::new(literal), level), current);
     if current == input.len(){
         return result;        
     }
@@ -105,8 +105,8 @@ fn parse_heading(input: &[u8], start: usize) -> (Expression, usize) {
     }
 }
 
-fn parse(input: &[u8], start: usize) -> Expression {
-    let mut expression = Expression::Empty(); // we start with "nothing", as rust has no null values
+fn parse(input: &[u8], start: usize) -> Exp {
+    let mut expression = Exp::Empty(); // we start with "nothing", as rust has no null values
     let mut current: usize = start;
     while current < input.len() {
         let current_char = input[current];
@@ -117,7 +117,7 @@ fn parse(input: &[u8], start: usize) -> Expression {
             b'"' => parse_quote(input, current + 1),
             _ => parse_literal(input, current, "_*#\"".as_bytes()),
         };
-        expression = Expression::Concat(Box::new(expression), Box::new(expr));
+        expression = Exp::Cat(Box::new(expression), Box::new(expr));
         current = next_pos;
     }
     expression
