@@ -35,7 +35,7 @@ impl Display for Exp {
         }
     }
 }
-
+// TODO merge this function into the parse function
 fn parse_literal(input: &[u8], start: usize, break_chars: &[u8]) -> (Exp, usize) {
     let mut current: usize = start;
     while current < input.len() {
