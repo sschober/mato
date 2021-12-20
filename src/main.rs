@@ -1,4 +1,5 @@
 use std::fmt::Display;
+use std::thread::current;
 use std::{env, panic, str};
 
 // Expressions are the building blocks of the abstract syntax tree
@@ -35,6 +36,17 @@ impl Display for Exp {
         }
     }
 }
+
+fn consume(input: &[u8], at_index: usize, char: u8) -> usize {
+    if at_index >= input.len() {
+        panic!("index {} out of bounds {} ", at_index, input.len());
+    }
+    if input[at_index] != char {
+        panic!("expected char '{}' at index {}, but found '{}'", char as char, at_index, input[at_index] as char);
+    }
+    at_index + 1
+}
+
 // TODO merge this function into the parse function
 fn parse_literal(input: &[u8], start: usize, break_chars: &[u8]) -> (Exp, usize) {
     let mut current: usize = start;
@@ -51,37 +63,25 @@ fn parse_literal(input: &[u8], start: usize, break_chars: &[u8]) -> (Exp, usize)
     )
 }
 
-fn parse_italic(input: &[u8], start: usize) -> (Exp, usize) {
-    let (literal, current) = parse_literal(input, start, "_*".as_bytes());
-    match input[current] {
-        b'_' => (Exp::Italic(Box::new(literal)), current + 1), // the +1 consumes the '_'
-        // having no arm for '*' means we cannot nest a '*' in a "_", like so '_*kursiv und fett*_'
-        _ => panic!("expected _ at {}", current),
-    }
+fn parse_italic(input: &[u8], current: usize) -> (Exp, usize) {
+    let current = consume(input, current, b'_');
+    let (literal, current) = parse(input, current, "_".as_bytes());
+    let current = consume(input, current, b'_');
+    (Exp::Italic(Box::new(literal)), current)
 }
 
-fn parse_bold(input: &[u8], start: usize) -> (Exp, usize) {
-    let (literal, current) = parse_literal(input, start, "_*".as_bytes());
-    if current == input.len(){
-        return (Exp::Bold(Box::new(literal)), current + 1);
-    } 
-    match input[current] {
-        b'*' => (Exp::Bold(Box::new(literal)), current + 1), // the +1 consumes the '*'
-        b'_' => {
-            let (italic, current) = parse_italic(input, current + 1);
-            (Exp::Bold(Box::new(Exp::Cat(Box::new(literal), Box::new(italic)))), current + 1)
-        }
-        // no nesting
-        _ => panic!("expected * at {}", current),
-    }
+fn parse_bold(input: &[u8], current: usize) -> (Exp, usize) {
+    let current = consume(input, current, b'*');
+    let (literal, current) = parse(input, current, "*".as_bytes());
+    let current = consume(input, current, b'*');
+    (Exp::Bold(Box::new(literal)), current)
 }
 
-fn parse_quote(input: &[u8], start: usize) -> (Exp, usize) {
-    let (literal, current) = parse_literal(input, start, "\"".as_bytes());
-    match input[current] {
-        b'"' => (Exp::Quote(Box::new(literal)), current + 1),
-        _ => panic!("expected \" at {}", current),
-    }
+fn parse_quote(input: &[u8], current: usize) -> (Exp, usize) {
+    let current = consume(input, current, b'"');
+    let (literal, current) = parse(input, current, "\"".as_bytes());
+    let current = consume(input, current, b'"');
+    (Exp::Quote(Box::new(literal)), current)
 }
 
 fn parse_heading_level(input: &[u8], start: usize, level: u8) -> (usize, u8) {
@@ -93,6 +93,7 @@ fn parse_heading_level(input: &[u8], start: usize, level: u8) -> (usize, u8) {
 }
 
 fn parse_heading(input: &[u8], start: usize) -> (Exp, usize) {
+    let start = consume(input, start, b'#');
     let (start, level) = parse_heading_level(input, start, 0);
     let (literal, current) = parse_literal(input, start, "\n".as_bytes());
     let result = (Exp::Heading(Box::new(literal), level), current);
@@ -105,26 +106,28 @@ fn parse_heading(input: &[u8], start: usize) -> (Exp, usize) {
     }
 }
 
-fn parse(input: &[u8], start: usize) -> Exp {
+fn parse(input: &[u8], mut current: usize, break_chars: &[u8]) -> (Exp, usize) {
     let mut expression = Exp::Empty(); // we start with "nothing", as rust has no null values
-    let mut current: usize = start;
     while current < input.len() {
         let current_char = input[current];
-        let (expr, next_pos) = match current_char {
-            b'#' => parse_heading(input, current + 1),
-            b'*' => parse_bold(input, current + 1),
-            b'_' => parse_italic(input, current + 1),
-            b'"' => parse_quote(input, current + 1),
+        if break_chars.contains(&current_char){
+            break;
+        }
+        let (expr, cur) = match current_char {
+            b'#' => parse_heading(input, current),
+            b'*' => parse_bold(input, current),
+            b'_' => parse_italic(input, current),
+            b'"' => parse_quote(input, current),
             _ => parse_literal(input, current, "_*#\"".as_bytes()),
         };
         expression = Exp::Cat(Box::new(expression), Box::new(expr));
-        current = next_pos;
+        current = cur;
     }
-    expression
+    (expression, current)
 }
 
 fn transform(input: &str) -> String {
-    return parse(input.as_bytes(), 0).to_string();
+    return parse(input.as_bytes(), 0, "".as_bytes()).0.to_string();
 }
 
 fn main() {
