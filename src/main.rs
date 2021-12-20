@@ -1,5 +1,4 @@
 use std::fmt::Display;
-use std::thread::current;
 use std::{env, panic, str};
 
 // Expressions are the building blocks of the abstract syntax tree
