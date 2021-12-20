@@ -46,12 +46,10 @@ fn consume(input: &[u8], at_index: usize, char: u8) -> usize {
     at_index + 1
 }
 
-// TODO merge this function into the parse function
-fn parse_literal(input: &[u8], start: usize, break_chars: &[u8]) -> (Exp, usize) {
-    let mut current: usize = start;
+fn parse_literal(input: &[u8], mut current: usize, break_chars: &[u8]) -> (Exp, usize) {
+    let start = current;
     while current < input.len() {
-        let current_char = input[current];
-        if break_chars.contains(&current_char) {
+        if break_chars.contains(&input[current]) {
             break;
         }
         current += 1;
@@ -91,10 +89,10 @@ fn parse_heading_level(input: &[u8], start: usize, level: u8) -> (usize, u8) {
     }
 }
 
-fn parse_heading(input: &[u8], start: usize) -> (Exp, usize) {
-    let start = consume(input, start, b'#');
-    let (start, level) = parse_heading_level(input, start, 0);
-    let (literal, current) = parse_literal(input, start, "\n".as_bytes());
+fn parse_heading(input: &[u8], current: usize) -> (Exp, usize) {
+    let current = consume(input, current, b'#');
+    let (current, level) = parse_heading_level(input, current, 0);
+    let (literal, current) = parse_literal(input, current, "\n".as_bytes());
     let result = (Exp::Heading(Box::new(literal), level), current);
     if current == input.len(){
         return result;        
