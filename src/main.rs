@@ -35,66 +35,78 @@ impl Display for Exp {
         }
     }
 }
+
+// holds parsing state
 struct Parser<'a> {
-    input: &'a[u8],
-    input_len : usize,
-    i: usize
+    // the input string as a byte slice
+    input: &'a [u8],
+    // the lnegth of the input byte slice
+    input_len: usize,
+    // the current position of parsing
+    i: usize,
+    // the character at the current parsing position
+    char: u8
 }
 
 impl Parser<'_> {
+    
+    fn advance(&mut self) {
+        self.i +=1;
+        if !self.at_end(){
+            self.char = self.input[self.i];
+        }
+    }
+
+    fn at_end(&self) -> bool {
+        self.i >= self.input_len
+    }
 
     fn consume(&mut self, char: u8) {
-        if self.i >= self.input_len {
+        if self.at_end() {
             panic!("index {} out of bounds {} ", self.i, self.input_len);
         }
-        if self.input[self.i] != char {
-            panic!("expected char '{}' at index {}, but found '{}'", char as char, self.i, self.input[self.i] as char);
+        if self.char != char {
+            panic!(
+                "expected char '{}' at index {}, but found '{}'",
+                char as char, self.i, self.char as char
+            );
         }
-        self.i += 1;
+        self.advance();
     }
 
     fn parse_literal(&mut self, break_chars: &[u8]) -> Exp {
         let start = self.i;
-        while self.i < self.input_len {
-            if break_chars.contains(&self.input[self.i]) {
+        while !self.at_end() {
+            if break_chars.contains(&self.char) {
                 break;
             }
-            self.i += 1;
+            self.advance();
         }
-        Exp::Literal(str::from_utf8(&self.input[start..self.i]).unwrap().to_string())
+        Exp::Literal(
+            str::from_utf8(&self.input[start..self.i])
+                .unwrap()
+                .to_string(),
+        )
     }
 
-    fn parse_italic(&mut self) -> Exp {
-        self.consume(b'_');
-        let literal= self.parse("_".as_bytes());
-        self.consume(b'_');
-        Exp::Italic(Box::new(literal))
-    }
-
-    fn parse_bold(&mut self) -> Exp {
-        self.consume(b'*');
-        let literal = self.parse("*".as_bytes());
-        self.consume(b'*');
-        Exp::Bold(Box::new(literal))
-    }
-
-    fn parse_quote(&mut self) -> Exp {
-        self.consume(b'"');
-        let literal = self.parse("\"".as_bytes());
-        self.consume(b'"');
-        Exp::Quote(Box::new(literal))
+    fn parse_quoted(&mut self) -> Exp {
+        let break_char = self.char;
+        self.consume(break_char); // opening quote
+        let exp = self.parse(&[break_char]); // body
+        self.consume(break_char); // ending quote
+        exp
     }
 
     fn parse_heading_level(&mut self, level: u8) -> u8 {
-        match self.input[self.i] {
+        match self.char {
             b'#' => {
-                self.i += 1;
+                self.advance();
                 self.parse_heading_level(level + 1)
-            },
+            }
             b' ' => {
-                self.i += 1;
+                self.advance();
                 level
-            },
+            }
             _ => level,
         }
     }
@@ -104,10 +116,10 @@ impl Parser<'_> {
         let level = self.parse_heading_level(0);
         let literal = self.parse_literal("\n".as_bytes());
         let result = Exp::Heading(Box::new(literal), level);
-        if self.i == self.input_len {
-            return result;        
+        if self.at_end() {
+            return result;
         }
-        match self.input[self.i] {
+        match self.char {
             b'\n' => result,
             _ => panic!("expected \\n at {}", self.i),
         }
@@ -115,27 +127,31 @@ impl Parser<'_> {
 
     fn parse(&mut self, break_chars: &[u8]) -> Exp {
         let mut expression = Exp::Empty(); // we start with "nothing", as rust has no null values
-        while self.i < self.input_len {
-            let current_char = self.input[self.i];
-            if break_chars.contains(&current_char){
+        while !self.at_end() {
+            if break_chars.contains(&self.char) {
                 break;
             }
-            let expr = match current_char {
+            let expr = match self.char {
                 b'#' => self.parse_heading(),
-                b'*' => self.parse_bold(),
-                b'_' => self.parse_italic(),
-                b'"' => self.parse_quote(),
+                b'*' => Exp::Bold(Box::new(self.parse_quoted())),
+                b'_' => Exp::Italic(Box::new(self.parse_quoted())),
+                b'"' => Exp::Quote(Box::new(self.parse_quoted())),
                 _ => self.parse_literal("_*#\"".as_bytes()),
             };
             expression = Exp::Cat(Box::new(expression), Box::new(expr));
         }
         expression
     }
-    
 }
 
 fn transform(input: &str) -> String {
-    let mut parser = Parser {input : input.as_bytes(), input_len : input.len(), i : 0};
+    let input_byte_slice = input.as_bytes();
+    let mut parser = Parser {
+        input: input_byte_slice,
+        input_len: input_byte_slice.len(),
+        i: 0,
+        char: input_byte_slice[0]
+    };
     return parser.parse("".as_bytes()).to_string();
 }
 
@@ -162,23 +178,26 @@ mod tests {
         assert_eq!(super::transform("*hallo*"), "\\textbf{hallo}");
     }
     #[test]
-    fn heading(){
+    fn heading() {
         assert_eq!(super::transform("# heading\n"), "\\section{heading}\n");
     }
     #[test]
-    fn heading_without_newline(){
+    fn heading_without_newline() {
         assert_eq!(super::transform("# 1"), "\\section{1}");
     }
     #[test]
-    fn quote(){
+    fn quote() {
         assert_eq!(super::transform("\"input\""), "\"`input\"'");
     }
     #[test]
-    fn bold_and_italic(){
+    fn bold_and_italic() {
         assert_eq!(super::transform("*_text_*"), "\\textbf{\\textit{text}}");
     }
     #[test]
-    fn bold_and_italic_but_with_outer_chars(){
-        assert_eq!(super::transform("*fett _kursiv_ wieder fett*"), "\\textbf{fett \\textit{kursiv} wieder fett}");
+    fn bold_and_italic_but_with_outer_chars() {
+        assert_eq!(
+            super::transform("*fett _kursiv_ wieder fett*"),
+            "\\textbf{fett \\textit{kursiv} wieder fett}"
+        );
     }
 }
