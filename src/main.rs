@@ -35,96 +35,108 @@ impl Display for Exp {
         }
     }
 }
-
-fn consume(input: &[u8], at_index: usize, char: u8) -> usize {
-    if at_index >= input.len() {
-        panic!("index {} out of bounds {} ", at_index, input.len());
-    }
-    if input[at_index] != char {
-        panic!("expected char '{}' at index {}, but found '{}'", char as char, at_index, input[at_index] as char);
-    }
-    at_index + 1
+struct Parser<'a> {
+    input: &'a[u8],
+    input_len : usize,
+    i: usize
 }
 
-fn parse_literal(input: &[u8], mut current: usize, break_chars: &[u8]) -> (Exp, usize) {
-    let start = current;
-    while current < input.len() {
-        if break_chars.contains(&input[current]) {
-            break;
+impl Parser<'_> {
+
+    fn consume(&mut self, char: u8) {
+        if self.i >= self.input_len {
+            panic!("index {} out of bounds {} ", self.i, self.input_len);
         }
-        current += 1;
-    }
-    (
-        Exp::Literal(str::from_utf8(&input[start..current]).unwrap().to_string()),
-        current,
-    )
-}
-
-fn parse_italic(input: &[u8], current: usize) -> (Exp, usize) {
-    let current = consume(input, current, b'_');
-    let (literal, current) = parse(input, current, "_".as_bytes());
-    let current = consume(input, current, b'_');
-    (Exp::Italic(Box::new(literal)), current)
-}
-
-fn parse_bold(input: &[u8], current: usize) -> (Exp, usize) {
-    let current = consume(input, current, b'*');
-    let (literal, current) = parse(input, current, "*".as_bytes());
-    let current = consume(input, current, b'*');
-    (Exp::Bold(Box::new(literal)), current)
-}
-
-fn parse_quote(input: &[u8], current: usize) -> (Exp, usize) {
-    let current = consume(input, current, b'"');
-    let (literal, current) = parse(input, current, "\"".as_bytes());
-    let current = consume(input, current, b'"');
-    (Exp::Quote(Box::new(literal)), current)
-}
-
-fn parse_heading_level(input: &[u8], start: usize, level: u8) -> (usize, u8) {
-    match input[start] {
-        b'#' => parse_heading_level(input, start + 1, level + 1),
-        b' ' => (start + 1, level),
-        _ => (start, level),
-    }
-}
-
-fn parse_heading(input: &[u8], current: usize) -> (Exp, usize) {
-    let current = consume(input, current, b'#');
-    let (current, level) = parse_heading_level(input, current, 0);
-    let (literal, current) = parse_literal(input, current, "\n".as_bytes());
-    let result = (Exp::Heading(Box::new(literal), level), current);
-    if current == input.len(){
-        return result;        
-    }
-    match input[current] {
-        b'\n' => result,
-        _ => panic!("expected \\n at {}", current),
-    }
-}
-
-fn parse(input: &[u8], mut current: usize, break_chars: &[u8]) -> (Exp, usize) {
-    let mut expression = Exp::Empty(); // we start with "nothing", as rust has no null values
-    while current < input.len() {
-        let current_char = input[current];
-        if break_chars.contains(&current_char){
-            break;
+        if self.input[self.i] != char {
+            panic!("expected char '{}' at index {}, but found '{}'", char as char, self.i, self.input[self.i] as char);
         }
-        let (expr, cur) = match current_char {
-            b'#' => parse_heading(input, current),
-            b'*' => parse_bold(input, current),
-            b'_' => parse_italic(input, current),
-            b'"' => parse_quote(input, current),
-            _ => parse_literal(input, current, "_*#\"".as_bytes()),
-        };
-        expression = Exp::Cat(Box::new(expression), Box::new(expr));
-        current = cur;
+        self.i += 1;
     }
-    (expression, current)
+
+    fn parse_literal(&mut self, break_chars: &[u8]) -> Exp {
+        let start = self.i;
+        while self.i < self.input_len {
+            if break_chars.contains(&self.input[self.i]) {
+                break;
+            }
+            self.i += 1;
+        }
+        Exp::Literal(str::from_utf8(&self.input[start..self.i]).unwrap().to_string())
+    }
+
+    fn parse_italic(&mut self) -> Exp {
+        self.consume(b'_');
+        let literal= self.parse("_".as_bytes());
+        self.consume(b'_');
+        Exp::Italic(Box::new(literal))
+    }
+
+    fn parse_bold(&mut self) -> Exp {
+        self.consume(b'*');
+        let literal = self.parse("*".as_bytes());
+        self.consume(b'*');
+        Exp::Bold(Box::new(literal))
+    }
+
+    fn parse_quote(&mut self) -> Exp {
+        self.consume(b'"');
+        let literal = self.parse("\"".as_bytes());
+        self.consume(b'"');
+        Exp::Quote(Box::new(literal))
+    }
+
+    fn parse_heading_level(&mut self, level: u8) -> u8 {
+        match self.input[self.i] {
+            b'#' => {
+                self.i += 1;
+                self.parse_heading_level(level + 1)
+            },
+            b' ' => {
+                self.i += 1;
+                level
+            },
+            _ => level,
+        }
+    }
+
+    fn parse_heading(&mut self) -> Exp {
+        self.consume(b'#');
+        let level = self.parse_heading_level(0);
+        let literal = self.parse_literal("\n".as_bytes());
+        let result = Exp::Heading(Box::new(literal), level);
+        if self.i == self.input_len {
+            return result;        
+        }
+        match self.input[self.i] {
+            b'\n' => result,
+            _ => panic!("expected \\n at {}", self.i),
+        }
+    }
+
+    fn parse(&mut self, break_chars: &[u8]) -> Exp {
+        let mut expression = Exp::Empty(); // we start with "nothing", as rust has no null values
+        while self.i < self.input_len {
+            let current_char = self.input[self.i];
+            if break_chars.contains(&current_char){
+                break;
+            }
+            let expr = match current_char {
+                b'#' => self.parse_heading(),
+                b'*' => self.parse_bold(),
+                b'_' => self.parse_italic(),
+                b'"' => self.parse_quote(),
+                _ => self.parse_literal("_*#\"".as_bytes()),
+            };
+            expression = Exp::Cat(Box::new(expression), Box::new(expr));
+        }
+        expression
+    }
+    
 }
 
 fn transform(input: &str) -> String {
-    return parse(input.as_bytes(), 0, "".as_bytes()).0.to_string();
+    let mut parser = Parser {input : input.as_bytes(), input_len : input.len(), i : 0};
+    return parser.parse("".as_bytes()).to_string();
 }
 
 fn main() {
