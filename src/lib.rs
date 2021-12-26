@@ -45,29 +45,29 @@ pub struct Parser<'a> {
     /// the current position of parsing
     i: usize,
     /// the character at the current parsing position
-    char: u8
+    char: u8,
 }
 
 impl Parser<'_> {
-
     fn new(input: &str) -> Parser {
         let input_byte_slice = input.as_bytes();
         Parser {
             input: input_byte_slice,
             input_len: input_byte_slice.len(),
             i: 0,
-            char: input_byte_slice[0]
+            char: input_byte_slice[0],
         }
     }
-    
+
     pub fn transform(input: &str) -> String {
         let mut parser = Parser::new(input);
-        return parser.parse("".as_bytes()).to_string();
+        // passing "" as bytes parses until the end of file
+        return parser.parse_until("".as_bytes()).to_string();
     }
-    
+
     fn advance(&mut self) {
-        self.i +=1;
-        if !self.at_end(){
+        self.i += 1;
+        if !self.at_end() {
             self.char = self.input[self.i];
         }
     }
@@ -91,10 +91,7 @@ impl Parser<'_> {
 
     fn parse_literal(&mut self, break_chars: &[u8]) -> Exp {
         let start = self.i;
-        while !self.at_end() {
-            if break_chars.contains(&self.char) {
-                break;
-            }
+        while !self.at_end() && !break_chars.contains(&self.char) {
             self.advance();
         }
         Exp::Literal(
@@ -107,7 +104,7 @@ impl Parser<'_> {
     fn parse_quoted(&mut self) -> Exp {
         let break_char = self.char;
         self.consume(break_char); // opening quote
-        let exp = self.parse(&[break_char]); // body
+        let exp = self.parse_until(&[break_char]); // body
         self.consume(break_char); // ending quote
         exp
     }
@@ -140,12 +137,9 @@ impl Parser<'_> {
         }
     }
 
-    fn parse(&mut self, break_chars: &[u8]) -> Exp {
+    fn parse_until(&mut self, break_chars: &[u8]) -> Exp {
         let mut expression = Exp::Empty(); // we start with "nothing", as rust has no null values
-        while !self.at_end() {
-            if break_chars.contains(&self.char) {
-                break;
-            }
+        while !self.at_end() && !break_chars.contains(&self.char) {
             let expr = match self.char {
                 b'#' => self.parse_heading(),
                 b'*' => Exp::Bold(Box::new(self.parse_quoted())),
