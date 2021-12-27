@@ -167,8 +167,12 @@ impl Parser<'_> {
                 b'`' => Exp::Teletype(Box::new(self.parse_symmetric_quoted())),
                 b'"' => Exp::Quote(Box::new(self.parse_symmetric_quoted())),
                 b'^' => self.parse_footnote(),
+                b'&' => {
+                    self.consume(self.char);
+                    Exp::Literal("\\&".to_string())}
+                    ,
                 _ => self.parse_literal(
-                    format!("_*#\"^`{}", str::from_utf8(break_chars).unwrap()).as_bytes(),
+                    format!("_*#\"^`&{}", str::from_utf8(break_chars).unwrap()).as_bytes(),
                 ),
             };
             expression = Exp::Cat(Box::new(expression), Box::new(expr));

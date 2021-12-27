@@ -66,4 +66,9 @@ mod tests {
     fn teletype(){
         assert_eq!(super::Parser::transform("`input`"), "\\texttt{input}");
     }
+
+    #[test]
+    fn ampersand_is_escaped(){
+        assert_eq!(super::Parser::transform("&"), "\\&");
+    }
 }
