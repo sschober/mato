@@ -26,7 +26,10 @@ mod tests {
     }
     #[test]
     fn heading() {
-        assert_eq!(super::Parser::transform("# heading\n"), "\\section{heading}\n");
+        assert_eq!(
+            super::Parser::transform("# heading\n"),
+            "\\section{heading}\n"
+        );
     }
     #[test]
     fn heading_without_newline() {
@@ -38,7 +41,10 @@ mod tests {
     }
     #[test]
     fn bold_and_italic() {
-        assert_eq!(super::Parser::transform("*_text_*"), "\\textbf{\\textit{text}}");
+        assert_eq!(
+            super::Parser::transform("*_text_*"),
+            "\\textbf{\\textit{text}}"
+        );
     }
     #[test]
     fn bold_and_italic_but_with_outer_chars() {
@@ -46,5 +52,18 @@ mod tests {
             super::Parser::transform("*fett _kursiv_ wieder fett*"),
             "\\textbf{fett \\textit{kursiv} wieder fett}"
         );
+    }
+
+    #[test]
+    fn footnote() {
+        assert_eq!(
+            super::Parser::transform("input^(footnote)"),
+            "input~\\footnote{footnote}"
+        );
+    }
+
+    #[test]
+    fn teletype(){
+        assert_eq!(super::Parser::transform("`input`"), "\\texttt{input}");
     }
 }

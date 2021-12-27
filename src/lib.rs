@@ -8,7 +8,9 @@ enum Exp {
     Heading(Box<Exp>, u8),
     Bold(Box<Exp>),
     Italic(Box<Exp>),
+    Teletype(Box<Exp>),
     Quote(Box<Exp>),
+    Footnote(Box<Exp>),
     // this enables composition, forming the tree
     Cat(Box<Exp>, Box<Exp>),
     // this is a neutral element, yielding no ouput
@@ -21,6 +23,7 @@ impl Display for Exp {
             Exp::Literal(s) => write!(f, "{}", s),
             Exp::Bold(b_exp) => write!(f, "\\textbf{{{}}}", b_exp),
             Exp::Italic(b_exp) => write!(f, "\\textit{{{}}}", b_exp),
+            Exp::Teletype(b_exp) => write!(f, "\\texttt{{{}}}", b_exp),
             Exp::Heading(b_exp, level) => {
                 let section = match level {
                     2 => "subsubsection",
@@ -30,6 +33,7 @@ impl Display for Exp {
                 write!(f, "\\{}{{{}}}", section, b_exp)
             }
             Exp::Quote(b_exp) => write!(f, "\"`{}\"'", b_exp),
+            Exp::Footnote(b_exp) => write!(f, "~\\footnote{{{}}}", b_exp),
             Exp::Cat(b_exp1, b_exp2) => write!(f, "{}{}", b_exp1, b_exp2),
             Exp::Empty() => write!(f, ""),
         }
@@ -37,6 +41,7 @@ impl Display for Exp {
 }
 
 /// holds parsing state
+#[derive(Debug)]
 pub struct Parser<'a> {
     /// the input string as a byte slice
     input: &'a [u8],
@@ -101,9 +106,16 @@ impl Parser<'_> {
         )
     }
 
-    fn parse_quoted(&mut self) -> Exp {
+    fn parse_symmetric_quoted(&mut self) -> Exp {
         let break_char = self.char;
         self.consume(break_char); // opening quote
+        let exp = self.parse_until(&[break_char]); // body
+        self.consume(break_char); // ending quote
+        exp
+    }
+
+    fn parse_quoted(&mut self, break_char: u8) -> Exp {
+        self.consume(self.char); // opening quote
         let exp = self.parse_until(&[break_char]); // body
         self.consume(break_char); // ending quote
         exp
@@ -137,15 +149,27 @@ impl Parser<'_> {
         }
     }
 
+    fn parse_footnote(&mut self) -> Exp {
+        self.consume(b'^');
+        match self.char {
+            b'(' => Exp::Footnote(Box::new(self.parse_quoted(b')'))),
+            _ => Exp::Literal("^".to_string()),
+        }
+    }
+
     fn parse_until(&mut self, break_chars: &[u8]) -> Exp {
         let mut expression = Exp::Empty(); // we start with "nothing", as rust has no null values
         while !self.at_end() && !break_chars.contains(&self.char) {
             let expr = match self.char {
                 b'#' => self.parse_heading(),
-                b'*' => Exp::Bold(Box::new(self.parse_quoted())),
-                b'_' => Exp::Italic(Box::new(self.parse_quoted())),
-                b'"' => Exp::Quote(Box::new(self.parse_quoted())),
-                _ => self.parse_literal("_*#\"".as_bytes()),
+                b'*' => Exp::Bold(Box::new(self.parse_symmetric_quoted())),
+                b'_' => Exp::Italic(Box::new(self.parse_symmetric_quoted())),
+                b'`' => Exp::Teletype(Box::new(self.parse_symmetric_quoted())),
+                b'"' => Exp::Quote(Box::new(self.parse_symmetric_quoted())),
+                b'^' => self.parse_footnote(),
+                _ => self.parse_literal(
+                    format!("_*#\"^`{}", str::from_utf8(break_chars).unwrap()).as_bytes(),
+                ),
             };
             expression = Exp::Cat(Box::new(expression), Box::new(expr));
         }
