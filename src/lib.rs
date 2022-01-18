@@ -164,7 +164,7 @@ impl Parser<'_> {
             self.consume(b')');
             Exp::HyperRef(Box::new(exp_link_text), Box::new(exp_url))
         } else {
-            exp_link_text
+            Exp::Literal("[".to_string()).cat(exp_link_text).cat(Exp::Literal("]".to_string()))
         }
     }
 

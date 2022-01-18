@@ -76,4 +76,9 @@ mod tests {
     fn link(){
         assert_eq!(super::Parser::transform("[link text](http://example.com)"), "\\href{http://example.com}{link text}");
     }
+
+    #[test]
+    fn brackets_are_kept(){
+        assert_eq!(super::Parser::transform("[link text]"), "[link text]");
+    }
 }
