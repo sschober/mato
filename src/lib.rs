@@ -49,6 +49,19 @@ impl Exp {
     }
 }
 
+fn lit(s: &str) -> Exp {
+    Exp::Literal(s.to_string())
+}
+fn heading(exp: Exp, lvl: u8) -> Exp {
+    Exp::Heading(Box::new(exp), lvl)
+}
+fn footnote(exp: Exp) -> Exp {
+    Exp::Footnote(Box::new(exp))
+}
+fn hyperref(exp1: Exp, exp2: Exp) -> Exp {
+    Exp::HyperRef(Box::new(exp1), Box::new(exp2))
+}
+
 /// holds parsing state
 #[derive(Debug)]
 pub struct Parser<'a> {
@@ -136,7 +149,7 @@ impl Parser<'_> {
         self.consume(b'#');
         let level = self.parse_heading_level(0);
         let literal = self.parse_literal("\n".as_bytes());
-        let result = Exp::Heading(Box::new(literal), level);
+        let result = heading(literal, level);
         if self.at_end() {
             return result;
         }
@@ -149,8 +162,8 @@ impl Parser<'_> {
     fn parse_footnote(&mut self) -> Exp {
         self.consume(b'^');
         match self.char {
-            b'(' => Exp::Footnote(Box::new(self.parse_quoted(b')'))),
-            _ => Exp::Literal("^".to_string()),
+            b'(' => footnote(self.parse_quoted(b')')),
+            _ => lit("^"),
         }
     }
 
@@ -162,9 +175,9 @@ impl Parser<'_> {
             self.consume(b'(');
             let exp_url = self.parse_until(")".as_bytes());
             self.consume(b')');
-            Exp::HyperRef(Box::new(exp_link_text), Box::new(exp_url))
+            hyperref(exp_link_text, exp_url)
         } else {
-            Exp::Literal("[".to_string()).cat(exp_link_text).cat(Exp::Literal("]".to_string()))
+            lit("[").cat(exp_link_text).cat(lit("]"))
         }
     }
 
@@ -173,11 +186,7 @@ impl Parser<'_> {
         while !self.at_end() && !break_chars.contains(&self.char) {
             self.advance();
         }
-        Exp::Literal(
-            str::from_utf8(&self.input[start..self.i])
-                .unwrap()
-                .to_string(),
-        )
+        lit(str::from_utf8(&self.input[start..self.i]).unwrap())
     }
 
     fn parse_until(&mut self, break_chars: &[u8]) -> Exp {
@@ -192,7 +201,7 @@ impl Parser<'_> {
                 b'^' => self.parse_footnote(),
                 b'&' => {
                     self.consume(self.char);
-                    Exp::Literal("\\&".to_string())
+                    lit("\\&")
                 }
                 b'[' => self.parse_hyperlink(),
                 _ => self.parse_literal(
