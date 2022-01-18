@@ -71,4 +71,9 @@ mod tests {
     fn ampersand_is_escaped(){
         assert_eq!(super::Parser::transform("&"), "\\&");
     }
+
+    #[test]
+    fn link(){
+        assert_eq!(super::Parser::transform("[link text](http://example.com)"), "\\href{http://example.com}{link text}");
+    }
 }

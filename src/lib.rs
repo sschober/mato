@@ -11,6 +11,7 @@ enum Exp {
     Teletype(Box<Exp>),
     Quote(Box<Exp>),
     Footnote(Box<Exp>),
+    HyperRef(Box<Exp>, Box<Exp>),
     // this enables composition, forming the tree
     Cat(Box<Exp>, Box<Exp>),
     // this is a neutral element, yielding no ouput
@@ -34,9 +35,17 @@ impl Display for Exp {
             }
             Exp::Quote(b_exp) => write!(f, "\"`{}\"'", b_exp),
             Exp::Footnote(b_exp) => write!(f, "~\\footnote{{{}}}", b_exp),
+            Exp::HyperRef(b_exp1, b_exp2) => write!(f, "\\href{{{}}}{{{}}}", b_exp2, b_exp1),
             Exp::Cat(b_exp1, b_exp2) => write!(f, "{}{}", b_exp1, b_exp2),
             Exp::Empty() => write!(f, ""),
         }
+    }
+}
+
+impl Exp {
+    /// constructs new Exp of self and expr
+    fn cat(self, expr: Exp) -> Exp {
+        Exp::Cat(Box::new(self), Box::new(expr))
     }
 }
 
@@ -94,24 +103,12 @@ impl Parser<'_> {
         self.advance();
     }
 
-    fn parse_literal(&mut self, break_chars: &[u8]) -> Exp {
-        let start = self.i;
-        while !self.at_end() && !break_chars.contains(&self.char) {
-            self.advance();
-        }
-        Exp::Literal(
-            str::from_utf8(&self.input[start..self.i])
-                .unwrap()
-                .to_string(),
-        )
-    }
-
-    fn parse_symmetric_quoted(&mut self) -> Exp {
+    fn parse_symmetric_quoted(&mut self) -> Box<Exp> {
         let break_char = self.char;
         self.consume(break_char); // opening quote
         let exp = self.parse_until(&[break_char]); // body
         self.consume(break_char); // ending quote
-        exp
+        Box::new(exp)
     }
 
     fn parse_quoted(&mut self, break_char: u8) -> Exp {
@@ -157,25 +154,52 @@ impl Parser<'_> {
         }
     }
 
+    fn parse_hyperlink(&mut self) -> Exp {
+        self.consume(b'[');
+        let exp_link_text = self.parse_until("]".as_bytes());
+        self.consume(b']');
+        if self.char == b'(' {
+            self.consume(b'(');
+            let exp_url = self.parse_until(")".as_bytes());
+            self.consume(b')');
+            Exp::HyperRef(Box::new(exp_link_text), Box::new(exp_url))
+        } else {
+            exp_link_text
+        }
+    }
+
+    fn parse_literal(&mut self, break_chars: &[u8]) -> Exp {
+        let start = self.i;
+        while !self.at_end() && !break_chars.contains(&self.char) {
+            self.advance();
+        }
+        Exp::Literal(
+            str::from_utf8(&self.input[start..self.i])
+                .unwrap()
+                .to_string(),
+        )
+    }
+
     fn parse_until(&mut self, break_chars: &[u8]) -> Exp {
         let mut expression = Exp::Empty(); // we start with "nothing", as rust has no null values
         while !self.at_end() && !break_chars.contains(&self.char) {
             let expr = match self.char {
                 b'#' => self.parse_heading(),
-                b'*' => Exp::Bold(Box::new(self.parse_symmetric_quoted())),
-                b'_' => Exp::Italic(Box::new(self.parse_symmetric_quoted())),
-                b'`' => Exp::Teletype(Box::new(self.parse_symmetric_quoted())),
-                b'"' => Exp::Quote(Box::new(self.parse_symmetric_quoted())),
+                b'*' => Exp::Bold(self.parse_symmetric_quoted()),
+                b'_' => Exp::Italic(self.parse_symmetric_quoted()),
+                b'`' => Exp::Teletype(self.parse_symmetric_quoted()),
+                b'"' => Exp::Quote(self.parse_symmetric_quoted()),
                 b'^' => self.parse_footnote(),
                 b'&' => {
                     self.consume(self.char);
-                    Exp::Literal("\\&".to_string())}
-                    ,
+                    Exp::Literal("\\&".to_string())
+                }
+                b'[' => self.parse_hyperlink(),
                 _ => self.parse_literal(
                     format!("_*#\"^`&{}", str::from_utf8(break_chars).unwrap()).as_bytes(),
                 ),
             };
-            expression = Exp::Cat(Box::new(expression), Box::new(expr));
+            expression = expression.cat(expr);
         }
         expression
     }
