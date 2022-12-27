@@ -1,3 +1,3 @@
-# MaToTe - Markdown To Tex transformer
+# MaTo - MArkdown TO transformer framework
 
 See sample for help.
