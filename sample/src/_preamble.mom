@@ -1,0 +1,7 @@
+.AUTHOR "Sven Schober"
+.TITLE "Wunschzettel"
+.SUBTITLE "Revision 23" "03.12.2022"
+.PRINTSTYLE TYPESET
+.PAGE 6i 9i .75i .75i .75i .75i
+.FAMILY P
+.START

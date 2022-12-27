@@ -1,9 +1,19 @@
-use std::fmt::Display;
+pub mod renderer;
+
 use std::{panic, str};
+
+pub fn transform<T: renderer::Renderer>(t: T, input: &str) -> String {
+    let result = Parser::parse(input);
+    render(t, result)
+}
+
+fn render<T: renderer::Renderer>(t: T, exp: Exp) -> String {
+    t.render(exp)
+}
 
 /// Expressions are the building blocks of an abstract syntax tree
 #[derive(Debug)]
-enum Exp {
+pub enum Exp {
     Literal(String),
     Heading(Box<Exp>, u8),
     Bold(Box<Exp>),
@@ -18,29 +28,6 @@ enum Exp {
     Empty(),
 }
 
-impl Display for Exp {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Exp::Literal(s) => write!(f, "{}", s),
-            Exp::Bold(b_exp) => write!(f, "\\textbf{{{}}}", b_exp),
-            Exp::Italic(b_exp) => write!(f, "\\textit{{{}}}", b_exp),
-            Exp::Teletype(b_exp) => write!(f, "\\texttt{{{}}}", b_exp),
-            Exp::Heading(b_exp, level) => {
-                let section = match level {
-                    2 => "subsubsection",
-                    1 => "subsection",
-                    _ => "section",
-                };
-                write!(f, "\\{}{{{}}}", section, b_exp)
-            }
-            Exp::Quote(b_exp) => write!(f, "\"`{}\"'", b_exp),
-            Exp::Footnote(b_exp) => write!(f, "~\\footnote{{{}}}", b_exp),
-            Exp::HyperRef(b_exp1, b_exp2) => write!(f, "\\href{{{}}}{{{}}}", b_exp2, b_exp1),
-            Exp::Cat(b_exp1, b_exp2) => write!(f, "{}{}", b_exp1, b_exp2),
-            Exp::Empty() => write!(f, ""),
-        }
-    }
-}
 
 impl Exp {
     /// constructs new Exp of self and expr
@@ -64,7 +51,7 @@ fn hyperref(exp1: Exp, exp2: Exp) -> Exp {
 
 /// holds parsing state
 #[derive(Debug)]
-pub struct Parser<'a> {
+struct Parser<'a> {
     /// the input string as a byte slice
     input: &'a [u8],
     /// the lnegth of the input byte slice
@@ -86,12 +73,12 @@ impl Parser<'_> {
         }
     }
 
-    pub fn transform(input: &str) -> String {
+    fn parse(input: &str) -> Exp {
         let mut parser = Parser::new(input);
         // passing "" as bytes parses until the end of file
-        return parser.parse_until("".as_bytes()).to_string();
+        return parser.parse_until("".as_bytes());
     }
-
+    
     fn advance(&mut self) {
         self.i += 1;
         if !self.at_end() {
