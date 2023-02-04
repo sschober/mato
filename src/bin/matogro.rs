@@ -3,6 +3,9 @@ use std::env;
 use mato::renderer::groff::GroffRenderer;
 
 fn main() {
+    let mom_preamble = include_str!("default-preamble.mom");
+    println!("{}", mom_preamble);
+
     for file in env::args().skip(1) {
         let input = std::fs::read_to_string(file).unwrap();
         println!("{}", mato::transform(GroffRenderer{}, input.as_str()));

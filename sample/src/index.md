@@ -1,6 +1,6 @@
-# MaToTe - a markdown to tex transformer
+# MaTo{Gro,Te} - a markdown to {groff,tex} transformer
 
-This little binary is a transformer for markdown formatted text to LaTeX. It
+This little binary is a transformer for markdown formatted text to LaTeX and Groff. It
 features only a subset of markdown that I commonly use. It tries hard to strike
 a balance between conformity to the markdown "standard" (whatever that is) and
 practicality.
@@ -8,12 +8,21 @@ practicality.
 ## Features
 
 It supports different heading levels (currently only three) and a quotations
-"style"^(and even footnotes!). Ampersands are special characters in LaTeX, so if
-you use them in markdown, they have to be escaped in the tex output. Let's try
-that out: A&B. Let's see, if that also works in teletype expressions: `A&B`. And
-fat ones: *A&B*. And italics: _A&B_. And fat italics: *_A&B_*. Is there
-something like fat italic teletype? `_*A&B*_`. -- It seems there is.
+"style"^(and even footnotes!). 
 
+### Escaping
+
+Ampersands are special characters in LaTeX, so if
+you use them in markdown, they have to be escaped in the tex output. Let's try
+that out: A and B. Let's see, if that also works in teletype expressions: `A and B`. And
+fat ones: *A and B*. And italics: _A and B_. And fat italics: *_A and B_*. Is there
+something like fat italic teletype? `_*A and B*_`. -- It seems there is.
+
+### Escaping Differences
+
+As I expanded the output engine to groff, I realized, that there is a challenge:
+LaTeX and groff see different characters as necessary to escape: in LaTeX it is,
+amongst others, the Ampersand, in Groff it is a full stop at the beginning of a line!
 ## Technical Details
 
 It is written in rust, primarily for me to learn the language, but also for me
@@ -24,3 +33,7 @@ as it seems to me. Don't try to squeeze anything out of me in the vicinity of
 the chomsky hiearchy or context freeness. 
 
 To tranform a given text in markdown just invoke the `matote` command, like so:
+
+```
+matogro <file>
+```

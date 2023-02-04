@@ -9,6 +9,7 @@ impl Renderer for TexRenderer {
     fn render(&self, exp: Exp) -> String {
         match exp {
             Exp::Literal(s) => format!("{}", s),
+            Exp::EscapeLit(s) => format!("\\{}",s),
             Exp::Bold(b_exp) => format!("\\textbf{{{}}}", self.render(*b_exp)),
             Exp::Italic(b_exp) => format!("\\textit{{{}}}", self.render(*b_exp)),
             Exp::Teletype(b_exp) => format!("\\texttt{{{}}}", self.render(*b_exp)),

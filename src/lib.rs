@@ -22,6 +22,7 @@ pub enum Exp {
     Quote(Box<Exp>),
     Footnote(Box<Exp>),
     HyperRef(Box<Exp>, Box<Exp>),
+    EscapeLit(String),
     // this enables composition, forming the tree
     Cat(Box<Exp>, Box<Exp>),
     // this is a neutral element, yielding no ouput
@@ -36,8 +37,12 @@ impl Exp {
     }
 }
 
+// TODO all these to_string invocation incur a copy!
 fn lit(s: &str) -> Exp {
     Exp::Literal(s.to_string())
+}
+fn escape_lit(s: &str) -> Exp {
+    Exp::EscapeLit(s.to_string())
 }
 fn heading(exp: Exp, lvl: u8) -> Exp {
     Exp::Heading(Box::new(exp), lvl)
@@ -188,7 +193,11 @@ impl Parser<'_> {
                 b'^' => self.parse_footnote(),
                 b'&' => {
                     self.consume(self.char);
-                    lit("\\&")
+                    escape_lit("&")
+                },
+                b'.' => {
+                    self.consume(self.char);
+                    escape_lit(".")
                 }
                 b'[' => self.parse_hyperlink(),
                 _ => self.parse_literal(
