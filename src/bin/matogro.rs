@@ -2,10 +2,13 @@ use std::env;
 use std::fs;
 use std::io::Write;
 use std::process::{Command, Stdio};
+use std::time::{Instant};
 
 use mato::renderer::groff::GroffRenderer;
 
 fn main() {
+    let start = Instant::now();
+
     let mom_preamble = include_str!("default-preamble.mom");
     // TODO implement sane preamble logic
     // if exists a .preamble.mom in current dir => use that
@@ -35,6 +38,8 @@ fn main() {
         // ... otherwise this call would not terminate
         let output = child.wait_with_output().expect("Failed to read stdout");
         fs::write("out.pdf", output.stdout).expect("Unable to write out.pdf");
+        let duration = start.elapsed();
+        println!("total time: {:?} ", duration);
     }
 
 }
