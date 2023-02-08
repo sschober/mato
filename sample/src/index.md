@@ -1,15 +1,22 @@
 # MaTo{Gro,Te} - a markdown to {groff,tex} transformer
 
-This little binary is a transformer for markdown formatted text to LaTeX and Groff. It
+This little tool is a transformer for markdown formatted text to LaTeX and Groff. It
 features only a subset of markdown that I commonly use. It tries hard to strike
 a balance between conformity to the markdown "standard" (whatever that is) and
 practicality.
 
+I find Markdown to strike a good compromise between syntax getting in the way
+and power of expression.
+
+Code blocks currently are note supported, but I plan to.
 ## Features
 
 It supports different heading levels (currently only three) and a quotations
 "style"^(and even footnotes!). 
 
+The groff version `matogro` currently sports a direct compilation mode, which
+is to say, that it will call pdfmom directly after transforming the markdown
+source to groff output.
 ### Escaping
 
 Ampersands are special characters in LaTeX, so if
