@@ -1,15 +1,42 @@
 use std::env;
+use std::fs;
+use std::io::Write;
+use std::process::{Command, Stdio};
 
 use mato::renderer::groff::GroffRenderer;
 
 fn main() {
     let mom_preamble = include_str!("default-preamble.mom");
-    println!("{}", mom_preamble);
-
+    // TODO implement sane preamble logic
+    // if exists a .preamble.mom in current dir => use that
+    // if exists a ~/.mato/preamble.mom => use that
+    // => use default
+    println!("using preamble:\n{}", mom_preamble);    
     for file in env::args().skip(1) {
         let input = std::fs::read_to_string(file).unwrap();
-        println!("{}", mato::transform(GroffRenderer{}, input.as_str()));
+        let groff_output = mato::transform(GroffRenderer{}, input.as_str());
+        println!("transformed...");
+
+        let mut child = Command::new("/opt/homebrew/bin/pdfmom")
+        .arg("-mden")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .spawn()
+        .expect("Failed to spawn pdfmom");
+        println!("spawned pdfmom...");    
+
+        {
+            // this lexical block is only here to let stdin run out of scope to be closed...
+            let mut stdin = child.stdin.take().expect("Failed to open stdin for pdfmom");
+            stdin.write_all(mom_preamble.as_bytes()).expect("Failed to write preamble to stdin");
+            stdin.write_all(groff_output.as_bytes()).expect("Failed to write to stdin of pdfmom");
+        }
+        println!("wrote to stdin...");
+        // ... otherwise this call would not terminate
+        let output = child.wait_with_output().expect("Failed to read stdout");
+        fs::write("out.pdf", output.stdout).expect("Unable to write out.pdf");
     }
+
 }
 
 #[cfg(test)]
