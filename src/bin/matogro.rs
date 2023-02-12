@@ -123,6 +123,7 @@ fn transform_and_render(file: String, mom_preamble: &str) {
 
     let mut child = Command::new("/opt/homebrew/bin/pdfmom")
         .arg("-mden")
+        .arg("-K UTF-8") // process with preconv to support utf-8
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .spawn()
