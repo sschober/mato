@@ -3,6 +3,7 @@ use std::fs;
 use std::fs::File;
 use std::io::Write;
 use std::os::unix::io::AsRawFd;
+use std::path::Path;
 use std::process::{Command, Stdio};
 use std::ptr;
 use std::time::Instant;
@@ -54,14 +55,24 @@ mod ffi {
 
 fn main() -> std::io::Result<()> {
 
-    let mom_preamble = include_str!("default-preamble.mom");
+    let mut mom_preamble = include_str!("default-preamble.mom").to_string();
     // TODO implement sane preamble logic
     // if exists a .preamble.mom in current dir => use that
     // if exists a ~/.mato/preamble.mom => use that
     // => use default
-    println!("using preamble:\n{}", mom_preamble);
     let file = env::args().skip(1).nth(0).expect("need a file as argument");
 
+    // try to find preamble.mom located next to source file
+    let path = Path::new(&file);
+    let parent_dir = path.parent().expect("could not establish parent path of file");
+    let sibbling_preamble = parent_dir.join("preamble.mom");
+    if sibbling_preamble.as_path().is_file() {
+        println!("found sibbling preamble: {}", sibbling_preamble.display());
+        mom_preamble = fs::read_to_string(sibbling_preamble)?
+    }
+    println!("using preamble:\n{}", mom_preamble);
+
+    // open source file to be able watch it (we need a file descriptor)
     println!("opening file {}", &file);
     let f = File::open(&file)?;
     let fd = f.as_raw_fd();
@@ -99,7 +110,7 @@ fn main() -> std::io::Result<()> {
             panic!("{}", std::io::Error::last_os_error());
         }
         println!("...and am back... rending...");
-        transform_and_render(file.clone(), mom_preamble);
+        transform_and_render(file.clone(), &mom_preamble);
     }
 }
 
