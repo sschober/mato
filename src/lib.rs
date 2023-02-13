@@ -1,4 +1,5 @@
 pub mod renderer;
+pub mod watch;
 
 use std::{panic, str};
 

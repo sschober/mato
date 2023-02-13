@@ -9,49 +9,8 @@ use std::ptr;
 use std::time::Instant;
 
 use mato::renderer::groff::GroffRenderer;
-
-mod ffi {
-
-    pub const EVFILT_VNODE: i16 = -4;
-    pub const EV_ADD: u16 = 0x1;
-    pub const EV_ENABLE: u16 = 0x4;
-    pub const EV_CLEAR: u16 = 0x20;
-
-    pub const NOTE_WRITE: u32 = 0x00000002;
-
-    #[derive(Debug)]
-    #[repr(C)]
-    pub(super) struct Timespec {
-        /// Seconds
-        tv_sec: isize,
-        /// Nanoseconds
-        v_nsec: usize,
-    }
-
-    #[derive(Debug, Clone, Default)]
-    #[repr(C)]
-    pub struct Kevent {
-        pub ident: u64,
-        pub filter: i16,
-        pub flags: u16,
-        pub fflags: u32,
-        pub data: i64,
-        pub udata: u64,
-    }
-
-    #[link(name = "c")]
-    extern "C" {
-        pub(super) fn kqueue() -> i32;
-        pub(super) fn kevent(
-            kq: i32,
-            changelist: *const Kevent,
-            nchanges: i32,
-            eventlist: *mut Kevent,
-            nevents: i32,
-            timeout: *const Timespec,
-        ) -> i32;
-    }
-}
+use mato::watch;
+use mato::watch::Kevent;
 
 fn main() -> std::io::Result<()> {
 
@@ -79,25 +38,18 @@ fn main() -> std::io::Result<()> {
     println!("got fd: {}", fd);
 
     println!("creating kqueue...");
-    let queue = unsafe { ffi::kqueue() };
+    let queue = unsafe { watch::kqueue() };
     if queue < 0 {
         panic!("{}", std::io::Error::last_os_error());
     }
     println!("kqueue: {} ... looping", queue);
 
     loop {
-        let event = ffi::Kevent {
-            ident: fd as u64,
-            filter: ffi::EVFILT_VNODE,
-            flags: ffi::EV_ADD | ffi::EV_ENABLE | ffi::EV_CLEAR,
-            fflags: ffi::NOTE_WRITE,
-            data: 0,
-            udata: 0,
-        };
+        let event = Kevent::wait_for_write_on(fd);
         let mut changelist = [event];
         println!("constructed changelist... calling kevent...");
         let res = unsafe {
-            ffi::kevent(
+            watch::kevent(
                 queue,
                 changelist.as_ptr(),
                 1,
