@@ -36,6 +36,11 @@ fn main() -> std::io::Result<()> {
     let f = File::open(&file)?;
     let fd = f.as_raw_fd();
     println!("got fd: {}", fd);
+    
+    let file_stem = path.file_stem().expect("Could not get file stemp").to_str().expect("could not get utf-8 string");
+    println!("source file stem: {}", file_stem);
+    let target_file_name = format!("{}.pdf", file_stem);
+    println!("target file name: {}", target_file_name);
 
     println!("creating kqueue...");
     let queue = unsafe { watch::kqueue() };
@@ -62,14 +67,14 @@ fn main() -> std::io::Result<()> {
             panic!("{}", std::io::Error::last_os_error());
         }
         println!("...and am back... rending...");
-        transform_and_render(file.clone(), &mom_preamble);
+        transform_and_render(file.clone(), target_file_name.clone(), &mom_preamble);
     }
 }
 
-fn transform_and_render(file: String, mom_preamble: &str) {
+fn transform_and_render(source_file: String, target_file: String, mom_preamble: &str) {
     let start = Instant::now();
 
-    let input = std::fs::read_to_string(file).unwrap();
+    let input = std::fs::read_to_string(source_file).unwrap();
     let groff_output = mato::transform(GroffRenderer {}, input.as_str());
     println!("transformed...");
 
@@ -95,7 +100,7 @@ fn transform_and_render(file: String, mom_preamble: &str) {
     println!("wrote to stdin...");
     // ... otherwise this call would not terminate
     let output = child.wait_with_output().expect("Failed to read stdout");
-    fs::write("out.pdf", output.stdout).expect("Unable to write out.pdf");
+    fs::write(target_file, output.stdout).expect("Unable to write out.pdf");
     let duration = start.elapsed();
     println!("total time: {:?} ", duration);
 }
