@@ -19,11 +19,11 @@ fn main() -> std::io::Result<()> {
     // if exists a .preamble.mom in current dir => use that
     // if exists a ~/.mato/preamble.mom => use that
     // => use default
-    let file = env::args().skip(1).nth(0).expect("need a file as argument");
+    let arg_source_file = env::args().skip(1).nth(0).expect("need a file as argument");
 
     // try to find preamble.mom located next to source file
-    let path = Path::new(&file);
-    let parent_dir = path.parent().expect("could not establish parent path of file");
+    let path_source_file = Path::new(&arg_source_file);
+    let parent_dir = path_source_file.parent().expect("could not establish parent path of file");
     let sibbling_preamble = parent_dir.join("preamble.mom");
     if sibbling_preamble.as_path().is_file() {
         println!("found sibbling preamble: {}", sibbling_preamble.display());
@@ -32,27 +32,26 @@ fn main() -> std::io::Result<()> {
     println!("using preamble:\n{}", mom_preamble);
 
     // open source file to be able watch it (we need a file descriptor)
-    println!("opening file {}", &file);
-    let f = File::open(&file)?;
+    println!("source file:\t\t{}", &arg_source_file);
+    let f = File::open(&arg_source_file)?;
     let fd = f.as_raw_fd();
-    println!("got fd: {}", fd);
+    // println!("got fd: {}", fd);
     
-    let file_stem = path.file_stem().expect("Could not get file stemp").to_str().expect("could not get utf-8 string");
-    println!("source file stem: {}", file_stem);
-    let target_file_name = format!("{}.pdf", file_stem);
-    println!("target file name: {}", target_file_name);
+    let mut path_target_file = path_source_file.clone().to_path_buf();
+    path_target_file.set_extension("pdf");
+    println!("target file name:\t{}", path_target_file.display());
 
-    println!("creating kqueue...");
+    //println!("creating kqueue...");
     let queue = unsafe { watch::kqueue() };
     if queue < 0 {
         panic!("{}", std::io::Error::last_os_error());
     }
-    println!("kqueue: {} ... looping", queue);
+    //println!("kqueue: {} ... looping", queue);
 
     loop {
         let event = Kevent::wait_for_write_on(fd);
         let mut changelist = [event];
-        println!("constructed changelist... calling kevent...");
+        println!("watching:\t\t{}", path_source_file.display());
         let res = unsafe {
             watch::kevent(
                 queue,
@@ -66,17 +65,17 @@ fn main() -> std::io::Result<()> {
         if res < 0 {
             panic!("{}", std::io::Error::last_os_error());
         }
-        println!("...and am back... rending...");
-        transform_and_render(file.clone(), target_file_name.clone(), &mom_preamble);
+        //println!("...and am back... rending...");
+        transform_and_render(&arg_source_file, path_target_file.to_str().unwrap(), &mom_preamble);
     }
 }
 
-fn transform_and_render(source_file: String, target_file: String, mom_preamble: &str) {
+fn transform_and_render(source_file: &str, target_file: &str, mom_preamble: &str) {
     let start = Instant::now();
 
     let input = std::fs::read_to_string(source_file).unwrap();
     let groff_output = mato::transform(GroffRenderer {}, input.as_str());
-    println!("transformed...");
+    println!("transformed in:\t\t{:?}", start.elapsed());
 
     let mut child = Command::new("/opt/homebrew/bin/pdfmom")
         .arg("-mden")
@@ -85,7 +84,7 @@ fn transform_and_render(source_file: String, target_file: String, mom_preamble: 
         .stdout(Stdio::piped())
         .spawn()
         .expect("Failed to spawn pdfmom");
-    println!("spawned pdfmom...");
+    //println!("spawned pdfmom...");
 
     {
         // this lexical block is only here to let stdin run out of scope to be closed...
@@ -97,12 +96,12 @@ fn transform_and_render(source_file: String, target_file: String, mom_preamble: 
             .write_all(groff_output.as_bytes())
             .expect("Failed to write to stdin of pdfmom");
     }
-    println!("wrote to stdin...");
+    //println!("wrote to stdin...");
+    let start = Instant::now();
     // ... otherwise this call would not terminate
     let output = child.wait_with_output().expect("Failed to read stdout");
     fs::write(target_file, output.stdout).expect("Unable to write out.pdf");
-    let duration = start.elapsed();
-    println!("total time: {:?} ", duration);
+    println!("groff rendering:\t{:?} ", start.elapsed());
 }
 
 #[cfg(test)]
