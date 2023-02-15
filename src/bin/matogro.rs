@@ -5,12 +5,10 @@ use std::io::Write;
 use std::os::unix::io::AsRawFd;
 use std::path::Path;
 use std::process::{Command, Stdio};
-use std::ptr;
 use std::time::Instant;
 
 use mato::renderer::groff::GroffRenderer;
 use mato::watch;
-use mato::watch::Kevent;
 
 fn main() -> std::io::Result<()> {
 
@@ -35,36 +33,14 @@ fn main() -> std::io::Result<()> {
     println!("source file:\t\t{}", &arg_source_file);
     let f = File::open(&arg_source_file)?;
     let fd = f.as_raw_fd();
-    // println!("got fd: {}", fd);
     
     let mut path_target_file = path_source_file.clone().to_path_buf();
     path_target_file.set_extension("pdf");
     println!("target file name:\t{}", path_target_file.display());
 
-    //println!("creating kqueue...");
-    let queue = unsafe { watch::kqueue() };
-    if queue < 0 {
-        panic!("{}", std::io::Error::last_os_error());
-    }
-    //println!("kqueue: {} ... looping", queue);
-
+    let kqueue = watch::Kqueue::create();
     loop {
-        let event = Kevent::wait_for_write_on(fd);
-        let mut changelist = [event];
-        println!("watching:\t\t{}", path_source_file.display());
-        let res = unsafe {
-            watch::kevent(
-                queue,
-                changelist.as_ptr(),
-                1,
-                changelist.as_mut_ptr(),
-                1,
-                ptr::null(),
-            )
-        };
-        if res < 0 {
-            panic!("{}", std::io::Error::last_os_error());
-        }
+        kqueue.wait_for_write_on(fd);
         //println!("...and am back... rending...");
         transform_and_render(&arg_source_file, path_target_file.to_str().unwrap(), &mom_preamble);
     }
