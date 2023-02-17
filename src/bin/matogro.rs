@@ -17,7 +17,7 @@ fn main() -> std::io::Result<()> {
     // if exists a .preamble.mom in current dir => use that
     // if exists a ~/.mato/preamble.mom => use that
     // => use default
-    let arg_source_file = env::args().skip(1).nth(0).expect("need a file as argument");
+    let arg_source_file = env::args().nth(1).expect("need a file as argument");
 
     // try to find preamble.mom located next to source file
     let path_source_file = Path::new(&arg_source_file);
@@ -34,7 +34,7 @@ fn main() -> std::io::Result<()> {
     let f = File::open(&arg_source_file)?;
     let fd = f.as_raw_fd();
     
-    let mut path_target_file = path_source_file.clone().to_path_buf();
+    let mut path_target_file = path_source_file.to_path_buf();
     path_target_file.set_extension("pdf");
     println!("target file name:\t{}", path_target_file.display());
 
@@ -75,6 +75,7 @@ fn grotopdf(input: &str, mom_preamble: &str) -> Vec<u8> {
 }
 
 fn transform_and_render(source_file: &str, target_file: &str, mom_preamble: &str) {
+
     let start = Instant::now();
     let input = std::fs::read_to_string(source_file).unwrap();
     println!("read in:\t\t{:?}", start.elapsed());
