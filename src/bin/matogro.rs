@@ -46,13 +46,11 @@ fn main() -> std::io::Result<()> {
     }
 }
 
-fn transform_and_render(source_file: &str, target_file: &str, mom_preamble: &str) {
-    let start = Instant::now();
+fn matogro(input: &str) -> String {
+    mato::transform(GroffRenderer {}, input)
+}
 
-    let input = std::fs::read_to_string(source_file).unwrap();
-    let groff_output = mato::transform(GroffRenderer {}, input.as_str());
-    println!("transformed in:\t\t{:?}", start.elapsed());
-
+fn grotopdf(input: &str, mom_preamble: &str) -> Vec<u8> {
     let mut child = Command::new("/opt/homebrew/bin/pdfmom")
         .arg("-mden")
         .arg("-K UTF-8") // process with preconv to support utf-8
@@ -60,7 +58,6 @@ fn transform_and_render(source_file: &str, target_file: &str, mom_preamble: &str
         .stdout(Stdio::piped())
         .spawn()
         .expect("Failed to spawn pdfmom");
-    //println!("spawned pdfmom...");
 
     {
         // this lexical block is only here to let stdin run out of scope to be closed...
@@ -69,15 +66,30 @@ fn transform_and_render(source_file: &str, target_file: &str, mom_preamble: &str
             .write_all(mom_preamble.as_bytes())
             .expect("Failed to write preamble to stdin");
         stdin
-            .write_all(groff_output.as_bytes())
+            .write_all(input.as_bytes())
             .expect("Failed to write to stdin of pdfmom");
     }
-    //println!("wrote to stdin...");
-    let start = Instant::now();
     // ... otherwise this call would not terminate
     let output = child.wait_with_output().expect("Failed to read stdout");
-    fs::write(target_file, output.stdout).expect("Unable to write out.pdf");
+    output.stdout
+}
+
+fn transform_and_render(source_file: &str, target_file: &str, mom_preamble: &str) {
+    let start = Instant::now();
+    let input = std::fs::read_to_string(source_file).unwrap();
+    println!("read in:\t\t{:?}", start.elapsed());
+
+    let start = Instant::now();
+    let groff_output = matogro(&input);
+    println!("transformed in:\t\t{:?}", start.elapsed());
+
+    let start = Instant::now();
+    let pdf_output = grotopdf(&groff_output, mom_preamble);
     println!("groff rendering:\t{:?} ", start.elapsed());
+
+    let start = Instant::now();
+    fs::write(target_file, pdf_output).expect("Unable to write out.pdf");
+    println!("written in:\t\t{:?} ", start.elapsed());
 }
 
 #[cfg(test)]
