@@ -1,4 +1,5 @@
 use std::env;
+use std::env::Args;
 use std::fs;
 use std::fs::File;
 use std::io::Write;
@@ -10,17 +11,38 @@ use std::time::Instant;
 use mato::renderer::groff::GroffRenderer;
 use mato::watch;
 
+/// captures configuration parsed from command line arguments
+struct Config {
+    /// source file that is to be processed
+    source_file: String,
+    /// should watch mode be activated?
+    watch: bool
+}
+
+impl Config {
+    fn from(args: Args) -> Config {
+        let mut source_file = "".to_string();
+        let mut watch = false;
+        for arg in args {
+            match arg.as_str() {
+                "-w" => watch = true,
+                _ => source_file = arg
+            }
+        }
+        Config {
+            source_file,
+            watch
+        }
+    }
+}
 fn main() -> std::io::Result<()> {
 
+    let config = Config::from(env::args());
+
     let mut mom_preamble = include_str!("default-preamble.mom").to_string();
-    // TODO implement sane preamble logic
-    // if exists a .preamble.mom in current dir => use that
-    // if exists a ~/.mato/preamble.mom => use that
-    // => use default
-    let arg_source_file = env::args().nth(1).expect("need a file as argument");
 
     // try to find preamble.mom located next to source file
-    let path_source_file = Path::new(&arg_source_file);
+    let path_source_file = Path::new(&config.source_file);
     let parent_dir = path_source_file.parent().expect("could not establish parent path of file");
     let sibbling_preamble = parent_dir.join("preamble.mom");
     if sibbling_preamble.as_path().is_file() {
@@ -30,20 +52,26 @@ fn main() -> std::io::Result<()> {
     println!("using preamble:\n{}", mom_preamble);
 
     // open source file to be able watch it (we need a file descriptor)
-    println!("source file:\t\t{}", &arg_source_file);
-    let f = File::open(&arg_source_file)?;
+    println!("source file:\t\t{}", &config.source_file);
+    let f = File::open(&config.source_file)?;
     let fd = f.as_raw_fd();
     
     let mut path_target_file = path_source_file.to_path_buf();
     path_target_file.set_extension("pdf");
     println!("target file name:\t{}", path_target_file.display());
 
-    let kqueue = watch::Kqueue::create();
-    loop {
-        kqueue.wait_for_write_on(fd);
-        //println!("...and am back... rending...");
-        transform_and_render(&arg_source_file, path_target_file.to_str().unwrap(), &mom_preamble);
+    if config.watch {
+        let kqueue = watch::Kqueue::create();
+        loop {
+            kqueue.wait_for_write_on(fd);
+            //println!("...and am back... rending...");
+            transform_and_render(&config.source_file, path_target_file.to_str().unwrap(), &mom_preamble);
+        }
     }
+    else {
+        transform_and_render(&config.source_file, path_target_file.to_str().unwrap(), &mom_preamble);
+    };
+    Ok(())
 }
 
 fn matogro(input: &str) -> String {
