@@ -59,7 +59,7 @@ impl Kqueue {
     /// creates an event filter specifying we are interessted in writes on a file
     /// and call kevent to wait for one of those events, i.e., this call blocks
     /// until some process writes to the file below the given file descriptor
-    pub fn wait_for_write_on(&self, fd: i32) -> () {
+    pub fn wait_for_write_on(&self, fd: i32) {
         let event = Kevent::wait_for_write_on(fd);
         let mut changelist = [event];
         println!("watching:\t\t{}", fd);
