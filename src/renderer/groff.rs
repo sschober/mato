@@ -16,7 +16,7 @@ impl Renderer for GroffRenderer {
             },
             Exp::Bold(b_exp) => format!("\\*[BOLDER]{}\\*[BOLDERX]", self.render(*b_exp)),
             Exp::Italic(b_exp) => format!("\\*[SLANT]{}\\*[SLANTX]", self.render(*b_exp)),
-            Exp::Teletype(b_exp) => format!("\\*[CODE]{}\\*[CODE OFF]", self.render(*b_exp)),
+            Exp::Teletype(b_exp) => format!("\\*[CODE]\\*S[-2]{}\\*S[+2]\\*[CODE OFF]", self.render(*b_exp)),
             Exp::Heading(b_exp, level) => {
                 format!(".HEADING {} \"{}\"", level + 1, self.render(*b_exp))
             }
