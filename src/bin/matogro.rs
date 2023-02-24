@@ -143,6 +143,15 @@ mod tests {
             "\\*[BOLDER]hallo\\*[BOLDERX]"
         );
     }
+    
+    #[test]
+    fn complex_code() {
+        assert_eq!(
+            mato::transform(GroffRenderer {}, "`    -P /opt/homebrew/Cellar/groff/1.22.4_1/share/groff/`"),
+            "\\*[CODE]    -P /opt/homebrew/Cellar/groff/1.22.4_1/share/groff/\\*[CODE OFF]"
+        );
+    }
+
     /*
     #[test]
     fn heading() {
