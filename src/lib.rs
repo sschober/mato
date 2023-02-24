@@ -182,6 +182,18 @@ impl Parser<'_> {
         lit(str::from_utf8(&self.input[start..self.i]).unwrap())
     }
 
+    fn parse_code(&mut self, ) -> Box<Exp> {
+        self.consume(b'`'); // opening quote
+        let mut exp = Exp::Empty();
+        if self.char == b'.' {
+            self.consume(b'.');
+            exp = escape_lit(".")
+        }
+        let exp = exp.cat(self.parse_literal("`".as_bytes()));
+        self.consume(b'`'); // closing quote
+        Box::new(exp)
+    }
+
     fn parse_until(&mut self, break_chars: &[u8]) -> Exp {
         let mut expression = Exp::Empty(); // we start with "nothing", as rust has no null values
         while !self.at_end() && !break_chars.contains(&self.char) {
@@ -189,7 +201,7 @@ impl Parser<'_> {
                 b'#' => self.parse_heading(),
                 b'*' => Exp::Bold(self.parse_symmetric_quoted()),
                 b'_' => Exp::Italic(self.parse_symmetric_quoted()),
-                b'`' => Exp::Teletype(self.parse_symmetric_quoted()),
+                b'`' => Exp::Teletype(self.parse_code()),
                 b'"' => Exp::Quote(self.parse_symmetric_quoted()),
                 b'^' => self.parse_footnote(),
                 b'&' => {
