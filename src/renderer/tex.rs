@@ -1,3 +1,4 @@
+//! tex rendering backend
 use crate::Exp;
 
 use super::Renderer;

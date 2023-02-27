@@ -1,3 +1,4 @@
+//! watch file descriptors, wake up on changes and hide BSD kernel queueing complexities
 use std::ptr;
 
 pub const EVFILT_VNODE: i16 = -4;

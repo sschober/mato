@@ -1,7 +1,9 @@
+//! groff rendering backend
 use crate::Exp;
 
 use super::Renderer;
 
+/// empty struct to attach Renderer implementation on
 pub struct GroffRenderer;
 
 impl Renderer for GroffRenderer {
