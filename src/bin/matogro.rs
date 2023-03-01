@@ -1,45 +1,14 @@
 use std::env;
-use std::env::Args;
+
 use std::fs;
-use std::fs::File;
 use std::io::Write;
-use std::os::unix::io::AsRawFd;
 use std::path::Path;
 use std::process::{Command, Stdio};
 use std::time::Instant;
 
 use mato::renderer::groff::GroffRenderer;
 use mato::watch;
-
-/// captures configuration parsed from command line arguments
-struct Config {
-    /// source file that is to be processed
-    source_file: String,
-    /// should watch mode be activated?
-    watch: bool,
-    /// dump intermediate representation (groff or latex)
-    dump: bool,
-}
-
-impl Config {
-    fn from(args: Args) -> Config {
-        let mut source_file = "".to_string();
-        let mut watch = false;
-        let mut dump: bool = false;
-        for arg in args {
-            match arg.as_str() {
-                "-w" => watch = true,
-                "-d" => dump = true,
-                _ => source_file = arg,
-            }
-        }
-        Config {
-            source_file,
-            watch,
-            dump,
-        }
-    }
-}
+use mato::config::Config;
 
 fn main() -> std::io::Result<()> {
     let config = Config::from(env::args());
@@ -60,8 +29,6 @@ fn main() -> std::io::Result<()> {
 
     // open source file to be able watch it (we need a file descriptor)
     println!("source file:\t\t{}", &config.source_file);
-    let f = File::open(&config.source_file)?;
-    let fd = f.as_raw_fd();
 
     let mut path_target_file = path_source_file.to_path_buf();
     path_target_file.set_extension("pdf");
@@ -70,16 +37,17 @@ fn main() -> std::io::Result<()> {
     if config.watch {
         let kqueue = watch::Kqueue::create();
         loop {
-            kqueue.wait_for_write_on(fd);
-            //println!("...and am back... rending...");
-            config.transform_and_render(
+            kqueue.wait_for_write_on_file_name(&config.source_file)?;
+            transform_and_render(
+                &config,
                 &config.source_file,
                 path_target_file.to_str().unwrap(),
                 &mom_preamble,
             );
         }
     } else {
-        config.transform_and_render(
+        transform_and_render(
+            &config,
             &config.source_file,
             path_target_file.to_str().unwrap(),
             &mom_preamble,
@@ -116,8 +84,7 @@ fn grotopdf(input: &str, mom_preamble: &str) -> Vec<u8> {
     output.stdout
 }
 
-impl Config {
-    fn transform_and_render(&self, source_file: &str, target_file: &str, mom_preamble: &str) {
+    fn transform_and_render(config: &Config, source_file: &str, target_file: &str, mom_preamble: &str) {
         let start = Instant::now();
         let input = std::fs::read_to_string(source_file).unwrap();
         println!("read in:\t\t{:?}", start.elapsed());
@@ -125,7 +92,7 @@ impl Config {
         let start = Instant::now();
         let groff_output = matogro(&input);
         println!("transformed in:\t\t{:?}", start.elapsed());
-        if self.dump {
+        if config.dump {
             println!("{}", groff_output);
         }
 
@@ -137,7 +104,6 @@ impl Config {
         fs::write(target_file, pdf_output).expect("Unable to write out.pdf");
         println!("written in:\t\t{:?} ", start.elapsed());
     }
-}
 
 #[cfg(test)]
 mod tests {
