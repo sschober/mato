@@ -6,7 +6,7 @@ use std::{panic, str};
 pub struct Parser<'a> {
     /// the input string as a byte slice
     input: &'a [u8],
-    /// the lnegth of the input byte slice
+    /// the length of the input byte slice
     input_len: usize,
     /// the current position of parsing
     i: usize,
@@ -31,6 +31,7 @@ impl Parser<'_> {
         return parser.parse_until("".as_bytes());
     }
     
+    /// increases index and updates current char
     fn advance(&mut self) {
         self.i += 1;
         if !self.at_end() {
@@ -38,10 +39,15 @@ impl Parser<'_> {
         }
     }
 
+    /// true, if current index is equal to or greater than the 
+    /// input string length
     fn at_end(&self) -> bool {
         self.i >= self.input_len
     }
 
+    /// eat up a given character, or panic if that is not found at
+    /// the current position or we are already at the end of the 
+    /// input string
     fn consume(&mut self, char: u8) {
         if self.at_end() {
             panic!("index {} out of bounds {} ", self.i, self.input_len);
@@ -55,6 +61,8 @@ impl Parser<'_> {
         self.advance();
     }
 
+    /// parse a symmetrically quoted sub string, like
+    /// something enclosed in a " pair
     fn parse_symmetric_quoted(&mut self) -> Box<Exp> {
         let break_char = self.char;
         self.consume(break_char); // opening quote
@@ -63,6 +71,8 @@ impl Parser<'_> {
         Box::new(exp)
     }
 
+    /// parse an asymmetrically quoted substring, like
+    /// something enclosed in a pair of parentheses, ( and ).
     fn parse_quoted(&mut self, break_char: u8) -> Exp {
         self.consume(self.char); // opening quote
         let exp = self.parse_until(&[break_char]); // body
@@ -130,11 +140,19 @@ impl Parser<'_> {
 
     fn parse_code(&mut self, ) -> Box<Exp> {
         self.consume(b'`'); // opening quote
+    
+        // TODO here we would need to peek 1 and 2 characters
+        // ahead to see if they are also back ticks, and if so 
+        // parse a code block instead of an inline code snippet.
+
+        // this is an ugly groff necessity: if our code snippet
+        // begins with a dot, we need to escape it
         let mut exp = Exp::Empty();
         if self.char == b'.' {
             self.consume(b'.');
             exp = escape_lit(".")
         }
+
         let exp = exp.cat(self.parse_literal("`".as_bytes()));
         self.consume(b'`'); // closing quote
         Box::new(exp)
