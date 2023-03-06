@@ -18,7 +18,8 @@ impl Renderer for GroffRenderer {
             },
             Exp::Bold(b_exp) => format!("\\*[BOLDER]{}\\*[BOLDERX]", self.render(*b_exp)),
             Exp::Italic(b_exp) => format!("\\*[SLANT]{}\\*[SLANTX]", self.render(*b_exp)),
-            Exp::Teletype(b_exp) => format!("\\*[CODE]\\*S[-2]{}\\*S[+2]\\*[CODE OFF]", self.render(*b_exp)),
+            Exp::CodeBlock(b_exp) => format!(".QUOTE_STYLE INDENT 1\n.QUOTE\n.CODE\n.BOX OUTLINED black INSET 18p\n{}.BOX OFF\n.QUOTE OFF", self.render(*b_exp)),
+            Exp::InlineCode(b_exp) => format!("\\*[CODE]{}\\*[CODE OFF]", self.render(*b_exp)),
             Exp::Heading(b_exp, level) => {
                 format!(".HEADING {} \"{}\"", level + 1, self.render(*b_exp))
             }

@@ -13,7 +13,8 @@ impl Renderer for TexRenderer {
             Exp::EscapeLit(s) => format!("\\{}",s),
             Exp::Bold(b_exp) => format!("\\textbf{{{}}}", self.render(*b_exp)),
             Exp::Italic(b_exp) => format!("\\textit{{{}}}", self.render(*b_exp)),
-            Exp::Teletype(b_exp) => format!("\\texttt{{{}}}", self.render(*b_exp)),
+            Exp::CodeBlock(b_exp) => format!("\\texttt{{{}}}", self.render(*b_exp)),
+            Exp::InlineCode(b_exp) => format!("\\texttt{{{}}}", self.render(*b_exp)),
             Exp::Heading(b_exp, level) => {
                 let section = match level {
                     2 => "subsubsection",

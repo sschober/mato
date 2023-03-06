@@ -45,6 +45,14 @@ impl Parser<'_> {
         self.i >= self.input_len
     }
 
+    fn peek(&self, n: usize, char: u8) -> bool {
+        if self.i + n >= self.input_len {
+           false
+        } else {
+            char == self.input[self.i + n]
+        }
+    }
+
     /// eat up a given character, or panic if that is not found at
     /// the current position or we are already at the end of the 
     /// input string
@@ -138,12 +146,20 @@ impl Parser<'_> {
         lit(str::from_utf8(&self.input[start..self.i]).unwrap())
     }
 
-    fn parse_code(&mut self, ) -> Box<Exp> {
+    fn parse_code(&mut self, ) -> Exp {
         self.consume(b'`'); // opening quote
-    
-        // TODO here we would need to peek 1 and 2 characters
-        // ahead to see if they are also back ticks, and if so 
-        // parse a code block instead of an inline code snippet.
+        let mut is_code_block = false;
+        // here, we need to peek 1 and 2 characters ahead to see if
+        // they are also back ticks, and if so parse a code block
+        // instead of an inline code snippet.
+        if self.peek(0, b'`') && self.peek(1, b'`') {
+            // parse code block
+            is_code_block = true;
+            println!("code block detected!");
+            self.consume(b'`');
+            self.consume(b'`');
+            self.consume(b'\n');
+        }
 
         // this is an ugly groff necessity: if our code snippet
         // begins with a dot, we need to escape it
@@ -155,17 +171,27 @@ impl Parser<'_> {
 
         let exp = exp.cat(self.parse_literal("`".as_bytes()));
         self.consume(b'`'); // closing quote
-        Box::new(exp)
+        if is_code_block {
+            self.consume(b'`'); // closing quote
+            self.consume(b'`'); // closing quote
+            self.consume(b'\n'); // extra newline
+            Exp::CodeBlock(Box::new(exp))
+        }
+        else {
+            Exp::InlineCode(Box::new(exp))
+        }
     }
 
     fn parse_until(&mut self, break_chars: &[u8]) -> Exp {
-        let mut expression = Exp::Empty(); // we start with "nothing", as rust has no null values
+        let mut expression = Exp::Empty(); // we start with
+                                           // "nothing", as rust has
+                                           // no null values
         while !self.at_end() && !break_chars.contains(&self.char) {
             let expr = match self.char {
                 b'#' => self.parse_heading(),
                 b'*' => Exp::Bold(self.parse_symmetric_quoted()),
                 b'_' => Exp::Italic(self.parse_symmetric_quoted()),
-                b'`' => Exp::Teletype(self.parse_code()),
+                b'`' => self.parse_code(),
                 b'"' => Exp::Quote(self.parse_symmetric_quoted()),
                 b'^' => self.parse_footnote(),
                 b'&' => {

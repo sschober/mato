@@ -5,7 +5,8 @@
 pub enum Exp {
     /// A literal is a string rendered as is
     Literal(String),
-    /// An escaped literal probabely has to be treated in a special way, depending on the rendering backend
+    /// An escaped literal probabely has to be treated in a special
+    /// way, depending on the rendering backend
     EscapeLit(String),
     /// Section headers with a separate parameter specifying the level
     Heading(Box<Exp>, u8),
@@ -13,8 +14,12 @@ pub enum Exp {
     Bold(Box<Exp>),
     /// Encapsulates cursiveness; can contain varios other formattings
     Italic(Box<Exp>),
-    /// Encapsulates text rendered in non-proportional font, usually used for computer code
-    Teletype(Box<Exp>),
+    /// Encapsulates code placed as a separate block, set apart from
+    /// normal, flowing text
+    CodeBlock(Box<Exp>),
+    /// Encapsulates text rendered in non-proportional font, usually
+    /// used for computer code, placed in line with normal text
+    InlineCode(Box<Exp>),
     Quote(Box<Exp>),
     Footnote(Box<Exp>),
     HyperRef(Box<Exp>, Box<Exp>),
