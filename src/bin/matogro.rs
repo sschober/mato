@@ -117,14 +117,14 @@ mod tests {
     fn italic() {
         assert_eq!(
             mato::transform(GroffRenderer {}, "_hallo_"),
-            "\\*[SLANT]hallo\\*[SLANTX]"
+            "\\*[IT]hallo\\*[ROM]"
         );
     }
     #[test]
     fn bold() {
         assert_eq!(
             mato::transform(GroffRenderer {}, "*hallo*"),
-            "\\*[BOLDER]hallo\\*[BOLDERX]"
+            "\\*[BD]hallo\\*[ROM]"
         );
     }
 
@@ -139,6 +139,16 @@ mod tests {
         );
     }
 
+    #[test]
+    fn link(){
+        assert_eq!(
+            mato::transform(
+                GroffRenderer {},
+                "some text [link text](http://example.com)"
+            ), 
+            "some text .PDF_WWW_LINK http://example.com \"link text\""
+        );
+    }
     /*
     #[test]
     fn heading() {
@@ -188,10 +198,6 @@ mod tests {
         assert_eq!(super::Parser::parse("&"), "\\&");
     }
 
-    #[test]
-    fn link(){
-        assert_eq!(super::Parser::parse("[link text](http://example.com)"), "\\href{http://example.com}{link text}");
-    }
 
     #[test]
     fn brackets_are_kept(){

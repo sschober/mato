@@ -204,7 +204,7 @@ impl Parser<'_> {
                 }
                 b'[' => self.parse_hyperlink(),
                 _ => self.parse_literal(
-                    format!("_*#\"^`&{}", str::from_utf8(break_chars).unwrap()).as_bytes(),
+                    format!("_*#\"^`&[{}", str::from_utf8(break_chars).unwrap()).as_bytes(),
                 ),
             };
             expression = expression.cat(expr);

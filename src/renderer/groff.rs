@@ -33,7 +33,7 @@ impl GroffRenderer {
             Exp::CodeBlock(b_exp) => format!(".QUOTE_STYLE INDENT 1\n.QUOTE\n.CODE\n.BOX OUTLINED black INSET 18p\n{}.BOX OFF\n.QUOTE OFF", self.render(*b_exp)),
             Exp::InlineCode(b_exp) => format!("\\*[CODE]{}\\*[CODE OFF]", self.render(*b_exp)),
             Exp::Heading(b_exp, level) => {
-                format!(".HEADING {} \"{}\"", level + 1, self.render(*b_exp))
+                format!(".SPACE -.7v\n.EW 2\n.HEADING {} \"{}\"\n.EW 0", level + 1, self.render(*b_exp))
             }
             Exp::Quote(b_exp) => format!("\"{}\"", self.render(*b_exp)),
             Exp::Footnote(b_exp) => format!("\n.FOOTNOTE\n{}\n.FOOTNOTE END\n", self.render(*b_exp)),
