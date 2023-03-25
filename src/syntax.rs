@@ -3,6 +3,8 @@
 /// Expressions are the building blocks of an abstract syntax tree
 #[derive(Debug)]
 pub enum Exp {
+    /// Separate consequential pargraps
+    Paragraph(),
     /// A literal is a string rendered as is
     Literal(String),
     /// An escaped literal probabely has to be treated in a special

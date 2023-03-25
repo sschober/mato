@@ -149,6 +149,38 @@ mod tests {
             "some text .PDF_WWW_LINK http://example.com \"link text\""
         );
     }
+
+    #[test]
+    fn heading_and_subheading(){
+        assert_eq!(
+            mato::transform(
+                GroffRenderer {},
+                "# heading\n\n## subheading"
+            ), 
+            ".SPACE -.7v\n.EW 2\n.HEADING 1 \"heading\"\n.EW 0\n\n.SPACE -.7v\n.EW 2\n.HEADING 2 \"subheading\"\n.EW 0\n"
+        );
+    }
+
+    #[test]
+    fn heading_and_paragraph(){
+        assert_eq!(
+            mato::transform(
+                GroffRenderer {},
+                "# heading\n\nA new paragraph"
+            ), 
+            ".SPACE -.7v\n.EW 2\n.HEADING 1 \"heading\"\n.EW 0\n\n.PP\nA new paragraph"
+        );
+    }
+    #[test]
+    fn paragraph_and_heading(){
+        assert_eq!(
+            mato::transform(
+                GroffRenderer {},
+                "A new paragraph\n\n# heading"
+            ), 
+            "A new paragraph\n\n.SPACE -.7v\n.EW 2\n.HEADING 1 \"heading\"\n.EW 0\n"
+        );
+    }
     /*
     #[test]
     fn heading() {

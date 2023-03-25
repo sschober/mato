@@ -110,10 +110,12 @@ impl Parser<'_> {
         if self.at_end() {
             return result;
         }
-        match self.char {
-            b'\n' => result,
-            _ => panic!("expected \\n at {}", self.i),
+        if self.peek(2, b'#') {
+            // if this heading is followed by another heading, we slurp away the newline
+            // so that there is not too much vertical white space in between them
+            self.consume(b'\n');
         }
+        result
     }
 
     fn parse_footnote(&mut self) -> Exp {
@@ -203,8 +205,19 @@ impl Parser<'_> {
                     escape_lit(".")
                 }
                 b'[' => self.parse_hyperlink(),
+                b'\n' => {
+                    // if the blank line is followed by a heading do not insert a paragraph
+                    if self.peek(1, b'\n') && ! self.peek(2, b'#') {
+                        self.consume(b'\n');
+                        Exp::Paragraph()
+                    }
+                    else {
+                        self.consume(b'\n');
+                        lit("\n")
+                    }
+                },
                 _ => self.parse_literal(
-                    format!("_*#\"^`&[{}", str::from_utf8(break_chars).unwrap()).as_bytes(),
+                    format!("_*#\"^`&[{}\n", str::from_utf8(break_chars).unwrap()).as_bytes(),
                 ),
             };
             expression = expression.cat(expr);

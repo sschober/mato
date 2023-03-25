@@ -9,6 +9,7 @@ pub struct TexRenderer;
 impl Renderer for TexRenderer {
     fn render(&self, exp: Exp) -> String {
         match exp {
+            Exp::Paragraph() => String::new(),
             Exp::Literal(s) => s,
             Exp::EscapeLit(s) => format!("\\{}",s),
             Exp::Bold(b_exp) => format!("\\textbf{{{}}}", self.render(*b_exp)),

@@ -13,6 +13,9 @@ impl GroffRenderer {
     /// parameter, parent_format.
     fn render_with_parent_format(&self, exp: Exp, parent_format: &str) -> String {
         match exp {
+            Exp::Paragraph() => {
+                format!("\n.PP")
+            },
             Exp::Literal(s) => s,
             Exp::EscapeLit(s) => {
                 match s.as_str() {
@@ -34,10 +37,10 @@ impl GroffRenderer {
             Exp::InlineCode(b_exp) => format!("\\*[CODE]{}\\*[CODE OFF]", self.render(*b_exp)),
             Exp::Heading(b_exp, level) => {
                 if 3 == level {
-                    format!(".MN LEFT\n\\!.ALD 1v\n{}\n.MN OFF", self.render(*b_exp))
+                    format!(".SPACE -1v\n.MN LEFT\n\\!.ALD 1v\n{}\n.MN OFF", self.render(*b_exp))
                 }
                 else {
-                    format!(".SPACE -.7v\n.EW 2\n.HEADING {} \"{}\"\n.EW 0", level + 1, self.render(*b_exp))
+                    format!(".SPACE -.7v\n.EW 2\n.HEADING {} \"{}\"\n.EW 0\n", level + 1, self.render(*b_exp))
                 }
             }
             Exp::Quote(b_exp) => format!("\"{}\"", self.render(*b_exp)),
