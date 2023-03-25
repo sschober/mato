@@ -110,7 +110,7 @@ impl Parser<'_> {
         if self.at_end() {
             return result;
         }
-        if self.peek(2, b'#') {
+        if self.peek(2, b'#') && level != 2 {
             // if this heading is followed by another heading, we slurp away the newline
             // so that there is not too much vertical white space in between them
             self.consume(b'\n');
