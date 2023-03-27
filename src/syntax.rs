@@ -24,6 +24,7 @@ pub enum Exp {
     InlineCode(Box<Exp>),
     Quote(Box<Exp>),
     Footnote(Box<Exp>),
+    RightSidenote(Box<Exp>),
     HyperRef(Box<Exp>, Box<Exp>),
     // this enables composition, forming the tree
     Cat(Box<Exp>, Box<Exp>),

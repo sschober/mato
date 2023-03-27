@@ -42,7 +42,10 @@ impl GroffRenderer {
                 else {
                     format!(".SPACE -.7v\n.EW 2\n.HEADING {} \"{}\"\n.EW 0\n", level + 1, self.render(*b_exp))
                 }
-            }
+            },
+            Exp::RightSidenote(b_exp) => {
+                format!("\n.MN RIGHT\n.PT_SIZE -2\n{}\n.PT_SIZE\n.MN OFF\n", self.render(*b_exp))
+            },
             Exp::Quote(b_exp) => format!("\"{}\"", self.render(*b_exp)),
             Exp::Footnote(b_exp) => format!("\n.FOOTNOTE\n{}\n.FOOTNOTE END\n", self.render(*b_exp)),
             Exp::HyperRef(b_exp1, b_exp2) => format!(".PDF_WWW_LINK {} \"{}\"", self.render(*b_exp2), self.render(*b_exp1)),

@@ -126,6 +126,21 @@ impl Parser<'_> {
         }
     }
 
+    fn parse_right_sidenote(&mut self) -> Exp {
+        self.consume(b'>');
+        println!("right sidenote detected!");
+        match self.char {
+            b'(' => {
+                let exp = Exp::RightSidenote(Box::new(self.parse_quoted(b')')));
+                if self.char == b' ' {
+                    self.consume(b' ');
+                }
+                exp
+            }
+            _ => lit(">"),
+        }
+    }
+
     fn parse_hyperlink(&mut self) -> Exp {
         self.consume(b'[');
         let exp_link_text = self.parse_until("]".as_bytes());
@@ -216,8 +231,9 @@ impl Parser<'_> {
                         lit("\n")
                     }
                 },
+                b'>' => self.parse_right_sidenote(),
                 _ => self.parse_literal(
-                    format!("_*#\"^`&[{}\n", str::from_utf8(break_chars).unwrap()).as_bytes(),
+                    format!("_*#\"^`&[{}>\n", str::from_utf8(break_chars).unwrap()).as_bytes(),
                 ),
             };
             expression = expression.cat(expr);
