@@ -128,7 +128,6 @@ impl Parser<'_> {
 
     fn parse_right_sidenote(&mut self) -> Exp {
         self.consume(b'>');
-        println!("right sidenote detected!");
         match self.char {
             b'(' => {
                 let exp = Exp::RightSidenote(Box::new(self.parse_quoted(b')')));
