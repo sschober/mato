@@ -44,7 +44,7 @@ impl GroffRenderer {
                 }
             },
             Exp::RightSidenote(b_exp) => {
-                format!("\n.MN RIGHT\n.PT_SIZE -2\n{}\n.PT_SIZE\n.MN OFF\n", self.render(*b_exp))
+                format!("\n.MN RIGHT\n.PT_SIZE -2\n{}\n.MN OFF\n", self.render(*b_exp))
             },
             Exp::Quote(b_exp) => format!("\"{}\"", self.render(*b_exp)),
             Exp::Footnote(b_exp) => format!("\n.FOOTNOTE\n{}\n.FOOTNOTE END\n", self.render(*b_exp)),
