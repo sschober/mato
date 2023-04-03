@@ -24,8 +24,12 @@ fn main() -> std::io::Result<()> {
     if sibbling_preamble.as_path().is_file() {
         println!("found sibbling preamble: {}", sibbling_preamble.display());
         mom_preamble = fs::read_to_string(sibbling_preamble)?
+    } else {
+        println!("preamble:\t\tbuilt-in");
     }
-    println!("using preamble:\n{}", mom_preamble);
+    if config.dump {
+        println!("{}", mom_preamble);
+    }
 
     // open source file to be able watch it (we need a file descriptor)
     println!("source file:\t\t{}", &config.source_file);
