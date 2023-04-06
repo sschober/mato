@@ -10,6 +10,8 @@ pub enum Exp {
     /// An escaped literal probabely has to be treated in a special
     /// way, depending on the rendering backend
     EscapeLit(String),
+    /// Most often a single digit signifying the chapter number
+    ChapterMark(Box<Exp>),
     /// Section headers with a separate parameter specifying the level
     Heading(Box<Exp>, u8),
     /// Encapsulates boldness; can contain various other formattings 

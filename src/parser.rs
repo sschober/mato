@@ -128,15 +128,30 @@ impl Parser<'_> {
 
     fn parse_right_sidenote(&mut self) -> Exp {
         self.consume(b'>');
+        let is_chapter_mark = self.char == b'>';
+        if is_chapter_mark {
+            self.consume(b'>');
+        }
         match self.char {
             b'(' => {
-                let exp = Exp::RightSidenote(Box::new(self.parse_quoted(b')')));
+                let box_exp = Box::new(self.parse_quoted(b')'));
+                let exp = if is_chapter_mark { 
+                    self.consume(b'\n');
+                    Exp::ChapterMark(box_exp)
+                }
+                else { 
+                    Exp::RightSidenote(box_exp)
+                };
                 if self.char == b' ' {
                     self.consume(b' ');
                 }
                 exp
             }
-            _ => lit(">"),
+            _ => if is_chapter_mark {
+                    lit(">>")
+                } else{
+                    lit(">")
+                },
         }
     }
 

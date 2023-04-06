@@ -39,9 +39,15 @@ impl GroffRenderer {
                 if 3 == level {
                     format!(".SPACE -1v\n.MN LEFT\n\\!.ALD 1v\n{}\n.MN OFF", self.render(*b_exp))
                 }
+                else if 1 == level {
+                    format!(".SPACE -.7v\n.EW 2\n.HEADING {} \"{}\"\n.EW 0\n", level + 1, self.render(*b_exp))
+                }
                 else {
                     format!(".SPACE -.7v\n.EW 2\n.HEADING {} \"{}\"\n.EW 0\n", level + 1, self.render(*b_exp))
                 }
+            },
+            Exp::ChapterMark(b_exp) => {
+                format!(".MN RIGHT\n.PT_SIZE +48\n.COLOR grey\n{}\n.MN OFF\n", self.render(*b_exp))
             },
             Exp::RightSidenote(b_exp) => {
                 format!("\n.MN RIGHT\n.PT_SIZE -2\n{}\n.MN OFF\n", self.render(*b_exp))

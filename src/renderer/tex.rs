@@ -25,6 +25,7 @@ impl Renderer for TexRenderer {
                 format!("\\{}{{{}}}", section, self.render(*b_exp))
             }
             Exp::Quote(b_exp) => format!("\"`{}\"'", self.render(*b_exp)),
+            Exp::ChapterMark(b_exp) => self.render(*b_exp),
             Exp::RightSidenote(b_exp) => self.render(*b_exp),
             Exp::Footnote(b_exp) => format!("~\\footnote{{{}}}", self.render(*b_exp)),
             Exp::HyperRef(b_exp1, b_exp2) => format!("\\href{{{}}}{{{}}}", self.render(*b_exp2), self.render(*b_exp1)),
