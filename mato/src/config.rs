@@ -10,8 +10,8 @@ pub struct Config {
 }
 
 impl Config {
-    /// create a configuration struct directly from env::Args
-    pub fn from(args: Vec<String>) -> Config {
+    /// create a configuration struct directly from `env::args.collect()`
+    pub fn from(args: Vec<String>) -> Self {
         let mut source_file = "".to_string();
         let mut watch = false;
         let mut dump: bool = false;

@@ -1,4 +1,1 @@
-/target
-*.pdf
-test*
-thoughts.md
+target/
