@@ -67,7 +67,7 @@ fn matogro(input: &str) -> String {
 fn grotopdf(input: &str, mom_preamble: &str) -> Vec<u8> {
     let mut child = Command::new("/opt/homebrew/bin/pdfmom")
         .arg("-mden")
-        .arg("-K UTF-8") // process with preconv to support utf-8
+        .args(["-K", "UTF-8"]) // process with preconv to support utf-8
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -86,7 +86,7 @@ fn grotopdf(input: &str, mom_preamble: &str) -> Vec<u8> {
     }
     // ... otherwise this call would not terminate
     let output = child.wait_with_output().expect("Failed to read stdout");
-    if output.stderr.len() > 0 {
+    if !output.stderr.is_empty() {
         // TODO write to some file
     }
     output.stdout
@@ -183,60 +183,40 @@ mod tests {
             "A new paragraph\n\n.SPACE -.7v\n.EW 2\n.HEADING 1 \"heading\"\n.EW 0\n"
         );
     }
-    /*
+
     #[test]
-    fn heading() {
+    fn code_block() {
         assert_eq!(
-            super::Parser::parse("# heading\n"),
-            "\\section{heading}\n"
+            mato::transform(GroffRenderer {}, "```\nPP\n```\n"),
+            ".QUOTE_STYLE INDENT 1\n.QUOTE\n.CODE\n.BOX OUTLINED black INSET 18p\nPP\n.BOX OFF\n.QUOTE OFF"
         );
     }
     #[test]
-    fn heading_without_newline() {
-        assert_eq!(super::Parser::parse("# 1"), "\\section{1}");
-    }
-    #[test]
-    fn quote() {
-        assert_eq!(super::Parser::parse("\"input\""), "\"`input\"'");
-    }
-    #[test]
-    fn bold_and_italic() {
+    fn code_escape_literal() {
         assert_eq!(
-            super::Parser::parse("*_text_*"),
-            "\\textbf{\\textit{text}}"
+            mato::transform(GroffRenderer {}, "`.PP`"),
+            "\\*[CODE]\\&.PP\\*[CODE OFF]"
         );
     }
     #[test]
-    fn bold_and_italic_but_with_outer_chars() {
+    fn chapter_mark() {
         assert_eq!(
-            super::Parser::parse("*fett _kursiv_ wieder fett*"),
-            "\\textbf{fett \\textit{kursiv} wieder fett}"
+            mato::transform(GroffRenderer {}, ">>(c)\n"),
+            ".MN RIGHT\n.PT_SIZE +48\n.COLOR grey\nc\n.MN OFF\n"
         );
     }
-
     #[test]
-    fn footnote() {
+    fn right_side_note() {
         assert_eq!(
-            super::Parser::parse("input^(footnote)"),
-            "input~\\footnote{footnote}"
+            mato::transform(GroffRenderer {}, ">(side)\n"),
+            "\n.MN RIGHT\n.PT_SIZE -2\nside\n.MN OFF\n\n"
         );
     }
-
     #[test]
-    fn teletype(){
-        assert_eq!(super::Parser::parse("`input`"), "\\texttt{input}");
+    fn foot_note() {
+        assert_eq!(
+            mato::transform(GroffRenderer {}, "^(side)\n"),
+            "\n.FOOTNOTE\nside\n.FOOTNOTE END\n\n"
+        );
     }
-
-    #[test]
-    fn ampersand_is_escaped(){
-        assert_eq!(super::Parser::parse("&"), "\\&");
-    }
-
-
-    #[test]
-    fn brackets_are_kept(){
-        assert_eq!(super::Parser::parse("[link text]"), "[link text]");
-    }
-
-    */
 }
