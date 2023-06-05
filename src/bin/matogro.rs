@@ -41,13 +41,13 @@ fn main() -> std::io::Result<()> {
     if config.watch {
         let kqueue = watch::Kqueue::create();
         loop {
-            kqueue.wait_for_write_on_file_name(&config.source_file)?;
             transform_and_render(
                 &config,
                 &config.source_file,
                 path_target_file.to_str().unwrap(),
                 &mom_preamble,
             );
+            kqueue.wait_for_write_on_file_name(&config.source_file)?;
         }
     } else {
         transform_and_render(
