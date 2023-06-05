@@ -70,6 +70,7 @@ fn grotopdf(input: &str, mom_preamble: &str) -> Vec<u8> {
         .arg("-K UTF-8") // process with preconv to support utf-8
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
         .spawn()
         .expect("Failed to spawn pdfmom");
 
@@ -85,6 +86,9 @@ fn grotopdf(input: &str, mom_preamble: &str) -> Vec<u8> {
     }
     // ... otherwise this call would not terminate
     let output = child.wait_with_output().expect("Failed to read stdout");
+    if output.stderr.len() > 0  {
+        // TODO write to some file
+    }
     output.stdout
 }
 
