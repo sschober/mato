@@ -110,7 +110,7 @@ impl Parser<'_> {
     fn parse_heading(&mut self) -> Exp {
         self.consume(b'#');
         let level = self.parse_heading_level(0);
-        let literal = self.parse_literal("\n".as_bytes());
+        let literal = self.parse_literal(b"\n");
         let result = heading(literal, level);
         if self.at_end() {
             return result;
@@ -163,11 +163,11 @@ impl Parser<'_> {
 
     fn parse_hyperlink(&mut self) -> Exp {
         self.consume(b'[');
-        let exp_link_text = self.parse_until("]".as_bytes());
+        let exp_link_text = self.parse_until(b"]");
         self.consume(b']');
         if self.char == b'(' {
             self.consume(b'(');
-            let exp_url = self.parse_until(")".as_bytes());
+            let exp_url = self.parse_until(b")");
             self.consume(b')');
             hyperref(exp_link_text, exp_url)
         } else {
@@ -203,10 +203,10 @@ impl Parser<'_> {
         let mut exp = Exp::Empty();
         if self.char == b'.' {
             self.consume(b'.');
-            exp = escape_lit(".")
+            exp = escape_lit(".");
         }
 
-        let exp = exp.cat(self.parse_literal("`".as_bytes()));
+        let exp = exp.cat(self.parse_literal(b"`"));
         self.consume(b'`'); // closing quote
         if is_code_block {
             self.consume(b'`'); // closing quote

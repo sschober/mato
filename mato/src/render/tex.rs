@@ -1,12 +1,12 @@
 //! tex rendering backend
 use crate::Exp;
 
-use super::Renderer;
+use super::Render;
 
 /// TexRenderer renders parsed Exps into TeX strings
-pub struct TexRenderer;
+pub struct Renderer;
 
-impl Renderer for TexRenderer {
+impl Render for Renderer {
     fn render(&self, exp: Exp) -> String {
         match exp {
             Exp::Paragraph() => String::new(),

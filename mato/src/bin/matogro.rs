@@ -7,7 +7,7 @@ use std::process::{Command, Stdio};
 use std::time::Instant;
 
 use mato::config::Config;
-use mato::renderer::groff::GroffRenderer;
+use mato::render::groff;
 use mato::watch;
 
 fn main() -> std::io::Result<()> {
@@ -61,7 +61,7 @@ fn main() -> std::io::Result<()> {
 }
 
 fn matogro(input: &str) -> String {
-    mato::transform(GroffRenderer {}, input)
+    mato::transform(groff::Renderer {}, input)
 }
 
 fn grotopdf(input: &str, mom_preamble: &str) -> Vec<u8> {
@@ -115,34 +115,25 @@ fn transform_and_render(config: &Config, source_file: &str, target_file: &str, m
 
 #[cfg(test)]
 mod tests {
-    use mato::renderer::groff::GroffRenderer;
+    use super::matogro;
 
     #[test]
     fn literal() {
-        assert_eq!(mato::transform(GroffRenderer {}, "hallo"), "hallo");
+        assert_eq!(matogro("hallo"), "hallo");
     }
     #[test]
     fn italic() {
-        assert_eq!(
-            mato::transform(GroffRenderer {}, "_hallo_"),
-            "\\*[IT]hallo\\*[ROM]"
-        );
+        assert_eq!(matogro("_hallo_"), "\\*[IT]hallo\\*[ROM]");
     }
     #[test]
     fn bold() {
-        assert_eq!(
-            mato::transform(GroffRenderer {}, "*hallo*"),
-            "\\*[BD]hallo\\*[ROM]"
-        );
+        assert_eq!(matogro("*hallo*"), "\\*[BD]hallo\\*[ROM]");
     }
 
     #[test]
     fn complex_code() {
         assert_eq!(
-            mato::transform(
-                GroffRenderer {},
-                "`    -P /opt/homebrew/Cellar/groff/1.22.4_1/share/groff/`"
-            ),
+            matogro("`    -P /opt/homebrew/Cellar/groff/1.22.4_1/share/groff/`"),
             "\\*[CODE]    -P /opt/homebrew/Cellar/groff/1.22.4_1/share/groff/\\*[CODE OFF]"
         );
     }
@@ -150,26 +141,19 @@ mod tests {
     #[test]
     fn link() {
         assert_eq!(
-            mato::transform(
-                GroffRenderer {},
-                "some text [link text](http://example.com)"
-            ),
+            matogro("some text [link text](http://example.com)"),
             "some text .PDF_WWW_LINK http://example.com \"link text\""
         );
     }
     #[test]
     fn not_link() {
-        assert_eq!(
-            mato::transform(GroffRenderer {}, "some text [link text]"),
-            "some text [link text]"
-        );
+        assert_eq!(matogro("some text [link text]"), "some text [link text]");
     }
 
     #[test]
     fn heading_and_subheading() {
         assert_eq!(
-            mato::transform(
-                GroffRenderer {},
+            matogro(
                 "# heading\n\n## subheading"
             ),
             ".SPACE -.7v\n.EW 2\n.HEADING 1 \"heading\"\n.EW 0\n\n.SPACE -.7v\n.EW 2\n.HEADING 2 \"subheading\"\n.EW 0\n"
@@ -179,14 +163,14 @@ mod tests {
     #[test]
     fn heading_and_paragraph() {
         assert_eq!(
-            mato::transform(GroffRenderer {}, "# heading\n\nA new paragraph"),
+            matogro("# heading\n\nA new paragraph"),
             ".SPACE -.7v\n.EW 2\n.HEADING 1 \"heading\"\n.EW 0\n\n.PP\nA new paragraph"
         );
     }
     #[test]
     fn paragraph_and_heading() {
         assert_eq!(
-            mato::transform(GroffRenderer {}, "A new paragraph\n\n# heading"),
+            matogro("A new paragraph\n\n# heading"),
             "A new paragraph\n\n.SPACE -.7v\n.EW 2\n.HEADING 1 \"heading\"\n.EW 0\n"
         );
     }
@@ -194,44 +178,38 @@ mod tests {
     #[test]
     fn code_block() {
         assert_eq!(
-            mato::transform(GroffRenderer {}, "```\nPP\n```\n"),
+            matogro("```\nPP\n```\n"),
             ".QUOTE_STYLE INDENT 1\n.QUOTE\n.CODE\n.BOX OUTLINED black INSET 18p\nPP\n.BOX OFF\n.QUOTE OFF"
         );
     }
     #[test]
     fn code_escape_literal() {
-        assert_eq!(
-            mato::transform(GroffRenderer {}, "`.PP`"),
-            "\\*[CODE]\\&.PP\\*[CODE OFF]"
-        );
+        assert_eq!(matogro("`.PP`"), "\\*[CODE]\\&.PP\\*[CODE OFF]");
     }
     #[test]
     fn chapter_mark() {
         assert_eq!(
-            mato::transform(GroffRenderer {}, ">>(c)\n"),
+            matogro(">>(c)\n"),
             ".MN RIGHT\n.PT_SIZE +48\n.COLOR grey\nc\n.MN OFF\n"
         );
     }
     #[test]
     fn not_chapter_mark() {
-        assert_eq!(mato::transform(GroffRenderer {}, ">>c"), ">>c");
+        assert_eq!(matogro(">>c"), ">>c");
     }
     #[test]
     fn right_side_note() {
         assert_eq!(
-            mato::transform(GroffRenderer {}, ">(side)\n"),
+            matogro(">(side)\n"),
             "\n.MN RIGHT\n.PT_SIZE -2\nside\n.MN OFF\n\n"
         );
     }
     #[test]
     fn not_right_side_note() {
-        assert_eq!(mato::transform(GroffRenderer {}, ">side"), ">side");
+        assert_eq!(matogro(">side"), ">side");
     }
     #[test]
     fn foot_note() {
-        assert_eq!(
-            mato::transform(GroffRenderer {}, "^(side)\n"),
-            "\n.FOOTNOTE\nside\n.FOOTNOTE END\n\n"
-        );
+        assert_eq!(matogro("^(side)\n"), "\n.FOOTNOTE\nside\n.FOOTNOTE END\n\n");
     }
 }

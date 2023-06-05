@@ -1,12 +1,11 @@
 //! groff rendering backend
+use super::Render;
 use crate::Exp;
 
-use super::Renderer;
-
 /// empty struct to attach Renderer implementation on
-pub struct GroffRenderer;
+pub struct Renderer;
 
-impl GroffRenderer {
+impl Renderer {
     /// groff does not support nested formattings, because it has no
     /// stackable way of switching back to the previous style. we
     /// need to emulate this by passing in the parent style as a
@@ -61,7 +60,7 @@ impl GroffRenderer {
     }
 }
 
-impl Renderer for GroffRenderer {
+impl Render for Renderer {
     fn render(&self, exp: Exp) -> String {
         self.render_with_parent_format(exp, "ROM")
     }
