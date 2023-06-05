@@ -23,12 +23,12 @@ fn main() -> std::io::Result<()> {
     let sibbling_preamble = parent_dir.join("preamble.mom");
     if sibbling_preamble.as_path().is_file() {
         println!("found sibbling preamble: {}", sibbling_preamble.display());
-        mom_preamble = fs::read_to_string(sibbling_preamble)?
+        mom_preamble = fs::read_to_string(sibbling_preamble)?;
     } else {
         println!("preamble:\t\tbuilt-in");
     }
     if config.dump {
-        println!("{}", mom_preamble);
+        println!("{mom_preamble}");
     }
 
     // open source file to be able watch it (we need a file descriptor)
@@ -61,7 +61,7 @@ fn main() -> std::io::Result<()> {
 }
 
 fn matogro(input: &str) -> String {
-    mato::transform(groff::Renderer {}, input)
+    mato::transform(&groff::Renderer {}, input)
 }
 
 fn grotopdf(input: &str, mom_preamble: &str) -> Vec<u8> {
@@ -101,7 +101,7 @@ fn transform_and_render(config: &Config, source_file: &str, target_file: &str, m
     let groff_output = matogro(&input);
     println!("transformed in:\t\t{:?}", start.elapsed());
     if config.dump {
-        println!("{}", groff_output);
+        println!("{groff_output}");
     }
 
     let start = Instant::now();

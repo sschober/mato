@@ -36,24 +36,30 @@ pub enum Exp {
 
 impl Exp {
     /// constructs new Exp of self and expr
-    pub fn cat(self, expr: Exp) -> Exp {
-        Exp::Cat(Box::new(self), Box::new(expr))
+    #[must_use]
+    pub fn cat(self, expr: Self) -> Self {
+        Self::Cat(Box::new(self), Box::new(expr))
     }
 }
 
 // TODO all these to_string invocation incur a copy!
+#[must_use]
 pub fn lit(s: &str) -> Exp {
     Exp::Literal(s.to_string())
 }
+#[must_use]
 pub fn escape_lit(s: &str) -> Exp {
     Exp::EscapeLit(s.to_string())
 }
+#[must_use]
 pub fn heading(exp: Exp, lvl: u8) -> Exp {
     Exp::Heading(Box::new(exp), lvl)
 }
+#[must_use]
 pub fn footnote(exp: Exp) -> Exp {
     Exp::Footnote(Box::new(exp))
 }
+#[must_use]
 pub fn hyperref(exp1: Exp, exp2: Exp) -> Exp {
     Exp::HyperRef(Box::new(exp1), Box::new(exp2))
 }

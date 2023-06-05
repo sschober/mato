@@ -9,7 +9,7 @@ impl Renderer {
     /// groff does not support nested formattings, because it has no
     /// stackable way of switching back to the previous style. we
     /// need to emulate this by passing in the parent style as a
-    /// parameter, parent_format.
+    /// parameter, `parent_format`.
     fn render_with_parent_format(&self, exp: Exp, parent_format: &str) -> String {
         match exp {
             Exp::Paragraph() => {

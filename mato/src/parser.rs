@@ -60,7 +60,8 @@ impl Parser<'_> {
     fn consume(&mut self, char: u8) {
         assert!(
             !self.at_end(),
-            "index {} out of bounds {} ",
+            "consume({}): index {} out of bounds {} ",
+            char as char,
             self.i,
             self.input_len
         );
@@ -167,7 +168,7 @@ impl Parser<'_> {
         self.consume(b']');
         if self.char == b'(' {
             self.consume(b'(');
-            let exp_url = self.parse_until(b")");
+            let exp_url = self.parse_literal(b")");
             self.consume(b')');
             hyperref(exp_link_text, exp_url)
         } else {
@@ -200,11 +201,12 @@ impl Parser<'_> {
 
         // this is an ugly groff necessity: if our code snippet
         // begins with a dot, we need to escape it
-        let mut exp = Exp::Empty();
-        if self.char == b'.' {
+        let exp = if self.char == b'.' {
             self.consume(b'.');
-            exp = escape_lit(".");
-        }
+            escape_lit(".")
+        } else {
+            Exp::Empty()
+        };
 
         let exp = exp.cat(self.parse_literal(b"`"));
         self.consume(b'`'); // closing quote

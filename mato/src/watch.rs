@@ -33,8 +33,10 @@ pub struct Kevent {
 
 impl Kevent {
     /// contrsuctor for an event filter, which filters for write events on vnodes
-    pub fn wait_for_write_on(fd: i32) -> Kevent {
-        Kevent {
+    #[must_use]
+    pub const fn wait_for_write_on(fd: i32) -> Self {
+        #[allow(clippy::cast_sign_loss)]
+        Self {
             ident: fd as u64,
             filter: EVFILT_VNODE,
             flags: EV_ADD | EV_ENABLE | EV_CLEAR,
@@ -57,12 +59,15 @@ pub struct Kqueue {
 
 impl Kqueue {
     /// creates a new kernel queue, using lib c
-    pub fn create() -> Kqueue {
+    ///
+    /// # Panics
+    ///
+    /// Will panic if returned fd for queue is negative
+    #[must_use]
+    pub fn create() -> Self {
         let queue_fd = unsafe { kqueue() };
-        if queue_fd < 0 {
-            panic!("{}", std::io::Error::last_os_error());
-        }
-        Kqueue { fd: queue_fd }
+        assert!(queue_fd >= 0, "{}", std::io::Error::last_os_error());
+        Self { fd: queue_fd }
     }
 
     /// opens the file to acquire a file descriptor and then
@@ -73,6 +78,10 @@ impl Kqueue {
     /// new file and move that over the old one. that in turn
     /// triggers a DELETE notification but, afterwards no
     /// further changes could be detected using the old fd.
+    ///
+    /// # Errors
+    ///
+    /// Currently, will never return an error
     pub fn wait_for_write_on_file_name(&self, file_name: &str) -> std::io::Result<()> {
         let f = File::open(file_name)?;
         let fd = f.as_raw_fd();
@@ -82,6 +91,10 @@ impl Kqueue {
     /// creates an event filter specifying we are interessted in writes on a file
     /// and call kevent to wait for one of those events, i.e., this call blocks
     /// until some process writes to the file below the given file descriptor
+    ///
+    /// # Panics
+    ///
+    /// Panics, when result of `kevent` call is negative
     pub fn wait_for_write_on_file_descriptor(&self, fd: i32) {
         let event = Kevent::wait_for_write_on(fd);
         let mut changelist = [event];
@@ -95,10 +108,7 @@ impl Kqueue {
                 ptr::null(),
             )
         };
-        if res < 0 {
-            panic!("{}", std::io::Error::last_os_error());
-        }
-        //println!("change was: {:?}", changelist);
+        assert!(res >= 0, "{}", std::io::Error::last_os_error());
     }
 }
 
