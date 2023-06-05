@@ -11,7 +11,7 @@ use mato::renderer::groff::GroffRenderer;
 use mato::watch;
 
 fn main() -> std::io::Result<()> {
-    let config = Config::from(env::args());
+    let config = Config::from(env::args().collect());
 
     let mut mom_preamble = include_str!("default-preamble.mom").to_string();
 
@@ -157,6 +157,13 @@ mod tests {
             "some text .PDF_WWW_LINK http://example.com \"link text\""
         );
     }
+    #[test]
+    fn not_link() {
+        assert_eq!(
+            mato::transform(GroffRenderer {}, "some text [link text]"),
+            "some text [link text]"
+        );
+    }
 
     #[test]
     fn heading_and_subheading() {
@@ -206,11 +213,19 @@ mod tests {
         );
     }
     #[test]
+    fn not_chapter_mark() {
+        assert_eq!(mato::transform(GroffRenderer {}, ">>c"), ">>c");
+    }
+    #[test]
     fn right_side_note() {
         assert_eq!(
             mato::transform(GroffRenderer {}, ">(side)\n"),
             "\n.MN RIGHT\n.PT_SIZE -2\nside\n.MN OFF\n\n"
         );
+    }
+    #[test]
+    fn not_right_side_note() {
+        assert_eq!(mato::transform(GroffRenderer {}, ">side"), ">side");
     }
     #[test]
     fn foot_note() {
