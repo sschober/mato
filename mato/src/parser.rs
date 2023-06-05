@@ -1,5 +1,5 @@
 use crate::syntax::{escape_lit, footnote, heading, hyperref, lit, Exp};
-use std::{panic, str};
+use std::str;
 
 /// holds parsing state
 #[derive(Debug)]
@@ -15,7 +15,7 @@ pub struct Parser<'a> {
 }
 
 impl Parser<'_> {
-    fn new(input: &str) -> Parser {
+    const fn new(input: &str) -> Parser<'_> {
         let input_byte_slice = input.as_bytes();
         Parser {
             input: input_byte_slice,
@@ -25,10 +25,11 @@ impl Parser<'_> {
         }
     }
 
+    #[must_use]
     pub fn parse(input: &str) -> Exp {
         let mut parser = Parser::new(input);
         // passing "" as bytes parses until the end of file
-        return parser.parse_until("".as_bytes());
+        parser.parse_until(b"")
     }
 
     /// increases index and updates current char
@@ -41,11 +42,11 @@ impl Parser<'_> {
 
     /// true, if current index is equal to or greater than the
     /// input string length
-    fn at_end(&self) -> bool {
+    const fn at_end(&self) -> bool {
         self.i >= self.input_len
     }
 
-    fn peek(&self, n: usize, char: u8) -> bool {
+    const fn peek(&self, n: usize, char: u8) -> bool {
         if self.i + n >= self.input_len {
             false
         } else {
@@ -57,26 +58,30 @@ impl Parser<'_> {
     /// the current position or we are already at the end of the
     /// input string
     fn consume(&mut self, char: u8) {
-        if self.at_end() {
-            panic!("index {} out of bounds {} ", self.i, self.input_len);
-        }
-        if self.char != char {
-            panic!(
-                "expected char '{}' at index {}, but found '{}'",
-                char as char, self.i, self.char as char
-            );
-        }
+        assert!(
+            !self.at_end(),
+            "index {} out of bounds {} ",
+            self.i,
+            self.input_len
+        );
+        assert!(
+            self.char == char,
+            "expected char '{}' at index {}, but found '{}'",
+            char as char,
+            self.i,
+            self.char as char
+        );
         self.advance();
     }
 
     /// parse a symmetrically quoted sub string, like
     /// something enclosed in a " pair
-    fn parse_symmetric_quoted(&mut self) -> Box<Exp> {
+    fn parse_symmetric_quoted(&mut self) -> Exp {
         let break_char = self.char;
         self.consume(break_char); // opening quote
         let exp = self.parse_until(&[break_char]); // body
         self.consume(break_char); // ending quote
-        Box::new(exp)
+        exp
     }
 
     /// parse an asymmetrically quoted substring, like
@@ -220,10 +225,10 @@ impl Parser<'_> {
         while !self.at_end() && !break_chars.contains(&self.char) {
             let expr = match self.char {
                 b'#' => self.parse_heading(),
-                b'*' => Exp::Bold(self.parse_symmetric_quoted()),
-                b'_' => Exp::Italic(self.parse_symmetric_quoted()),
+                b'*' => Exp::Bold(Box::new(self.parse_symmetric_quoted())),
+                b'_' => Exp::Italic(Box::new(self.parse_symmetric_quoted())),
                 b'`' => self.parse_code(),
-                b'"' => Exp::Quote(self.parse_symmetric_quoted()),
+                b'"' => Exp::Quote(Box::new(self.parse_symmetric_quoted())),
                 b'^' => self.parse_footnote(),
                 b'&' => {
                     self.consume(self.char);

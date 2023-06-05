@@ -8,8 +8,8 @@ pub const EV_ADD: u16 = 0x1;
 pub const EV_ENABLE: u16 = 0x4;
 pub const EV_CLEAR: u16 = 0x20;
 
-pub const NOTE_DELETE: u32 = 0x00000001;
-pub const NOTE_WRITE: u32 = 0x00000002;
+pub const NOTE_DELETE: u32 = 0x0000_0001;
+pub const NOTE_WRITE: u32 = 0x0000_0002;
 
 #[derive(Debug)]
 #[repr(C)]

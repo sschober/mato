@@ -1,5 +1,5 @@
 /// captures configuration parsed from command line arguments
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Config {
     /// source file that is to be processed
     pub source_file: String,
@@ -11,8 +11,9 @@ pub struct Config {
 
 impl Config {
     /// create a configuration struct directly from `env::args.collect()`
+    #[must_use]
     pub fn from(args: Vec<String>) -> Self {
-        let mut source_file = "".to_string();
+        let mut source_file = String::new();
         let mut watch = false;
         let mut dump: bool = false;
         for arg in args {
@@ -22,7 +23,7 @@ impl Config {
                 _ => source_file = arg,
             }
         }
-        Config {
+        Self {
             source_file,
             watch,
             dump,
