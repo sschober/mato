@@ -6,9 +6,9 @@ use std::path::Path;
 use std::process::{Command, Stdio};
 use std::time::Instant;
 
+use mato::config::Config;
 use mato::renderer::groff::GroffRenderer;
 use mato::watch;
-use mato::config::Config;
 
 fn main() -> std::io::Result<()> {
     let config = Config::from(env::args());
@@ -86,32 +86,32 @@ fn grotopdf(input: &str, mom_preamble: &str) -> Vec<u8> {
     }
     // ... otherwise this call would not terminate
     let output = child.wait_with_output().expect("Failed to read stdout");
-    if output.stderr.len() > 0  {
+    if output.stderr.len() > 0 {
         // TODO write to some file
     }
     output.stdout
 }
 
-    fn transform_and_render(config: &Config, source_file: &str, target_file: &str, mom_preamble: &str) {
-        let start = Instant::now();
-        let input = std::fs::read_to_string(source_file).unwrap();
-        println!("read in:\t\t{:?}", start.elapsed());
+fn transform_and_render(config: &Config, source_file: &str, target_file: &str, mom_preamble: &str) {
+    let start = Instant::now();
+    let input = std::fs::read_to_string(source_file).unwrap();
+    println!("read in:\t\t{:?}", start.elapsed());
 
-        let start = Instant::now();
-        let groff_output = matogro(&input);
-        println!("transformed in:\t\t{:?}", start.elapsed());
-        if config.dump {
-            println!("{}", groff_output);
-        }
-
-        let start = Instant::now();
-        let pdf_output = grotopdf(&groff_output, mom_preamble);
-        println!("groff rendering:\t{:?} ", start.elapsed());
-
-        let start = Instant::now();
-        fs::write(target_file, pdf_output).expect("Unable to write out.pdf");
-        println!("written in:\t\t{:?} ", start.elapsed());
+    let start = Instant::now();
+    let groff_output = matogro(&input);
+    println!("transformed in:\t\t{:?}", start.elapsed());
+    if config.dump {
+        println!("{}", groff_output);
     }
+
+    let start = Instant::now();
+    let pdf_output = grotopdf(&groff_output, mom_preamble);
+    println!("groff rendering:\t{:?} ", start.elapsed());
+
+    let start = Instant::now();
+    fs::write(target_file, pdf_output).expect("Unable to write out.pdf");
+    println!("written in:\t\t{:?} ", start.elapsed());
+}
 
 #[cfg(test)]
 mod tests {
@@ -148,44 +148,38 @@ mod tests {
     }
 
     #[test]
-    fn link(){
+    fn link() {
         assert_eq!(
             mato::transform(
                 GroffRenderer {},
                 "some text [link text](http://example.com)"
-            ), 
+            ),
             "some text .PDF_WWW_LINK http://example.com \"link text\""
         );
     }
 
     #[test]
-    fn heading_and_subheading(){
+    fn heading_and_subheading() {
         assert_eq!(
             mato::transform(
                 GroffRenderer {},
                 "# heading\n\n## subheading"
-            ), 
+            ),
             ".SPACE -.7v\n.EW 2\n.HEADING 1 \"heading\"\n.EW 0\n\n.SPACE -.7v\n.EW 2\n.HEADING 2 \"subheading\"\n.EW 0\n"
         );
     }
 
     #[test]
-    fn heading_and_paragraph(){
+    fn heading_and_paragraph() {
         assert_eq!(
-            mato::transform(
-                GroffRenderer {},
-                "# heading\n\nA new paragraph"
-            ), 
+            mato::transform(GroffRenderer {}, "# heading\n\nA new paragraph"),
             ".SPACE -.7v\n.EW 2\n.HEADING 1 \"heading\"\n.EW 0\n\n.PP\nA new paragraph"
         );
     }
     #[test]
-    fn paragraph_and_heading(){
+    fn paragraph_and_heading() {
         assert_eq!(
-            mato::transform(
-                GroffRenderer {},
-                "A new paragraph\n\n# heading"
-            ), 
+            mato::transform(GroffRenderer {}, "A new paragraph\n\n# heading"),
             "A new paragraph\n\n.SPACE -.7v\n.EW 2\n.HEADING 1 \"heading\"\n.EW 0\n"
         );
     }

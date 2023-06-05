@@ -1,6 +1,6 @@
 //! components related to rendering a syntax tree to a concrete target language, like groff or latex
-pub mod tex;
 pub mod groff;
+pub mod tex;
 
 use crate::Exp;
 

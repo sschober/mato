@@ -1,5 +1,5 @@
 //! capture the essence of a markdown abstract syntax tree
-//! 
+//!
 /// Expressions are the building blocks of an abstract syntax tree
 #[derive(Debug)]
 pub enum Exp {
@@ -14,7 +14,7 @@ pub enum Exp {
     ChapterMark(Box<Exp>),
     /// Section headers with a separate parameter specifying the level
     Heading(Box<Exp>, u8),
-    /// Encapsulates boldness; can contain various other formattings 
+    /// Encapsulates boldness; can contain various other formattings
     Bold(Box<Exp>),
     /// Encapsulates cursiveness; can contain varios other formattings
     Italic(Box<Exp>),
@@ -33,7 +33,6 @@ pub enum Exp {
     // this is a neutral element, yielding no ouput
     Empty(),
 }
-
 
 impl Exp {
     /// constructs new Exp of self and expr

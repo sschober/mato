@@ -1,7 +1,7 @@
 //! watch file descriptors, wake up on changes and hide BSD kernel queueing complexities
-use std::ptr;
 use std::fs::File;
 use std::os::unix::io::AsRawFd;
+use std::ptr;
 
 pub const EVFILT_VNODE: i16 = -4;
 pub const EV_ADD: u16 = 0x1;
@@ -66,14 +66,14 @@ impl Kqueue {
     }
 
     /// opens the file to acquire a file descriptor and then
-    /// waits on that fd for changes. this can be used in a 
+    /// waits on that fd for changes. this can be used in a
     /// loop to wait for changes on a file by name. this is
     /// more robust, than waiting on the fd directly, as some
-    /// editors do not write to an fd directly, but create a 
+    /// editors do not write to an fd directly, but create a
     /// new file and move that over the old one. that in turn
-    /// triggers a DELETE notification but, afterwards no 
+    /// triggers a DELETE notification but, afterwards no
     /// further changes could be detected using the old fd.
-    pub fn wait_for_write_on_file_name(&self, file_name: &str) -> std::io::Result<()>{
+    pub fn wait_for_write_on_file_name(&self, file_name: &str) -> std::io::Result<()> {
         let f = File::open(file_name)?;
         let fd = f.as_raw_fd();
         self.wait_for_write_on_file_descriptor(fd);

@@ -1,4 +1,4 @@
-use crate::syntax::{Exp, heading, footnote, lit, hyperref, escape_lit};
+use crate::syntax::{escape_lit, footnote, heading, hyperref, lit, Exp};
 use std::{panic, str};
 
 /// holds parsing state
@@ -30,7 +30,7 @@ impl Parser<'_> {
         // passing "" as bytes parses until the end of file
         return parser.parse_until("".as_bytes());
     }
-    
+
     /// increases index and updates current char
     fn advance(&mut self) {
         self.i += 1;
@@ -39,7 +39,7 @@ impl Parser<'_> {
         }
     }
 
-    /// true, if current index is equal to or greater than the 
+    /// true, if current index is equal to or greater than the
     /// input string length
     fn at_end(&self) -> bool {
         self.i >= self.input_len
@@ -47,14 +47,14 @@ impl Parser<'_> {
 
     fn peek(&self, n: usize, char: u8) -> bool {
         if self.i + n >= self.input_len {
-           false
+            false
         } else {
             char == self.input[self.i + n]
         }
     }
 
     /// eat up a given character, or panic if that is not found at
-    /// the current position or we are already at the end of the 
+    /// the current position or we are already at the end of the
     /// input string
     fn consume(&mut self, char: u8) {
         if self.at_end() {
@@ -135,11 +135,10 @@ impl Parser<'_> {
         match self.char {
             b'(' => {
                 let box_exp = Box::new(self.parse_quoted(b')'));
-                let exp = if is_chapter_mark { 
+                let exp = if is_chapter_mark {
                     self.consume(b'\n');
                     Exp::ChapterMark(box_exp)
-                }
-                else { 
+                } else {
                     Exp::RightSidenote(box_exp)
                 };
                 if self.char == b' ' {
@@ -147,11 +146,13 @@ impl Parser<'_> {
                 }
                 exp
             }
-            _ => if is_chapter_mark {
+            _ => {
+                if is_chapter_mark {
                     lit(">>")
-                } else{
+                } else {
                     lit(">")
-                },
+                }
+            }
         }
     }
 
@@ -177,7 +178,7 @@ impl Parser<'_> {
         lit(str::from_utf8(&self.input[start..self.i]).unwrap())
     }
 
-    fn parse_code(&mut self, ) -> Exp {
+    fn parse_code(&mut self) -> Exp {
         self.consume(b'`'); // opening quote
         let mut is_code_block = false;
         // here, we need to peek 1 and 2 characters ahead to see if
@@ -207,8 +208,7 @@ impl Parser<'_> {
             self.consume(b'`'); // closing quote
             self.consume(b'\n'); // extra newline
             Exp::CodeBlock(Box::new(exp))
-        }
-        else {
+        } else {
             Exp::InlineCode(Box::new(exp))
         }
     }
@@ -228,7 +228,7 @@ impl Parser<'_> {
                 b'&' => {
                     self.consume(self.char);
                     escape_lit("&")
-                },
+                }
                 b'.' => {
                     self.consume(self.char);
                     escape_lit(".")
@@ -236,15 +236,14 @@ impl Parser<'_> {
                 b'[' => self.parse_hyperlink(),
                 b'\n' => {
                     // if the blank line is followed by a heading do not insert a paragraph
-                    if self.peek(1, b'\n') && ! self.peek(2, b'#') {
+                    if self.peek(1, b'\n') && !self.peek(2, b'#') {
                         self.consume(b'\n');
                         Exp::Paragraph()
-                    }
-                    else {
+                    } else {
                         self.consume(b'\n');
                         lit("\n")
                     }
-                },
+                }
                 b'>' => self.parse_right_sidenote(),
                 _ => self.parse_literal(
                     format!("_*#\"^`&[{}>\n", str::from_utf8(break_chars).unwrap()).as_bytes(),
