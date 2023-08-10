@@ -14,7 +14,7 @@ rendering, if all went well.
 Just use 
 
 ```
-cargo install --path .
+cargo install --path mato
 ```
 
 to install `matote` and `matogro` to your rust binary directory.
