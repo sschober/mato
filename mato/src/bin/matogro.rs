@@ -2,6 +2,7 @@ use std::env;
 
 use std::fs;
 use std::io::Write;
+use std::io;
 use std::path::Path;
 use std::process::{Command, Stdio};
 use std::time::Instant;
@@ -87,7 +88,7 @@ fn grotopdf(input: &str, mom_preamble: &str) -> Vec<u8> {
     // ... otherwise this call would not terminate
     let output = child.wait_with_output().expect("Failed to read stdout");
     if !output.stderr.is_empty() {
-        // TODO write to some file
+        let _ = io::stderr().write(&output.stderr);
     }
     output.stdout
 }
