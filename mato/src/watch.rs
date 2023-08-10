@@ -124,3 +124,23 @@ extern "C" {
         timeout: *const Timespec,
     ) -> i32;
 }
+
+#[cfg(test)]
+mod tests {
+    use super::Kevent;
+    #[test]
+    fn kevent_construction() {
+        let kevent = Kevent::wait_for_write_on(0);
+        assert!(kevent.ident == 0);
+    }
+
+    use super::Kqueue;
+    #[test]
+    fn kqueue_construction() {
+        let kqueue = Kqueue::create();
+        assert!(kqueue.fd >= 0);
+    }
+
+    // TODO write test that creates a file, creates a thread and waits for changes there, and
+    // then main thread writes to that file and then calls join
+}
