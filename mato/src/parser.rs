@@ -261,3 +261,31 @@ impl Parser<'_> {
         expression
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::Parser;
+    #[test]
+    fn construction() {
+        let parser = Parser::new("\"quoted\"");
+        assert_eq!(format!("{:?}", parser), "Parser { input: [34, 113, 117, 111, 116, 101, 100, 34], input_len: 8, i: 0, char: 34 }");
+    }
+    #[test]
+    fn expression() {
+        let parser = Parser::parse("\"quoted\"");
+        assert_eq!(
+            format!("{:?}", parser),
+            "Cat(Empty, Quote(Cat(Empty, Literal(\"quoted\"))))"
+        );
+    }
+    #[test]
+    fn ampersand() {
+        let parser = Parser::parse("&");
+        assert_eq!(format!("{:?}", parser), "Cat(Empty, EscapeLit(\"&\"))");
+    }
+    #[test]
+    fn dot() {
+        let parser = Parser::parse(".");
+        assert_eq!(format!("{:?}", parser), "Cat(Empty, EscapeLit(\".\"))");
+    }
+}
