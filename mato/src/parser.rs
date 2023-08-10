@@ -213,7 +213,12 @@ impl Parser<'_> {
         if is_code_block {
             self.consume(b'`'); // closing quote
             self.consume(b'`'); // closing quote
-            self.consume(b'\n'); // extra newline
+            if ! self.at_end() {
+                // comsuming the newline is optional, as the code block 
+                // might be the last element in the file and might not
+                // end with a newline (been there, done that)
+                self.consume(b'\n'); // extra newline
+            }
             Exp::CodeBlock(Box::new(exp))
         } else {
             Exp::InlineCode(Box::new(exp))
