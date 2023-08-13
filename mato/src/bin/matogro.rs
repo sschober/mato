@@ -34,7 +34,10 @@ fn main() -> std::io::Result<()> {
 
     // open source file to be able watch it (we need a file descriptor)
     println!("source file:\t\t{}", &config.source_file);
-
+    if ! Path::new(&config.source_file).exists() {
+        eprintln!("Could not open source file: {}", config.source_file);
+        std::process::exit(1);
+    }
     let mut path_target_file = path_source_file.to_path_buf();
     path_target_file.set_extension("pdf");
     println!("target file name:\t{}", path_target_file.display());
