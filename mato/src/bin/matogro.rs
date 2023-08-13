@@ -66,7 +66,8 @@ fn matogro(input: &str) -> String {
 }
 
 fn grotopdf(input: &str, mom_preamble: &str) -> Vec<u8> {
-    let mut child = Command::new("/opt/homebrew/bin/pdfmom")
+    let mut child = Command::new("/usr/bin/env")
+        .arg("pdfmom")
         .arg("-mden")
         .args(["-K", "UTF-8"]) // process with preconv to support utf-8
         .stdin(Stdio::piped())
