@@ -9,6 +9,7 @@ I find Markdown to strike a good compromise between syntax getting in the way
 and power of expression.
 
 Code blocks currently are note supported, but I plan to.
+
 ## Features
 
 It supports different heading levels (currently only three) and a quotations
@@ -17,6 +18,7 @@ It supports different heading levels (currently only three) and a quotations
 The groff version `matogro` currently sports a direct compilation mode, which
 is to say, that it will call pdfmom directly after transforming the markdown
 source to groff output.
+
 ### Escaping
 
 Ampersands are special characters in LaTeX, so if
@@ -30,6 +32,7 @@ something like fat italic teletype? `_*A and B*_`. -- It seems there is.
 As I expanded the output engine to groff, I realized, that there is a challenge:
 LaTeX and groff see different characters as necessary to escape: in LaTeX it is,
 amongst others, the Ampersand, in Groff it is a full stop at the beginning of a line!
+
 ## Technical Details
 
 It is written in rust, primarily for me to learn the language, but also for me
