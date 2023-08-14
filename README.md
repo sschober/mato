@@ -16,7 +16,12 @@ md -- matote --> LaTeX --> PDF
 md -- matogro --> groff --> PDF
 ```
 
-Both work, but the groff backend is more in use by me.
+Both work, but the groff backend is more in use by me. But, more
+importantly, the gorff backend is much quicker, it usually takes
+only around 1 second to process the input and produce the resulting
+PDF. The LaTeX backend in comparison takes many times as much and
+is heavily dependent on the ctan packages you include in your
+preamble.
 
 To test `matogro`, the groff based transformer, use:
 
