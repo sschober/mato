@@ -1,14 +1,15 @@
 # MaTo - MArkdown TransfOrmer framework
 
-Mato can transform markdown formatted text files into PDFs.
+With `mato`, you can transform markdown formatted text into PDFs, 
+and even more.
 
 ```mermaid
 graph LR
 md -- mato --> PDF
 ```
 
-Mato currently comprises a markdown parsing front-end part, 
-and two backend rederers: one using LaTeX and one using groff.
+Mato currently comprises a markdown parsing frontend part, 
+and two backend rederers: one using LaTeX and one using `groff`.
 
 ```mermaid
 graph LR
@@ -26,6 +27,17 @@ PDF.
 The LaTeX backend in comparison takes many times as much and
 is heavily dependent on the ctan packages you include in your
 preamble.
+
+### Styling
+
+The style (think of padding, fonts, etc.) is configurable, depending
+on the backend chosen. 
+
+The `groff` backend has a default preamble
+(see [here](mato/src/bin/default-preamble.mom)), which defines 
+standard styles. Settings therein can be overwritten by placing a
+`preamble.mom` file next to your markdown file.
+
 
 ## Build and run
 
