@@ -1,6 +1,6 @@
-# MaTo - MArkdown TO transformer framework
+# MaTo - MArkdown TransfOrmer framework
 
-Mato can transform Markdown formatted text files into PDFs.
+Mato can transform markdown formatted text files into PDFs.
 
 ```mermaid
 graph LR
