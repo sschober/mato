@@ -13,8 +13,8 @@ and two backend rederers: one using LaTeX and one using `groff`.
 
 ```mermaid
 graph LR
-md -- matote --> LaTeX --> PDF
-md -- matogro --> groff --> PDF
+md -- matote --> TeX -- latex --> PDF
+md -- matogro --> groff -- pdfmom --> PDF
 ```
 
 Both work, but the groff backend is more in use by me. 
