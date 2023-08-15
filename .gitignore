@@ -1,3 +1,4 @@
 target/
 coverage/
 termpdf.log
+**/.DS_Store
