@@ -183,6 +183,16 @@ impl Parser<'_> {
         }
         lit(str::from_utf8(&self.input[start..self.i]).unwrap())
     }
+    
+    fn parse_pass_through(&mut self) -> Exp {
+        self.consume(b'/');
+        if self.peek(0, b'/') {
+            self.consume(b'/');
+            self.parse_literal(b"\n")
+        } else {
+            lit("/")
+        }
+    }
 
     fn parse_code(&mut self) -> Exp {
         self.consume(b'`'); // opening quote
@@ -245,6 +255,7 @@ impl Parser<'_> {
                     self.consume(self.char);
                     escape_lit(".")
                 }
+                b'/' => self.parse_pass_through(),
                 b'[' => self.parse_hyperlink(),
                 b'\n' => {
                     // if the blank line is followed by a heading do not insert a paragraph
