@@ -1,19 +1,3 @@
-# Slides with MaTo
-## How to create great presentations
-
-
-
-
-
-
-
-//.QUAD RIGHT
-_Sven Schober_
-//.QUAD RIGHT
-_15.08.2023_
-
-//.NEWSLIDE
-
 # Preamble
 
 You have to provide a `preamble.mom`
@@ -129,3 +113,4 @@ And use formatting in the items:
 * An _italic_ item
 * A `code` item
 
+//.TOC
