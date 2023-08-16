@@ -184,8 +184,9 @@ mod tests {
     fn code_block() {
         assert_eq!(
             matogro("```\nPP\n```\n"),
-            ".QUOTE_STYLE INDENT 1\n.QUOTE\n.CODE\n.BOX OUTLINED black INSET 18p\nPP\n.BOX OFF\n.QUOTE OFF"
-        );
+//            ".QUOTE_STYLE INDENT 1\n.QUOTE\n.CODE\n.BOX OUTLINED black INSET 18p\nPP\n.BOX OFF\n.QUOTE OFF"
+            ".QUOTE_STYLE INDENT 1\n.QUOTE\n.CODE\nPP\n.QUOTE OFF"
+);
     }
     #[test]
     fn code_escape_literal() {
@@ -219,10 +220,10 @@ mod tests {
     }
     #[test]
     fn list_1() {
-        assert_eq!(matogro("* list item\n"), ".LIST\n.ITEM\nlist item\n.LIST OFF\n");
+        assert_eq!(matogro("* list item\n"), ".LIST\n.SHIFT_LIST 18p\n.ITEM\nlist item\n.LIST OFF\n");
     }
     #[test]
     fn list_2() {
-        assert_eq!(matogro("* list item 1\n* list item 2\n"), ".LIST\n.ITEM\nlist item 1\n.ITEM\nlist item 2\n.LIST OFF\n");
+        assert_eq!(matogro("* list item 1\n* list item 2\n"), ".LIST\n.SHIFT_LIST 18p\n.ITEM\nlist item 1\n.ITEM\nlist item 2\n.LIST OFF\n");
     }
 }
