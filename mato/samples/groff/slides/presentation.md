@@ -121,4 +121,11 @@ You can also make bullet lists:
 
 * A first item
 * A second item
-* and so on
+* ...and so on
+
+And use formatting in the items:
+
+* A *bold* item
+* An _italic_ item
+* A `code` item
+
