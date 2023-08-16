@@ -113,3 +113,12 @@ More other stuff
 
 Last of other stuff
 //.MCX
+
+//.NEWSLIDE
+# Lists
+
+You can also make bullet lists:
+
+* A first item
+* A second item
+* and so on

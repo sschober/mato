@@ -217,4 +217,12 @@ mod tests {
     fn foot_note() {
         assert_eq!(matogro("^(side)\n"), "\n.FOOTNOTE\nside\n.FOOTNOTE END\n\n");
     }
+    #[test]
+    fn list_1() {
+        assert_eq!(matogro("* list item\n"), ".LIST\n.ITEM\nlist item\n.LIST OFF\n");
+    }
+    #[test]
+    fn list_2() {
+        assert_eq!(matogro("* list item 1\n* list item 2\n"), ".LIST\n.ITEM\nlist item 1\n.ITEM\nlist item 2\n.LIST OFF\n");
+    }
 }

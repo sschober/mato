@@ -1,4 +1,4 @@
-use crate::syntax::{escape_lit, footnote, heading, hyperref, lit, Exp};
+use crate::syntax::{escape_lit, footnote, heading, hyperref, lit, Exp, list, list_item, empty};
 use std::str;
 
 /// holds parsing state
@@ -183,7 +183,7 @@ impl Parser<'_> {
         }
         lit(str::from_utf8(&self.input[start..self.i]).unwrap())
     }
-    
+
     fn parse_pass_through(&mut self) -> Exp {
         self.consume(b'/');
         if self.peek(0, b'/') {
@@ -191,6 +191,33 @@ impl Parser<'_> {
             self.parse_literal(b"\n")
         } else {
             lit("/")
+        }
+    }
+
+    fn parse_list_item(&mut self) -> Exp {
+        self.consume(b'*');
+        self.consume(b' ');
+        let item = self.parse_until(b"\n");
+        self.consume(b'\n');
+        list_item(item)
+    }
+
+    fn parse_list(&mut self) -> Exp {
+        if self.peek(1, b' ') {
+            // if * is followed by white space 
+            let mut iterator = empty();
+            loop {
+                let child_item = self.parse_list_item();
+                iterator = iterator.cat(child_item);
+                if self.peek(0, b'*') && self.peek(1, b' '){
+                    continue
+                }
+                break;
+            };
+            list(iterator)
+        } else {
+            // assume emphasize (*word*)
+            Exp::Bold(Box::new(self.parse_symmetric_quoted()))
         }
     }
 
@@ -242,7 +269,8 @@ impl Parser<'_> {
         while !self.at_end() && !break_chars.contains(&self.char) {
             let expr = match self.char {
                 b'#' => self.parse_heading(),
-                b'*' => Exp::Bold(Box::new(self.parse_symmetric_quoted())),
+//                b'*' => Exp::Bold(Box::new(self.parse_symmetric_quoted())),
+                b'*' => self.parse_list(),
                 b'_' => Exp::Italic(Box::new(self.parse_symmetric_quoted())),
                 b'`' => self.parse_code(),
                 b'"' => Exp::Quote(Box::new(self.parse_symmetric_quoted())),

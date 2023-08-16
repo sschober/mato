@@ -30,6 +30,10 @@ pub enum Exp {
     HyperRef(Box<Exp>, Box<Exp>),
     // this enables composition, forming the tree
     Cat(Box<Exp>, Box<Exp>),
+    // Lists, should contain ListItems
+    List(Box<Exp>),
+    // singular items of lists
+    ListItem(Box<Exp>),
     // this is a neutral element, yielding no ouput
     Empty(),
 }
@@ -62,4 +66,16 @@ pub fn footnote(exp: Exp) -> Exp {
 #[must_use]
 pub fn hyperref(exp1: Exp, exp2: Exp) -> Exp {
     Exp::HyperRef(Box::new(exp1), Box::new(exp2))
+}
+#[must_use]
+pub fn list(exp: Exp) -> Exp {
+    Exp::List(Box::new(exp))
+}
+#[must_use]
+pub fn list_item(exp: Exp) -> Exp {
+    Exp::ListItem(Box::new(exp))
+}
+#[must_use]
+pub fn empty() -> Exp {
+    Exp::Empty()
 }
