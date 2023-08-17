@@ -58,8 +58,8 @@ impl Renderer {
                         self.render_with_parent_format(*b_exp2, parent_format))
             },
             Exp::Empty() => String::new(),
-            Exp::List(b_exp) => format!(".LIST\n.SHIFT_LIST 18p\n{}.LIST OFF\n", self.render(*b_exp)),
-            Exp::ListItem(b_exp) => {
+            Exp::List(b_exp, _) => format!(".LIST\n.SHIFT_LIST 18p\n{}.LIST OFF\n", self.render(*b_exp)),
+            Exp::ListItem(b_exp, _) => {
                 match *b_exp {
                     Exp::Empty() => String::new(),
                     _ => format!(".ITEM\n{}\n", self.render(*b_exp)),

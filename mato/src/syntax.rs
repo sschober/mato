@@ -31,9 +31,9 @@ pub enum Exp {
     // this enables composition, forming the tree
     Cat(Box<Exp>, Box<Exp>),
     // Lists, should contain ListItems
-    List(Box<Exp>),
+    List(Box<Exp>,u8),
     // singular items of lists
-    ListItem(Box<Exp>),
+    ListItem(Box<Exp>,u8),
     // this is a neutral element, yielding no ouput
     Empty(),
 }
@@ -72,12 +72,12 @@ pub fn bold(exp: Exp) -> Exp {
     Exp::Bold(Box::new(exp))
 }
 #[must_use]
-pub fn list(exp: Exp) -> Exp {
-    Exp::List(Box::new(exp))
+pub fn list(exp: Exp, level: u8) -> Exp {
+    Exp::List(Box::new(exp), level)
 }
 #[must_use]
-pub fn list_item(exp: Exp) -> Exp {
-    Exp::ListItem(Box::new(exp))
+pub fn list_item(exp: Exp, level: u8) -> Exp {
+    Exp::ListItem(Box::new(exp), level)
 }
 #[must_use]
 pub fn empty() -> Exp {

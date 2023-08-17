@@ -34,8 +34,8 @@ impl Render for Renderer {
             ),
             Exp::Cat(b_exp1, b_exp2) => format!("{}{}", self.render(*b_exp1), self.render(*b_exp2)),
             Exp::Empty() | Exp::Paragraph() => String::new(),
-            Exp::List(_b_exp) => String::new(),
-            Exp::ListItem(_) => String::new(),
+            Exp::List(_b_exp, _) => String::new(),
+            Exp::ListItem(_,_) => String::new(),
         }
     }
 }

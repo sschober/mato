@@ -1,4 +1,6 @@
-use crate::syntax::{escape_lit, footnote, heading, hyperref, lit, Exp, list, list_item, empty, bold};
+use crate::syntax::{
+    bold, empty, escape_lit, footnote, heading, hyperref, list, list_item, lit, Exp,
+};
 use std::str;
 
 /// holds parsing state
@@ -194,27 +196,42 @@ impl Parser<'_> {
         }
     }
 
-    fn parse_list_item(&mut self) -> Exp {
+    fn parse_list_item(&mut self, level: u8) -> Exp {
+        eprintln!("parse_list_item({})", level);
+        if level > 0 {
+            for _ in 0..(level * 2) {
+                eprintln!("consuming space");
+                self.consume(b' ');
+            }
+        }
         self.consume(b'*');
         self.consume(b' ');
         let item = self.parse_until(b"\n");
         self.consume(b'\n');
-        list_item(item)
+        list_item(item, level)
     }
 
-    fn parse_list(&mut self) -> Exp {
-        if self.peek(1, b' ') {
-            // if * is followed by white space 
+    fn parse_list(&mut self, level: u8) -> Exp {
+        eprintln!("parse_list({})", level);
+        if self.peek((level * 2) as usize + 1, b' ') {
+            eprintln!("found space at {}", level * 2);
+            // if * is followed by white space
             let mut iterator = empty();
             loop {
-                let child_item = self.parse_list_item();
-                iterator = iterator.cat(child_item);
-                if self.peek(0, b'*') && self.peek(1, b' '){
-                    continue
+                if self.peek((level * 2) as usize, b'*') && self.peek((level * 2) as usize + 1, b' ') {
+                    eprintln!("found list item on level {}", level);
+                    iterator = iterator.cat(self.parse_list_item(level));
+                    continue;
+                } else if self.peek(((level + 1) * 2) as usize, b'*')
+                    && self.peek(((level + 1) * 2) as usize + 1, b' ')
+                {
+                    eprintln!("found sub list on level {}", level+1);
+                    iterator = iterator.cat(self.parse_list(level + 1));
+                } else {
+                    break;
                 }
-                break;
-            };
-            list(iterator)
+            }
+            list(iterator, level)
         } else {
             // assume emphasize (*word*)
             bold(self.parse_symmetric_quoted())
@@ -250,8 +267,8 @@ impl Parser<'_> {
         if is_code_block {
             self.consume(b'`'); // closing quote
             self.consume(b'`'); // closing quote
-            if ! self.at_end() {
-                // comsuming the newline is optional, as the code block 
+            if !self.at_end() {
+                // comsuming the newline is optional, as the code block
                 // might be the last element in the file and might not
                 // end with a newline (been there, done that)
                 self.consume(b'\n'); // extra newline
@@ -269,7 +286,7 @@ impl Parser<'_> {
         while !self.at_end() && !break_chars.contains(&self.char) {
             let expr = match self.char {
                 b'#' => self.parse_heading(),
-                b'*' => self.parse_list(),
+                b'*' => self.parse_list(0),
                 b'_' => Exp::Italic(Box::new(self.parse_symmetric_quoted())),
                 b'`' => self.parse_code(),
                 b'"' => Exp::Quote(Box::new(self.parse_symmetric_quoted())),

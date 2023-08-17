@@ -110,7 +110,8 @@ You can also make bullet lists:
 And use formatting in the items:
 
 * A *bold* item
-* An _italic_ item
-* A `code` item
+  * An _italic_ item in a sublist
+  * Another item of the sublist
+* A `code` item back in the top level list
 
 //.TOC
