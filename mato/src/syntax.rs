@@ -68,6 +68,10 @@ pub fn hyperref(exp1: Exp, exp2: Exp) -> Exp {
     Exp::HyperRef(Box::new(exp1), Box::new(exp2))
 }
 #[must_use]
+pub fn bold(exp: Exp) -> Exp {
+    Exp::Bold(Box::new(exp))
+}
+#[must_use]
 pub fn list(exp: Exp) -> Exp {
     Exp::List(Box::new(exp))
 }

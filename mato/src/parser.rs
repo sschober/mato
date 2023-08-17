@@ -1,4 +1,4 @@
-use crate::syntax::{escape_lit, footnote, heading, hyperref, lit, Exp, list, list_item, empty};
+use crate::syntax::{escape_lit, footnote, heading, hyperref, lit, Exp, list, list_item, empty, bold};
 use std::str;
 
 /// holds parsing state
@@ -217,7 +217,7 @@ impl Parser<'_> {
             list(iterator)
         } else {
             // assume emphasize (*word*)
-            Exp::Bold(Box::new(self.parse_symmetric_quoted()))
+            bold(self.parse_symmetric_quoted())
         }
     }
 
@@ -269,7 +269,6 @@ impl Parser<'_> {
         while !self.at_end() && !break_chars.contains(&self.char) {
             let expr = match self.char {
                 b'#' => self.parse_heading(),
-//                b'*' => Exp::Bold(Box::new(self.parse_symmetric_quoted())),
                 b'*' => self.parse_list(),
                 b'_' => Exp::Italic(Box::new(self.parse_symmetric_quoted())),
                 b'`' => self.parse_code(),
