@@ -7,6 +7,8 @@ pub struct Config {
     pub watch: bool,
     /// dump intermediate representation (groff or latex)
     pub dump: bool,
+    /// language
+    pub lang: String,
 }
 
 impl Config {
@@ -16,10 +18,12 @@ impl Config {
         let mut source_file = String::new();
         let mut watch = false;
         let mut dump: bool = false;
+        let mut lang: String = "den".to_string();
         for arg in args {
             match arg.as_str() {
                 "-w" => watch = true,
                 "-d" => dump = true,
+                "-len" | "-l en" => lang = "en".to_string(),
                 _ => source_file = arg,
             }
         }
@@ -27,6 +31,7 @@ impl Config {
             source_file,
             watch,
             dump,
+            lang
         }
     }
 }

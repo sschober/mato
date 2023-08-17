@@ -68,10 +68,10 @@ fn matogro(input: &str) -> String {
     mato::transform(&groff::Renderer {}, input)
 }
 
-fn grotopdf(input: &str, mom_preamble: &str) -> Vec<u8> {
+fn grotopdf(config: &Config, input: &str, mom_preamble: &str) -> Vec<u8> {
     let mut child = Command::new("/usr/bin/env")
         .arg("pdfmom")
-        .arg("-mden")
+        .arg(format!("-m{}", config.lang))
         .args(["-K", "UTF-8"]) // process with preconv to support utf-8
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
@@ -110,7 +110,7 @@ fn transform_and_render(config: &Config, source_file: &str, target_file: &str, m
     }
 
     let start = Instant::now();
-    let pdf_output = grotopdf(&groff_output, mom_preamble);
+    let pdf_output = grotopdf(config, &groff_output, mom_preamble);
     println!("groff rendering:\t{:?} ", start.elapsed());
 
     let start = Instant::now();
