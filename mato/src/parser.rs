@@ -221,8 +221,18 @@ impl Parser<'_> {
         self.consume(b' ');
         loop {
             item = item.cat(self.parse_until(b"\n"));
-            self.consume(b'\n');
-            if self.is_all_space_until((level * 2) + 2) {
+            eprintln!(
+                "parse_list_item({}): back from parse_until at {} '{}'",
+                level, self.i, self.char
+            );
+            if !self.at_end() {
+                eprintln!("parse_list_item(): consuming newline");
+                self.consume(b'\n');
+            }
+            eprintln!("cheking for continuation at {} {}", self.i, self.char);
+            if self.is_all_space_until((level * 2) + 2)
+                && !self.peek((level * 2) as usize + 2, b'*')
+            {
                 eprintln!("found item continuation");
                 self.consume_all_space_until((level * 2) + 2);
                 // reappend the newline we swallowed above
@@ -258,6 +268,7 @@ impl Parser<'_> {
             }
             list(iterator, level)
         } else {
+            eprintln!("bold at level {}", level);
             // assume emphasize (*word*)
             bold(self.parse_symmetric_quoted())
         }
