@@ -196,18 +196,41 @@ impl Parser<'_> {
         }
     }
 
-    fn parse_list_item(&mut self, level: u8) -> Exp {
-        eprintln!("parse_list_item({})", level);
-        if level > 0 {
-            for _ in 0..(level * 2) {
-                eprintln!("consuming space");
-                self.consume(b' ');
+    fn is_all_space_until(&self, index: u8) -> bool {
+        eprintln!("all_white_space_until({})", index);
+        for i in 0..index as usize {
+            if !self.peek(i, b' ') {
+                return false;
             }
         }
+        true
+    }
+
+    fn consume_all_space_until(&mut self, index: u8) {
+        for _ in 0..index {
+            eprintln!("consuming space");
+            self.consume(b' ');
+        }
+    }
+
+    fn parse_list_item(&mut self, level: u8) -> Exp {
+        eprintln!("parse_list_item({})", level);
+        let mut item = empty();
+        self.consume_all_space_until(level * 2);
         self.consume(b'*');
         self.consume(b' ');
-        let item = self.parse_until(b"\n");
-        self.consume(b'\n');
+        loop {
+            item = item.cat(self.parse_until(b"\n"));
+            self.consume(b'\n');
+            if self.is_all_space_until((level * 2) + 2) {
+                eprintln!("found item continuation");
+                self.consume_all_space_until((level * 2) + 2);
+                // reappend the newline we swallowed above
+                item = item.cat(lit("\n"));
+                continue;
+            }
+            break;
+        }
         list_item(item, level)
     }
 
@@ -218,14 +241,16 @@ impl Parser<'_> {
             // if * is followed by white space
             let mut iterator = empty();
             loop {
-                if self.peek((level * 2) as usize, b'*') && self.peek((level * 2) as usize + 1, b' ') {
+                if self.peek((level * 2) as usize, b'*')
+                    && self.peek((level * 2) as usize + 1, b' ')
+                {
                     eprintln!("found list item on level {}", level);
                     iterator = iterator.cat(self.parse_list_item(level));
                     continue;
                 } else if self.peek(((level + 1) * 2) as usize, b'*')
                     && self.peek(((level + 1) * 2) as usize + 1, b' ')
                 {
-                    eprintln!("found sub list on level {}", level+1);
+                    eprintln!("found sub list on level {}", level + 1);
                     iterator = iterator.cat(self.parse_list(level + 1));
                 } else {
                     break;
