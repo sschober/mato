@@ -230,4 +230,9 @@ mod tests {
     fn nested_list() {
         assert_eq!(matogro("* list item 1\n  * list item 2\n"), ".LIST\n.SHIFT_LIST 18p\n.ITEM\nlist item 1\n.LIST\n.SHIFT_LIST 18p\n.ITEM\nlist item 2\n.LIST OFF\n.LIST OFF\n");
     }
+    #[test]
+    fn list_1_multiline_item() {
+        assert_eq!(matogro("* list item\n  which continues on next line\n"), ".LIST\n.SHIFT_LIST 18p\n.ITEM\nlist item\nwhich continues on next line\n.LIST OFF\n");
+    }
+
 }
