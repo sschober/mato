@@ -34,6 +34,11 @@ pub enum Exp {
     List(Box<Exp>,u8),
     // singular items of lists
     ListItem(Box<Exp>,u8),
+    // captures a meta data block, basically a list of key values
+    // like title, author etc.
+    MetaDataBlock(Box<Exp>),
+    // a singular meta data item
+    MetaDataItem(String, String),
     // this is a neutral element, yielding no ouput
     Empty(),
 }

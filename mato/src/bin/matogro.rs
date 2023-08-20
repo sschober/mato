@@ -65,7 +65,7 @@ fn main() -> std::io::Result<()> {
 }
 
 fn matogro(input: &str) -> String {
-    mato::transform(&groff::Renderer {}, input)
+    mato::transform(& mut groff::Renderer::new(), input)
 }
 
 fn grotopdf(config: &Config, input: &str, mom_preamble: &str) -> Vec<u8> {

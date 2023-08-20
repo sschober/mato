@@ -7,7 +7,7 @@ use super::Render;
 pub struct Renderer;
 
 impl Render for Renderer {
-    fn render(&self, exp: Exp) -> String {
+    fn render(& mut self, exp: Exp) -> String {
         match exp {
             Exp::Literal(s) => s,
             Exp::EscapeLit(s) => format!("\\{s}"),
@@ -36,6 +36,8 @@ impl Render for Renderer {
             Exp::Empty() | Exp::Paragraph() => String::new(),
             Exp::List(_b_exp, _) => String::new(),
             Exp::ListItem(_,_) => String::new(),
+            Exp::MetaDataBlock(_) => String::new(),
+            Exp::MetaDataItem(_,_ ) => String::new(),
         }
     }
 }
