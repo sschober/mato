@@ -1,5 +1,5 @@
 use crate::syntax::{
-    bold, empty, escape_lit, footnote, heading, hyperref, list, list_item, lit, Exp,
+    bold, empty, escape_lit, footnote, heading, hyperref, list, list_item, lit, Exp, meta_data_item,
 };
 use std::str;
 
@@ -31,7 +31,7 @@ impl Parser<'_> {
     pub fn parse(input: &str) -> Exp {
         let mut parser = Parser::new(input);
         // passing "" as bytes parses until the end of file
-        parser.parse_until(b"")
+        Exp::Document().cat(parser.parse_until(b""))
     }
 
     /// increases index and updates current char
@@ -178,12 +178,20 @@ impl Parser<'_> {
         }
     }
 
-    fn parse_literal(&mut self, break_chars: &[u8]) -> Exp {
+    fn parse_raw_until(&mut self, break_chars: &[u8]) -> &[u8] {
         let start = self.i;
         while !self.at_end() && !break_chars.contains(&self.char) {
             self.advance();
         }
-        lit(str::from_utf8(&self.input[start..self.i]).unwrap())
+        &self.input[start..self.i]
+    }
+
+    fn parse_string_until(&mut self, break_chars: &[u8]) -> String {
+        str::from_utf8(self.parse_raw_until(break_chars)).unwrap().to_string()
+    }
+
+    fn parse_literal(&mut self, break_chars: &[u8]) -> Exp {
+        lit(&self.parse_string_until(break_chars))
     }
 
     fn parse_pass_through(&mut self) -> Exp {
@@ -210,6 +218,51 @@ impl Parser<'_> {
         for _ in 0..index {
             eprintln!("consuming space");
             self.consume(b' ');
+        }
+    }
+
+    fn parse_meta_data_item(&mut self) -> Exp {
+        let key = self.parse_string_until(b":");
+        self.consume(b':');
+        while self.char == b' ' {
+            self.advance();
+        }
+        let value = self.parse_string_until(b"\n");
+        meta_data_item(key.to_string(), value.to_string())
+    }
+    
+    fn parse_meta_data_items(&mut self) -> Exp {
+        let mut items = empty();
+        while self.char != b'-' && self.char != b'\n' {
+            items = items.cat(self.parse_meta_data_item());
+            self.consume(b'\n')
+        }
+        items
+    }
+
+    fn parse_meta_data_block(&mut self) -> Exp {
+        if self.peek(1, b'-') && self.peek(2, b'-') {
+            self.consume(b'-');
+            self.consume(b'-');
+            self.consume(b'-');
+            while self.char == b' ' || self.char == b'\t' {
+                self.advance()
+            }
+            self.consume(b'\n');
+            let items = self.parse_meta_data_items();
+            eprintln!("mdb: {} {}", self.i, self.char as char);
+            if self.char == b'-' {
+                self.consume(b'-');
+                self.consume(b'-');
+                self.consume(b'-');    
+            }
+            self.consume(b'\n');
+            if self.char == b'\n'{
+                self.consume(b'\n');
+            }
+            Exp::MetaDataBlock(Box::new(items))
+        } else {
+            lit("-")
         }
     }
 
@@ -321,6 +374,7 @@ impl Parser<'_> {
                                            // no null values
         while !self.at_end() && !break_chars.contains(&self.char) {
             let expr = match self.char {
+                b'-' => self.parse_meta_data_block(),
                 b'#' => self.parse_heading(),
                 b'*' => self.parse_list(0),
                 b'_' => Exp::Italic(Box::new(self.parse_symmetric_quoted())),
@@ -371,17 +425,17 @@ mod tests {
         let parser = Parser::parse("\"quoted\"");
         assert_eq!(
             format!("{:?}", parser),
-            "Cat(Empty, Quote(Cat(Empty, Literal(\"quoted\"))))"
+            "Cat(Document, Cat(Empty, Quote(Cat(Empty, Literal(\"quoted\")))))"
         );
     }
     #[test]
     fn ampersand() {
         let parser = Parser::parse("&");
-        assert_eq!(format!("{:?}", parser), "Cat(Empty, EscapeLit(\"&\"))");
+        assert_eq!(format!("{:?}", parser), "Cat(Document, Cat(Empty, EscapeLit(\"&\")))");
     }
     #[test]
     fn dot() {
         let parser = Parser::parse(".");
-        assert_eq!(format!("{:?}", parser), "Cat(Empty, EscapeLit(\".\"))");
+        assert_eq!(format!("{:?}", parser), "Cat(Document, Cat(Empty, EscapeLit(\".\")))");
     }
 }

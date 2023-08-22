@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use super::Process;
 
 use crate::Exp;
@@ -23,5 +25,9 @@ impl Process for Canonicalizer {
         let canon = erase_empty(exp);
         eprintln!("{:?}", canon);
         canon
+    }
+
+    fn get_context(& mut self) -> std::collections::HashMap<String,String> {
+        HashMap::new()
     }
 }

@@ -17,7 +17,7 @@ pub fn transform<R: render::Render, P: process::Process>(
 ) -> String {
     let mut exp = Parser::parse(input);
     exp = process(p, exp);
-    render(r, exp)
+    render(r, exp, p)
 }
 
 /// helper function for static dispatch
@@ -30,6 +30,6 @@ fn process<P: process::Process>(p: &mut P, exp: Exp) -> Exp {
 /// helper function for static dispatch
 ///
 /// calls the passed in renderer on the result created by the parser
-fn render<T: render::Render>(t: &mut T, exp: Exp) -> String {
-    t.render(exp)
+fn render<R: render::Render, P: process::Process>(r: &mut R, exp: Exp, p: &mut P) -> String {
+    r.render(exp, p.get_context())
 }

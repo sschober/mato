@@ -1,3 +1,8 @@
+---
+title: "Slides with MaTo"
+subtitle: "How to create great presentations"
+author: "Sven Schober"
+---
 # Preamble
 
 You have to provide a `preamble.mom`

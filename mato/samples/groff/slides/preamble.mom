@@ -1,13 +1,7 @@
-.TITLE "Slides with MaTo" 
-.SUBTITLE "How To Create Great Presentations"
-.AUTHOR "Sven Schober"
-.PDF_TITLE "\*[$TITLE]"
 .DOCTYPE SLIDES \
 ASPECT 16:9 \
 HEADER "\*[$TITLE]" "" "" \
-FOOTER "Sven Schober" "" "\*S[+2]\*[SLIDE#]\*S[-2]" \
-TRANSITION "Box 1 . 0" \
-PAUSE "Wipe 1"
+FOOTER "Sven Schober" "" "\*S[+2]\*[SLIDE#]\*S[-2]"
 
 .FAMILY Minion
 .PT_SIZE 18
@@ -28,4 +22,3 @@ FONT R CAPS SIZE -4
 .AUTO_RELOCATE_TOC AFTER_COVER
 .COVER TITLE SUBTITLE AUTHOR
 .TOC_HEADER_STYLE FAMILY Minion FONT R CAPS SIZE +8
-.START

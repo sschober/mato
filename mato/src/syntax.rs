@@ -3,6 +3,7 @@
 /// Expressions are the building blocks of an abstract syntax tree
 #[derive(Debug)]
 pub enum Exp {
+    Document(),
     /// Separate consequential pargraps
     Paragraph(),
     /// A literal is a string rendered as is
@@ -83,6 +84,14 @@ pub fn list(exp: Exp, level: u8) -> Exp {
 #[must_use]
 pub fn list_item(exp: Exp, level: u8) -> Exp {
     Exp::ListItem(Box::new(exp), level)
+}
+#[must_use]
+pub fn meta_data_item(key: String, value: String) -> Exp {
+    Exp::MetaDataItem(key, value)
+}
+#[must_use]
+pub fn meta_data_block(exp: Exp) -> Exp {
+    Exp::MetaDataBlock(Box::new(exp))
 }
 #[must_use]
 pub fn empty() -> Exp {

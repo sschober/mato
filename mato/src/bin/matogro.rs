@@ -8,6 +8,8 @@ use std::process::{Command, Stdio};
 use std::time::Instant;
 
 use mato::config::Config;
+use mato::process::chain;
+use mato::process::meta_data_extractor;
 use mato::render::groff;
 use mato::process::canonicalize;
 use mato::watch;
@@ -66,9 +68,12 @@ fn main() -> std::io::Result<()> {
 }
 
 fn matogro(input: &str) -> String {
+    let mde = meta_data_extractor::MetaDataExtractor::new();
+    let canon = canonicalize::Canonicalizer {};
+    let mut chain = chain::Chain{ a : Box::new(canon), b : Box::new(mde) };
     mato::transform(
         &mut groff::Renderer::new(),
-        &mut canonicalize::Canonicalizer {},
+        &mut chain,
         input,
     )
 }
