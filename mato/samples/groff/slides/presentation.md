@@ -1,20 +1,16 @@
 ---
 title: "Slides with MaTo"
-subtitle: "How to create great presentations"
+subtitle: "How to create presentations"
 author: "Sven Schober"
 ---
 # Preamble
 
 You have to provide a `preamble.mom`
 ```
-.TITLE "Slides with MaTo"
-\&.PDF_TITLE "\*[$TITLE]"
 \&.DOCTYPE SLIDES \\ 
 ASPECT 16:9 \ 
 HEADER "\*[$TITLE]" "" "" \\ 
-FOOTER "Sven Schober" "" "\*S[+2]\*[SLIDE#]\*S[-2]" \\ 
-TRANSITION "Box 1 . 0" \\ 
-PAUSE "Wipe 1"
+FOOTER "Sven Schober" "" "\*S[+2]\*[SLIDE#]\*S[-2]" 
 ```
 
 Therein define title, header and footer.
@@ -53,19 +49,6 @@ Quad left aligns the listings on the left.
 Finally, starts the document.
 
 //.NEWSLIDE
-# Title Page
-
-Use level 1 header as title
-```
-# My super presentation
-## is very awesome
-
-```
-
-Use level 2 header as subtitle
-
-//.NEWSLIDE
-
 # Code Listings
 
 Here we can see a simple script:
