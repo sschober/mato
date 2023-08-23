@@ -1,5 +1,5 @@
 use crate::syntax::{
-    bold, empty, escape_lit, footnote, heading, hyperref, list, list_item, lit, Exp, meta_data_item,
+    bold, empty, escape_lit, footnote, heading, hyperref, list, list_item, lit, meta_data_item, Exp,
 };
 use std::str;
 
@@ -15,6 +15,7 @@ pub struct Parser<'a> {
     /// the character at the current parsing position
     char: u8,
 }
+const LIST_INDENT: u8 = 2;
 
 impl Parser<'_> {
     const fn new(input: &str) -> Parser<'_> {
@@ -187,7 +188,9 @@ impl Parser<'_> {
     }
 
     fn parse_string_until(&mut self, break_chars: &[u8]) -> String {
-        str::from_utf8(self.parse_raw_until(break_chars)).unwrap().to_string()
+        str::from_utf8(self.parse_raw_until(break_chars))
+            .unwrap()
+            .to_string()
     }
 
     fn parse_literal(&mut self, break_chars: &[u8]) -> Exp {
@@ -230,7 +233,7 @@ impl Parser<'_> {
         let value = self.parse_string_until(b"\n");
         meta_data_item(key.to_string(), value.to_string())
     }
-    
+
     fn parse_meta_data_items(&mut self) -> Exp {
         let mut items = empty();
         while self.char != b'-' && self.char != b'\n' {
@@ -254,10 +257,10 @@ impl Parser<'_> {
             if self.char == b'-' {
                 self.consume(b'-');
                 self.consume(b'-');
-                self.consume(b'-');    
+                self.consume(b'-');
             }
             self.consume(b'\n');
-            if self.char == b'\n'{
+            if self.char == b'\n' {
                 self.consume(b'\n');
             }
             Exp::MetaDataBlock(Box::new(items))
@@ -269,7 +272,7 @@ impl Parser<'_> {
     fn parse_list_item(&mut self, level: u8) -> Exp {
         eprintln!("parse_list_item({})", level);
         let mut item = empty();
-        self.consume_all_space_until(level * 2);
+        self.consume_all_space_until(level * LIST_INDENT);
         self.consume(b'*');
         self.consume(b' ');
         loop {
@@ -283,11 +286,11 @@ impl Parser<'_> {
                 self.consume(b'\n');
             }
             eprintln!("cheking for continuation at {} {}", self.i, self.char);
-            if self.is_all_space_until((level * 2) + 2)
-                && !self.peek((level * 2) as usize + 2, b'*')
+            if self.is_all_space_until((level * LIST_INDENT) + LIST_INDENT)
+                && !self.peek((level * LIST_INDENT) as usize + LIST_INDENT as usize, b'*')
             {
                 eprintln!("found item continuation");
-                self.consume_all_space_until((level * 2) + 2);
+                self.consume_all_space_until((level * LIST_INDENT) + LIST_INDENT);
                 // reappend the newline we swallowed above
                 item = item.cat(lit("\n"));
                 continue;
@@ -299,19 +302,19 @@ impl Parser<'_> {
 
     fn parse_list(&mut self, level: u8) -> Exp {
         eprintln!("parse_list({})", level);
-        if self.peek((level * 2) as usize + 1, b' ') {
+        if self.peek((level * LIST_INDENT) as usize + 1, b' ') {
             eprintln!("found space at {}", level * 2);
             // if * is followed by white space
             let mut iterator = empty();
             loop {
-                if self.peek((level * 2) as usize, b'*')
-                    && self.peek((level * 2) as usize + 1, b' ')
+                if self.peek((level * LIST_INDENT) as usize, b'*')
+                    && self.peek((level * LIST_INDENT) as usize + 1, b' ')
                 {
                     eprintln!("found list item on level {}", level);
                     iterator = iterator.cat(self.parse_list_item(level));
                     continue;
-                } else if self.peek(((level + 1) * 2) as usize, b'*')
-                    && self.peek(((level + 1) * 2) as usize + 1, b' ')
+                } else if self.peek(((level + 1) * LIST_INDENT) as usize, b'*')
+                    && self.peek(((level + 1) * LIST_INDENT) as usize + 1, b' ')
                 {
                     eprintln!("found sub list on level {}", level + 1);
                     iterator = iterator.cat(self.parse_list(level + 1));
@@ -431,11 +434,17 @@ mod tests {
     #[test]
     fn ampersand() {
         let parser = Parser::parse("&");
-        assert_eq!(format!("{:?}", parser), "Cat(Document, Cat(Empty, EscapeLit(\"&\")))");
+        assert_eq!(
+            format!("{:?}", parser),
+            "Cat(Document, Cat(Empty, EscapeLit(\"&\")))"
+        );
     }
     #[test]
     fn dot() {
         let parser = Parser::parse(".");
-        assert_eq!(format!("{:?}", parser), "Cat(Document, Cat(Empty, EscapeLit(\".\")))");
+        assert_eq!(
+            format!("{:?}", parser),
+            "Cat(Document, Cat(Empty, EscapeLit(\".\")))"
+        );
     }
 }
