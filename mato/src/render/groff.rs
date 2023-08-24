@@ -7,12 +7,24 @@ use crate::Exp;
 /// empty struct to attach Renderer implementation on
 pub struct Renderer {
     ctx: HashMap<String, String>,
+    document_started: bool,
+}
+
+impl Default for Renderer {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Renderer {
+    fn is_doctype(&self, doc_type: &str) -> bool {
+        self.ctx.contains_key("doctype") && self.ctx.get("doctype").unwrap() == doc_type
+    }
+
     pub fn new() -> Self {
         Self {
             ctx: HashMap::new(),
+            document_started: false,
         }
     }
 
@@ -32,10 +44,11 @@ impl Renderer {
                 if !self.ctx.is_empty() && !self.ctx.contains_key("pdf title"){
                     result = format!("{}.PDF_TITLE \"*[$TITLE]\"\n", result)
                 }
-                if !self.ctx.is_empty() {
+                if !self.ctx.is_empty() && !self.is_doctype("CHAPTER"){
                     // if the user gave no meta data block, we
                     // do not emit a .START
                     result = format!("{}\n.START\n", result);
+                    self.document_started = true;
                 }
                 result
             },
@@ -70,9 +83,14 @@ impl Renderer {
                 self.render_with_default_format(*b_exp)
             ),
             Exp::Heading(b_exp, level) => {
-                if self.ctx.contains_key("doctype") && self.ctx.get("doctype").unwrap() == "CHAPTER" {
+                if self.is_doctype("CHAPTER") {
                     if level == 0 {
-                        format!(".COLLATE\n.CHAPTER_TITLE \"{}\"\n.START\n", self.render_with_default_format(*b_exp))
+                        if self.document_started {
+                            format!(".COLLATE\n.CHAPTER_TITLE \"{}\"\n.START\n", self.render_with_default_format(*b_exp))
+                        } else {
+                            self.document_started = true;
+                            format!(".CHAPTER_TITLE \"{}\"\n.START\n", self.render_with_default_format(*b_exp))
+                        }
                     } else {
                         format!(
                             ".SPACE -.7v\n.EW 2\n.HEADING {} \"{}\"\n.EW 0\n",
@@ -146,12 +164,6 @@ impl Renderer {
     }
     fn render_with_default_format(&mut self, exp: Exp) -> String {
         self.render_with_parent_format(exp, "ROM")
-    }
-}
-
-impl Default for Renderer {
-    fn default() -> Self {
-        Self::new()
     }
 }
 
