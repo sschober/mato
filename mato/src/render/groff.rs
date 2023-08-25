@@ -37,21 +37,21 @@ impl Renderer {
             Exp::Document() => {
                 eprintln!("{:?}", self.ctx);
                 let mut result = String::new();
-                for (key, value) in self.ctx.clone().into_iter(){
+                for (key, value) in self.ctx.clone().into_iter() {
                     let key = key.replace(' ', "_");
                     result = format!("{}.{} {}\n", result, key.to_uppercase(), value);
                 }
-                if !self.ctx.is_empty() && !self.ctx.contains_key("pdf title"){
+                if !self.ctx.is_empty() && !self.ctx.contains_key("pdf title") {
                     result = format!("{}.PDF_TITLE \"*[$TITLE]\"\n", result)
                 }
-                if !self.ctx.is_empty() && !self.is_doctype("CHAPTER"){
+                if !self.ctx.is_empty() && !self.is_doctype("CHAPTER") {
                     // if the user gave no meta data block, we
                     // do not emit a .START
                     result = format!("{}\n.START\n", result);
                     self.document_started = true;
                 }
                 result
-            },
+            }
             Exp::Paragraph() => "\n.PP".to_string(),
             Exp::Literal(s) => s,
             Exp::EscapeLit(s) => match s.as_str() {
@@ -86,10 +86,16 @@ impl Renderer {
                 if self.is_doctype("CHAPTER") {
                     if level == 0 {
                         if self.document_started {
-                            format!(".COLLATE\n.CHAPTER_TITLE \"{}\"\n.START\n", self.render_with_default_format(*b_exp))
+                            format!(
+                                ".COLLATE\n.CHAPTER_TITLE \"{}\"\n.START\n",
+                                self.render_with_default_format(*b_exp)
+                            )
                         } else {
                             self.document_started = true;
-                            format!(".CHAPTER_TITLE \"{}\"\n.START\n", self.render_with_default_format(*b_exp))
+                            format!(
+                                ".CHAPTER_TITLE \"{}\"\n.START\n",
+                                self.render_with_default_format(*b_exp)
+                            )
                         }
                     } else {
                         format!(
@@ -157,8 +163,13 @@ impl Renderer {
                 _ => format!(".ITEM\n{}\n", self.render_with_default_format(*b_exp)),
             },
             Exp::MetaDataBlock(b_exp) => self.render_with_default_format(*b_exp),
-            Exp::MetaDataItem(_, _) => {
-                String::new()
+            Exp::MetaDataItem(_, _) => String::new(),
+            Exp::Image(b_exp, path) => {
+                format!(
+                    ".PDF_IMAGE {} 200p 150p CAPTION \"{}\"",
+                    self.render_with_default_format(*path),
+                    self.render_with_default_format(*b_exp)
+                )
             }
         }
     }

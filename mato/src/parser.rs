@@ -1,5 +1,5 @@
 use crate::syntax::{
-    bold, empty, escape_lit, footnote, heading, hyperref, list, list_item, lit, meta_data_item, Exp,
+    bold, empty, escape_lit, footnote, heading, hyperref, list, list_item, lit, meta_data_item, Exp, image,
 };
 use std::str;
 
@@ -371,6 +371,21 @@ impl Parser<'_> {
         }
     }
 
+    fn parse_image(&mut self) -> Exp {
+        if self.peek(1, b'[') {
+            self.consume(b'!');
+            self.consume(b'[');
+            let caption = self.parse_until(b"]");
+            self.consume(b']');
+            self.consume(b'(');
+            let path= self.parse_literal(b")");
+            self.consume(b')');
+            image(caption, path)
+        } else {
+            lit("!")
+        }
+    }
+
     fn parse_until(&mut self, break_chars: &[u8]) -> Exp {
         let mut expression = Exp::Empty(); // we start with
                                            // "nothing", as rust has
@@ -405,6 +420,7 @@ impl Parser<'_> {
                     }
                 }
                 b'>' => self.parse_right_sidenote(),
+                b'!' => self.parse_image(),
                 _ => self.parse_literal(
                     format!("_*#\"^`&[{}>\n", str::from_utf8(break_chars).unwrap()).as_bytes(),
                 ),

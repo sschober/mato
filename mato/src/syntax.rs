@@ -40,6 +40,8 @@ pub enum Exp {
     MetaDataBlock(Box<Exp>),
     // a singular meta data item
     MetaDataItem(String, String),
+    /// image with caption an path
+    Image(Box<Exp>, Box<Exp>),
     // this is a neutral element, yielding no ouput
     Empty(),
 }
@@ -92,6 +94,10 @@ pub fn meta_data_item(key: String, value: String) -> Exp {
 #[must_use]
 pub fn meta_data_block(exp: Exp) -> Exp {
     Exp::MetaDataBlock(Box::new(exp))
+}
+#[must_use]
+pub fn image(caption: Exp, path: Exp) -> Exp {
+    Exp::Image(Box::new(caption), Box::new(path))
 }
 #[must_use]
 pub fn empty() -> Exp {

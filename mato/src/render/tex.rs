@@ -40,6 +40,7 @@ impl Renderer {
             Exp::ListItem(_, _) => String::new(),
             Exp::MetaDataBlock(_) => String::new(),
             Exp::MetaDataItem(_, _) => String::new(),
+            Exp::Image(_, _) => String::new(),
         }
     }
 }
