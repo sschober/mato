@@ -1,5 +1,6 @@
 use std::env;
 
+use mato::config::Config;
 use mato::process::canonicalize;
 use mato::render::tex::Renderer;
 
@@ -11,6 +12,7 @@ fn main() {
             mato::transform(
                 &mut Renderer {},
                 &mut canonicalize::Canonicalizer {},
+                &Config::new(),
                 input.as_str()
             )
         );
@@ -19,6 +21,7 @@ fn main() {
 
 #[cfg(test)]
 mod tests {
+    use mato::config::Config;
     use mato::render::tex::Renderer;
     use mato::process::canonicalize;
 
@@ -28,6 +31,7 @@ mod tests {
             mato::transform(
                 &mut Renderer {},
                 &mut canonicalize::Canonicalizer {},
+                &Config::new(),
                 "hallo"
             ),
             "hallo"
@@ -39,6 +43,7 @@ mod tests {
             mato::transform(
                 &mut Renderer {},
                 &mut canonicalize::Canonicalizer {},
+                &Config::new(),
                 "_hallo_"
             ),
             "\\textit{hallo}"
@@ -50,6 +55,7 @@ mod tests {
             mato::transform(
                 &mut Renderer {},
                 &mut canonicalize::Canonicalizer {},
+                &Config::new(),
                 "*hallo*"
             ),
             "\\textbf{hallo}"

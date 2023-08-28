@@ -1,5 +1,6 @@
 //! markdown transformer toolkit
 
+use config::Config;
 use parser::Parser;
 use syntax::Exp;
 pub mod config;
@@ -13,18 +14,19 @@ pub mod watch;
 pub fn transform<R: render::Render, P: process::Process>(
     r: &mut R,
     p: &mut P,
+    config: &Config,
     input: &str,
 ) -> String {
     let mut exp = Parser::parse(input);
-    exp = process(p, exp);
+    exp = process(p, exp, config);
     render(r, exp, p)
 }
 
 /// helper function for static dispatch
-/// 
+///
 /// calls the passed in processor on the given exp
-fn process<P: process::Process>(p: &mut P, exp: Exp) -> Exp {
-    p.process(exp)
+fn process<P: process::Process>(p: &mut P, exp: Exp, config: &Config) -> Exp {
+    p.process(exp, config)
 }
 
 /// helper function for static dispatch

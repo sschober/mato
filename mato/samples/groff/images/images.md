@@ -1,11 +1,17 @@
 # Tour: Golmer Seenweg
 
-In the following, a short tour description about the Golmer Seenweg is given.
+In the following, a short tour description about the Golmer Seenweg
+is given. We were hiking the route in late summer 2023.
 
-## Hiking in Montafon
+In the following picture, you can see a marvelous view which is to
+be had on the tour:
+![View of the Rätikon Group approximately two thirds along the way.](IMG_4025.pdf)
 
-In the following picture, you can see a marvelous view which is to be had on the tour:
+It can be experienced somewhat into the tour, about two thirds along
+the way.
 
-![View of the Rätikon Group approximately two thirds along the way.](mato/samples/groff/images/IMG_4025.pdf)
+## Overview of the Tour
 
-It can be experienced somewhat into the tour, about two thirds along the way.
+The following picture depicts an overview of the tour on the map:
+
+![The map overview of the tour](IMG_4053.pdf)

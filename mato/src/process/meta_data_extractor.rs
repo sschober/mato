@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::syntax::{Exp, meta_data_block, meta_data_item};
+use crate::{syntax::{Exp, meta_data_block, meta_data_item}, config::Config};
 
 use super::Process;
 
@@ -36,7 +36,7 @@ impl Default for MetaDataExtractor {
 }
 
 impl Process for MetaDataExtractor {
-    fn process(&mut self, exp: crate::syntax::Exp) -> crate::syntax::Exp {
+    fn process(&mut self, exp: Exp, _: &Config) -> crate::syntax::Exp {
         self.extract_meta_data(exp)
     }
 

@@ -2,8 +2,9 @@ use std::collections::HashMap;
 
 use super::Process;
 
-use crate::Exp;
+use crate::config::Config;
 use crate::syntax::meta_data_block;
+use crate::Exp;
 
 pub struct Canonicalizer {}
 
@@ -20,14 +21,14 @@ fn erase_empty(exp: Exp) -> Exp {
 }
 
 impl Process for Canonicalizer {
-    fn process(&mut self, exp: Exp) -> Exp {
+    fn process(&mut self, exp: Exp, _: &Config) -> Exp {
         eprintln!("{:?}", exp);
         let canon = erase_empty(exp);
         eprintln!("{:?}", canon);
         canon
     }
 
-    fn get_context(& mut self) -> std::collections::HashMap<String,String> {
+    fn get_context(&mut self) -> std::collections::HashMap<String, String> {
         HashMap::new()
     }
 }

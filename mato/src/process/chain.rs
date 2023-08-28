@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use super::Process;
 
-use crate::Exp;
+use crate::{Exp, config::Config};
 
 pub struct Chain {
     pub a: Box<dyn Process>,
@@ -10,9 +10,9 @@ pub struct Chain {
 }
 
 impl Process for Chain {
-    fn process(&mut self, exp: Exp) -> Exp {
-        let result = self.a.process(exp);
-        self.b.process(result)
+    fn process(&mut self, exp: Exp, config: &Config) -> Exp {
+        let result = self.a.process(exp, config);
+        self.b.process(result, config)
     }
 
     fn get_context(& mut self) -> HashMap<String,String> {
@@ -20,3 +20,4 @@ impl Process for Chain {
         result.into_iter().chain(self.b.get_context()).collect()
     }
 }
+

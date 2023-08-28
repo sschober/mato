@@ -9,6 +9,7 @@ use std::time::Instant;
 
 use mato::config::Config;
 use mato::process::chain;
+use mato::process::image_converter;
 use mato::process::meta_data_extractor;
 use mato::render::groff;
 use mato::process::canonicalize;
@@ -16,15 +17,11 @@ use mato::watch;
 
 fn main() -> std::io::Result<()> {
     let config = Config::from(env::args().collect());
-
+    eprintln!("config: {:#?}", config);
     let mut mom_preamble = include_str!("default-preamble.mom").to_string();
 
     // try to find preamble.mom located next to source file
-    let path_source_file = Path::new(&config.source_file);
-    let parent_dir = path_source_file
-        .parent()
-        .expect("could not establish parent path of file");
-    let sibbling_preamble = parent_dir.join("preamble.mom");
+    let sibbling_preamble = Path::new(&config.parent_dir).join("preamble.mom");
     if sibbling_preamble.as_path().is_file() {
         println!("found sibbling preamble: {}", sibbling_preamble.display());
         mom_preamble = fs::read_to_string(sibbling_preamble)?;
@@ -41,6 +38,7 @@ fn main() -> std::io::Result<()> {
         eprintln!("Could not open source file: {}", config.source_file);
         std::process::exit(1);
     }
+    let path_source_file = Path::new(&config.source_file);
     let mut path_target_file = path_source_file.to_path_buf();
     path_target_file.set_extension("pdf");
     println!("target file name:\t{}", path_target_file.display());
@@ -67,16 +65,19 @@ fn main() -> std::io::Result<()> {
     Ok(())
 }
 
-fn matogro(input: &str) -> String {
+fn matogro_with_config(input: &str, config: &Config) -> String {
     let mde = meta_data_extractor::MetaDataExtractor::new();
     let canon = canonicalize::Canonicalizer {};
-    let mut chain = chain::Chain{ a : Box::new(canon), b : Box::new(mde) };
+    let chain = chain::Chain{ a : Box::new(canon), b : Box::new(mde) };
+    let mut chain_outer =  chain::Chain{ a : Box::new(chain), b: Box::new(image_converter::ImageConverter{}) };
     mato::transform(
         &mut groff::Renderer::new(),
-        &mut chain,
+        &mut chain_outer,
+        config,
         input,
     )
 }
+
 
 fn grotopdf(config: &Config, input: &str, mom_preamble: &str) -> Vec<u8> {
     let mut child = Command::new("/usr/bin/env")
@@ -113,7 +114,7 @@ fn transform_and_render(config: &Config, source_file: &str, target_file: &str, m
     println!("read in:\t\t{:?}", start.elapsed());
 
     let start = Instant::now();
-    let groff_output = matogro(&input);
+    let groff_output = matogro_with_config(&input, config);
     println!("transformed in:\t\t{:?}", start.elapsed());
     if config.dump {
         println!("{groff_output}");
@@ -130,8 +131,14 @@ fn transform_and_render(config: &Config, source_file: &str, target_file: &str, m
 
 #[cfg(test)]
 mod tests {
-    use super::matogro;
+    use mato::config::Config;
 
+    use super::matogro_with_config;
+
+    fn matogro(input: &str) -> String {
+        matogro_with_config(input, &Config::new())
+    }
+    
     #[test]
     fn literal() {
         assert_eq!(matogro("hallo"), "hallo");
