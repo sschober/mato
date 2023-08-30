@@ -1,4 +1,4 @@
-use crate::syntax::Exp;
+use crate::syntax::{Exp, bold};
 
 use super::Render;
 
@@ -55,7 +55,19 @@ impl Render for Renderer {
         match exp {
             Exp::Literal(s) => self.wrap_at(s, 68),
             Exp::EscapeLit(s) => s,
-            Exp::Bold(b_exp) => format!("*{}*", self.render(*b_exp, ctx)),
+            Exp::Bold(b_exp) => {
+                let mut bold_text = self.render(*b_exp, ctx);
+                // if the text between the * chars would immediately
+                // start with a newline, we break the opening * onto
+                // the newline instead.
+                if bold_text.starts_with('\n'){
+                    bold_text.remove(0);
+                    self.char_index += 1;
+                    format!("\n*{}*", bold_text)
+                } else {
+                    format!("*{}*", bold_text)
+                }
+            },
             Exp::Italic(b_exp) => format!("_{}_", self.render(*b_exp, ctx)),
             Exp::CodeBlock(b_exp) => format!("```\n{}\n```", self.render(*b_exp, ctx)),
             Exp::InlineCode(b_exp) => format!("`{}`", self.render(*b_exp, ctx)),
