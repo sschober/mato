@@ -42,6 +42,8 @@ pub enum Exp {
     MetaDataItem(String, String),
     /// image with caption an path
     Image(Box<Exp>, Box<Exp>),
+    /// new line
+    LineBreak(),
     // this is a neutral element, yielding no ouput
     Empty(),
 }

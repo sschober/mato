@@ -5,4 +5,6 @@ author: Sven Schober
 
 # Showcase
 
-This is a text.
+This is a test text, to test the formatting *characteristics* of matofmt. It should automatically wrap text at column 69. 
+
+If there is a link [like this](https://github.com/sschober/mato) the url should not be broken 

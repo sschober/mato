@@ -53,6 +53,7 @@ impl Renderer {
                 result
             }
             Exp::Paragraph() => "\n.PP".to_string(),
+            Exp::LineBreak() => "\n".to_string(),
             Exp::Literal(s) => s,
             Exp::EscapeLit(s) => match s.as_str() {
                 "." => "\\&.".to_string(),

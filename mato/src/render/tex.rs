@@ -36,6 +36,7 @@ impl Renderer {
             ),
             Exp::Cat(b_exp1, b_exp2) => format!("{}{}", self.render_internal(*b_exp1), self.render_internal(*b_exp2)),
             Exp::Empty() | Exp::Paragraph() | Exp::Document() => String::new(),
+            Exp::LineBreak() => "\n".to_string(),
             Exp::List(_b_exp, _) => String::new(),
             Exp::ListItem(_, _) => String::new(),
             Exp::MetaDataBlock(_) => String::new(),

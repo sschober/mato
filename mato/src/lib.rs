@@ -19,6 +19,9 @@ pub fn transform<R: render::Render, P: process::Process>(
 ) -> String {
     let mut exp = Parser::parse(input);
     exp = process(p, exp, config);
+    if config.dump {
+        eprintln!("{:#?}", exp)
+    }
     render(r, exp, p)
 }
 

@@ -416,7 +416,7 @@ impl Parser<'_> {
                         Exp::Paragraph()
                     } else {
                         self.consume(b'\n');
-                        lit("\n")
+                        Exp::LineBreak()
                     }
                 }
                 b'>' => self.parse_right_sidenote(),

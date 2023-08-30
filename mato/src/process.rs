@@ -2,6 +2,7 @@ pub mod canonicalize;
 pub mod chain;
 pub mod meta_data_extractor;
 pub mod image_converter;
+pub mod identity;
 
 use std::collections::HashMap;
 
