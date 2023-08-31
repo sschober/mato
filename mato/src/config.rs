@@ -26,12 +26,14 @@ impl Config {
         let mut watch = false;
         let mut dump: bool = false;
         let mut lang: String = "den".to_string();
-        for arg in args {
-            match arg.as_str() {
-                "-w" => watch = true,
-                "-d" => dump = true,
-                "-len" | "-l en" => lang = "en".to_string(),
-                _ => source_file = arg,
+        if args.len() > 1 {
+            for arg in args {
+                match arg.as_str() {
+                    "-w" => watch = true,
+                    "-d" => dump = true,
+                    "-len" | "-l en" => lang = "en".to_string(),
+                    _ => source_file = arg,
+                }
             }
         }
         let path_source_file = Path::new(&source_file);
