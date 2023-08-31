@@ -1,4 +1,4 @@
-use crate::syntax::{Exp, bold};
+use crate::syntax::Exp;
 
 use super::Render;
 
@@ -88,8 +88,14 @@ impl Render for Renderer {
                 format!("{}{}", self.render(*b1, ctx.clone()), self.render(*b2, ctx))
             }
             Exp::Empty() => String::new(),
-            Exp::Paragraph() => "\n".to_string(),
-            Exp::LineBreak() => "\n".to_string(),
+            Exp::Paragraph() => {
+                self.char_index = 0;
+                "\n".to_string()
+            },
+            Exp::LineBreak() => {
+                self.char_index = 0;
+                "\n".to_string()
+            },
             Exp::Document() => String::new(),
             Exp::List(b_exp, _) => self.render(*b_exp, ctx),
             Exp::ListItem(b_exp, level) => {
