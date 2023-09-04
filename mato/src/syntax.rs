@@ -6,6 +6,8 @@ pub enum Exp {
     Document(),
     /// Separate consequential pargraps
     Paragraph(),
+    /// code and stuff
+    PreformattedLiteral(String),
     /// A literal is a string rendered as is
     Literal(String),
     /// An escaped literal probabely has to be treated in a special
@@ -60,6 +62,10 @@ impl Exp {
 #[must_use]
 pub fn lit(s: &str) -> Exp {
     Exp::Literal(s.to_string())
+}
+#[must_use]
+pub fn prelit(s: &str) -> Exp {
+    Exp::PreformattedLiteral(s.to_string())
 }
 #[must_use]
 pub fn escape_lit(s: &str) -> Exp {

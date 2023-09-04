@@ -11,7 +11,7 @@ pub struct Renderer;
 impl Renderer {
     fn render_internal(&mut self, exp: Exp) -> String {
         match exp {
-            Exp::Literal(s) => s,
+            Exp::Literal(s) | Exp::PreformattedLiteral(s) => s,
             Exp::EscapeLit(s) => format!("\\{s}"),
             Exp::Bold(b_exp) => format!("\\textbf{{{}}}", self.render_internal(*b_exp)),
             Exp::Italic(b_exp) => format!("\\textit{{{}}}", self.render_internal(*b_exp)),

@@ -32,6 +32,7 @@ impl Config {
                     "-w" => watch = true,
                     "-d" => dump = true,
                     "-len" | "-l en" => lang = "en".to_string(),
+                    "-" => source_file = String::new(),
                     _ => source_file = arg,
                 }
             }

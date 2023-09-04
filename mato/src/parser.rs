@@ -1,5 +1,5 @@
 use crate::syntax::{
-    bold, empty, escape_lit, footnote, heading, hyperref, list, list_item, lit, meta_data_item, Exp, image,
+    bold, empty, escape_lit, footnote, heading, hyperref, list, list_item, lit, meta_data_item, Exp, image, prelit,
 };
 use std::str;
 
@@ -197,6 +197,10 @@ impl Parser<'_> {
         lit(&self.parse_string_until(break_chars))
     }
 
+    fn parse_preformatted_literal(&mut self, break_chars: &[u8]) -> Exp {
+        prelit(&self.parse_string_until(break_chars))
+    }
+
     fn parse_pass_through(&mut self) -> Exp {
         self.consume(b'/');
         if self.peek(0, b'/') {
@@ -332,14 +336,14 @@ impl Parser<'_> {
 
     fn parse_code(&mut self) -> Exp {
         self.consume(b'`'); // opening quote
-        let mut is_code_block = false;
+        let mut is_code_block: bool = false;
         // here, we need to peek 1 and 2 characters ahead to see if
         // they are also back ticks, and if so parse a code block
         // instead of an inline code snippet.
         if self.peek(0, b'`') && self.peek(1, b'`') {
             // parse code block
             is_code_block = true;
-            println!("code block detected!");
+            eprintln!("code block detected!");
             self.consume(b'`');
             self.consume(b'`');
             self.consume(b'\n');
@@ -353,8 +357,12 @@ impl Parser<'_> {
         } else {
             Exp::Empty()
         };
-
-        let exp = exp.cat(self.parse_literal(b"`"));
+        let code_exp = if is_code_block {
+            self.parse_preformatted_literal(b"`")
+        } else {
+            self.parse_literal(b"`")
+        };
+        let exp = exp.cat(code_exp);
         self.consume(b'`'); // closing quote
         if is_code_block {
             self.consume(b'`'); // closing quote

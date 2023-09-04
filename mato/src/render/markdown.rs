@@ -17,12 +17,6 @@ impl Renderer {
             self.char_index += 1;
         }
         for word in s.split(&[' ', '\n']) {
-            eprintln!(
-                "considering '{}', size '{}' at char_index {}",
-                word,
-                word.len(),
-                self.char_index
-            );
             if self.char_index + word.len() < col {
                 if !result.is_empty() && result != " " {
                     result = format!("{} {}", result, word);
@@ -31,12 +25,6 @@ impl Renderer {
                 }
                 self.char_index += word.len();
             } else {
-                eprintln!(
-                    "wraping '{}', size '{}' at char_index {}",
-                    word,
-                    word.len(),
-                    self.char_index
-                );
                 result = format!("{}\n{}", result, word);
                 self.char_index = word.len();
             }
@@ -55,6 +43,7 @@ impl Render for Renderer {
         match exp {
             Exp::Literal(s) => self.wrap_at(s, 68),
             Exp::EscapeLit(s) => s,
+            Exp::PreformattedLiteral(s) => s,
             Exp::Bold(b_exp) => {
                 let mut bold_text = self.render(*b_exp, ctx);
                 // if the text between the * chars would immediately
@@ -69,7 +58,7 @@ impl Render for Renderer {
                 }
             },
             Exp::Italic(b_exp) => format!("_{}_", self.render(*b_exp, ctx)),
-            Exp::CodeBlock(b_exp) => format!("```\n{}\n```", self.render(*b_exp, ctx)),
+            Exp::CodeBlock(b_exp) => format!("```\n{}```", self.render(*b_exp, ctx)),
             Exp::InlineCode(b_exp) => format!("`{}`", self.render(*b_exp, ctx)),
             Exp::Heading(b_exp, level) => {
                 let prefix = (0..level + 1).map(|_| "#").collect::<String>();

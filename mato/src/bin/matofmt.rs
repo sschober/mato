@@ -37,7 +37,8 @@ fn read_all_from_stdin() -> String {
     let lines = io::stdin().lines();
     let mut result = String::new();
     for line in lines {
-        result.push_str(line.unwrap().as_str())
+        result.push_str(line.unwrap().as_str());
+        result.push('\n');
     }
     result
 }
@@ -49,7 +50,9 @@ fn transform_and_render(config: &Config, source_file: &str) {
         std::fs::read_to_string(source_file).unwrap()
     };
     eprintln!("read in:\t\t{:?}", start.elapsed());
-
+    if config.dump {
+        eprintln!("{}", input);
+    }
     let start = Instant::now();
     let output = matofmt(&input, config);
     eprintln!("transformed in:\t\t{:?}", start.elapsed());
