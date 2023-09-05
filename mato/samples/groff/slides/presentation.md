@@ -4,19 +4,39 @@ title: "Slides with MaTo"
 subtitle: "How to create presentations"
 author: "Sven Schober"
 ---
+# Doctype
+
+First, you need to set the document type to `SLIDES` in the meta
+data block:
+```
+---
+doctype: SLIDES
+...
+---
+```
+
+This will trigger a new slide each time you create a level 1
+heading in the markdown document:
+```
+# My new heading // creates .NEWSLIDE
+```
+
+# Further Metadata
+
+You can set `title`, `subtitle` and `author` as well in meta data
+block:
+```
+---
+doctype: SLIDES
+title: "Slides with MaTo"
+subtitle: "How to create presentations"
+author: "Sven Schober"
+---
+```
+
+This will be reflected on the cover and in headers and footers.
+
 # Preamble
-
-You have to provide a `preamble.mom`
-```
-\&.DOCTYPE SLIDES \\ 
-ASPECT 16:9 \ 
-HEADER "\*[$TITLE]" "" "" \\ 
-FOOTER "Sven Schober" "" "\*S[+2]\*[SLIDE#]\*S[-2]" 
-```
-
-Therein define title, header and footer.
-
-# Preamble (2)
 
 Define font and heading sizes:
 ```
@@ -34,7 +54,7 @@ Also left aligns them (central alignment is default in mom slides).
 
 Sets general alignment to left.
 
-# Preamble (3)
+# Preamble (2)
 
 Define code style 
 ```

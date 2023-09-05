@@ -1,0 +1,177 @@
+.DOCTYPE SLIDES HEADER "\*[$TITLE]" "" ""  FOOTER "\*[$AUTHOR]" "" "\*S[+2]\*[SLIDE#]\*S[-2]"
+                        
+
+.FAMILY Minion
+.PT_SIZE 18
+.HEADING_STYLE 1 CAPS FONT R QUAD LEFT
+.HEADING_STYLE 2 CAPS FONT R SIZE -4  QUAD LEFT
+.HEADING_STYLE 3 FONT I SIZE -1 QUAD LEFT
+.COVER_TITLE_STYLE FAMILY Minion FONT R CAPS SIZE +10
+.COVER_SUBTITLE_STYLE FAMILY Minion FONT R CAPS SIZE -4
+
+.QUOTE_STYLE QUAD LEFT
+.CODE_SIZE 80
+.CODE_FAMILY IosevkaTerm
+.NEWCOLOR grey RGB #dddddd
+.QUAD LEFT
+.AUTOLEAD 2
+.AUTO_RELOCATE_TOC AFTER_COVER
+.COVER TITLE SUBTITLE AUTHOR
+.TOC_HEADER_STYLE FAMILY Minion FONT R CAPS SIZE +8
+
+.AUTHOR "Sven Schober"
+.SUBTITLE "How to create presentations"
+.TITLE "Slides with MaTo"
+.PDF_TITLE "\*[$TITLE]"
+.START
+.HEADING 1 "Doctype"
+
+.PP
+First, you need to set the document type to \*[CODE]SLIDES\*[CODE OFF] in the meta
+data block:
+.QUOTE_STYLE INDENT 1
+.QUOTE
+.CODE
+---
+doctype: SLIDES
+...
+---
+.QUOTE OFF
+This will trigger a new slide each time you create a level 1
+heading in the markdown document:
+.QUOTE_STYLE INDENT 1
+.QUOTE
+.CODE
+# My new heading // creates .NEWSLIDE
+.QUOTE OFF
+.NEWSLIDE
+.HEADING 1 "Further Metadata"
+
+.PP
+You can set \*[CODE]title\*[CODE OFF], \*[CODE]subtitle\*[CODE OFF] and \*[CODE]author\*[CODE OFF] as well in meta data
+block:
+.QUOTE_STYLE INDENT 1
+.QUOTE
+.CODE
+---
+doctype: SLIDES
+title: "Slides with MaTo"
+subtitle: "How to create presentations"
+author: "Sven Schober"
+---
+.QUOTE OFF
+This will be reflected on the cover and in headers and footers.
+
+.NEWSLIDE
+.HEADING 1 "Preamble"
+
+.PP
+Define font and heading sizes:
+.QUOTE_STYLE INDENT 1
+.QUOTE
+.CODE
+\&.FAMILY Minion
+\&.PT_SIZE 18
+\&.HEADING_STYLE 1 CAPS FONT R QUAD LEFT
+\&.HEADING_STYLE 2 CAPS FONT R SIZE -4  QUAD LEFT
+\&.HEADING_STYLE 3 FONT I SIZE -1 QUAD LEFT
+\&.QUAD LEFT
+.QUOTE OFF
+This sets the font to Minion and makes headers level 1 and 2 all caps.
+.PP
+Also left aligns them (central alignment is default in mom slides).
+.PP
+Sets general alignment to left.
+
+.NEWSLIDE
+.HEADING 1 "Preamble (2)"
+
+.PP
+Define code style 
+.QUOTE_STYLE INDENT 1
+.QUOTE
+.CODE
+\&.QUOTE_STYLE QUAD LEFT
+\&.CODE_SIZE 80
+\&.CODE_FAMILY IosevkaTerm
+\&.START
+
+.QUOTE OFF
+Quad left aligns the listings on the left.
+.PP
+Finally, starts the document.
+
+.NEWSLIDE
+.HEADING 1 "Code Listings"
+
+.PP
+Here we can see a simple script:
+.PP
+.QUOTE_STYLE INDENT 1
+.QUOTE
+.CODE
+$ echo "hello world"
+hello world
+.QUOTE OFF
+.NEWSLIDE
+.HEADING 1 "Multicolumn"
+
+.PP
+It is also possible to fill multiple columns.
+.PP
+Unfortunately, there currently is no syntax for this.
+.PP
+.TAB_SET 1 1p 25P
+.TAB_SET 2 32P 25P
+.MCO
+.TAB 1
+.PP
+Here is stuff on the left
+.PP
+Even more stuff
+.PP
+A lot of stuff
+.MCR
+.TAB 2
+.PP
+And other stuff on the right
+.PP
+More other stuff
+.PP
+Last of other stuff
+.MCX
+
+.NEWSLIDE
+.HEADING 1 "Lists"
+
+.PP
+You can also make bullet lists:
+.PP
+.LIST
+.SHIFT_LIST 18p
+.ITEM
+A first item
+.ITEM
+A second item
+.ITEM
+\&.\&.\&.and so on
+.LIST OFF
+
+And use formatting in the items:
+.PP
+.LIST
+.SHIFT_LIST 18p
+.ITEM
+A \*[BD]bold\*[ROM] item
+.LIST
+.SHIFT_LIST 18p
+.ITEM
+An \*[IT]italic\*[ROM] item in a sublist
+.ITEM
+Another item of the sublist
+.LIST OFF
+.ITEM
+A \*[CODE]code\*[CODE OFF] item back in the top level list
+.LIST OFF
+
+.TOC
