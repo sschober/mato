@@ -15,6 +15,14 @@ impl MetaDataExtractor {
         }
     }
 
+    pub fn from(custom_preamble: &str) -> Self {
+        let mut map = HashMap::new();
+        map.insert("custom_preamble".to_string(), custom_preamble.to_string());
+        Self {
+            ctx: map,
+        }
+    }
+
     fn extract_meta_data(&mut self, exp: Exp) -> Exp {
         match exp {
             Exp::Cat(b1, b2) => self.extract_meta_data(*b1).cat(self.extract_meta_data(*b2)),

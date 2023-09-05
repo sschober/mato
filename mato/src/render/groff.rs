@@ -37,14 +37,41 @@ impl Renderer {
             Exp::Document() => {
                 eprintln!("{:?}", self.ctx);
                 let mut result = String::new();
+                let mut doctype_emitted = false;
+                // doctype needs to be first emitted
+                if self.ctx.contains_key("doctype") {
+                    let value = self.ctx.get("doctype").unwrap();
+                    result = format!(
+                        "{}.{} {} {} {}\n",
+                        result,
+                        "doctype".to_uppercase(),
+                        value,
+                        "HEADER \"\\*[$TITLE]\" \"\" \"\" ",
+                        "FOOTER \"\\*[$AUTHOR]\" \"\" \"\\*S[+2]\\*[SLIDE#]\\*S[-2]\"
+                        "
+                    );
+                    //self.ctx.remove("doctype");
+                    doctype_emitted = true;
+                }
+
+                if self.ctx.contains_key("custom_preamble") {
+                    let value = self.ctx.get("custom_preamble").unwrap();
+                    result = format!("{}\n{}\n", result, value);
+                    self.ctx.remove("custom_preamble");
+                }
+
                 for (key, value) in self.ctx.clone().into_iter() {
                     let key = key.replace(' ', "_");
+                    if key == "doctype" && doctype_emitted {
+                        continue;
+                    }
                     result = format!("{}.{} {}\n", result, key.to_uppercase(), value);
                 }
                 if !self.ctx.is_empty() && !self.ctx.contains_key("pdf title") {
-                    result = format!("{}.PDF_TITLE \"*[$TITLE]\"\n", result)
+                    result = format!("{}.PDF_TITLE \"\\*[$TITLE]\"\n", result)
                 }
-                if !self.ctx.is_empty() && !self.is_doctype("CHAPTER") {
+                if !self.ctx.is_empty() && !self.is_doctype("CHAPTER") & !self.is_doctype("SLIDES")
+                {
                     // if the user gave no meta data block, we
                     // do not emit a .START
                     result = format!("{}\n.START\n", result);
@@ -102,6 +129,29 @@ impl Renderer {
                         format!(
                             ".SPACE -.7v\n.EW 2\n.HEADING {} \"{}\"\n.EW 0\n",
                             level + 2,
+                            self.render_with_default_format(*b_exp)
+                        )
+                    }
+                } else if self.is_doctype("SLIDES") {
+                    if level == 0 {
+                        if self.document_started {
+                            format!(
+                                ".NEWSLIDE\n.HEADING {} \"{}\"\n",
+                                level + 1,
+                                self.render_with_default_format(*b_exp)
+                            )
+                        } else {
+                            self.document_started = true;
+                            format!(
+                                ".START\n.HEADING {} \"{}\"\n",
+                                level + 1,
+                                self.render_with_default_format(*b_exp)
+                            )
+                        }
+                    } else {
+                        format!(
+                            ".SPACE -.7v\n.EW 2\n.HEADING {} \"{}\"\n.EW 0\n",
+                            level + 1,
                             self.render_with_default_format(*b_exp)
                         )
                     }

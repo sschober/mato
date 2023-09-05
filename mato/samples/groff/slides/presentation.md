@@ -1,4 +1,5 @@
 ---
+doctype: SLIDES
 title: "Slides with MaTo"
 subtitle: "How to create presentations"
 author: "Sven Schober"
@@ -14,7 +15,7 @@ FOOTER "Sven Schober" "" "\*S[+2]\*[SLIDE#]\*S[-2]"
 ```
 
 Therein define title, header and footer.
-//.NEWSLIDE
+
 # Preamble (2)
 
 Define font and heading sizes:
@@ -32,7 +33,7 @@ This sets the font to Minion and makes headers level 1 and 2 all caps.
 Also left aligns them (central alignment is default in mom slides).
 
 Sets general alignment to left.
-//.NEWSLIDE
+
 # Preamble (3)
 
 Define code style 
@@ -48,7 +49,6 @@ Quad left aligns the listings on the left.
 
 Finally, starts the document.
 
-//.NEWSLIDE
 # Code Listings
 
 Here we can see a simple script:
@@ -57,8 +57,6 @@ Here we can see a simple script:
 $ echo "hello world"
 hello world
 ```
-
-//.NEWSLIDE
 
 # Multicolumn
 
@@ -86,7 +84,6 @@ More other stuff
 Last of other stuff
 //.MCX
 
-//.NEWSLIDE
 # Lists
 
 You can also make bullet lists:

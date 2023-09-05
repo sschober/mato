@@ -65,8 +65,8 @@ fn main() -> std::io::Result<()> {
     Ok(())
 }
 
-fn matogro_with_config(input: &str, config: &Config) -> String {
-    let mde = meta_data_extractor::MetaDataExtractor::new();
+fn matogro_with_config(input: &str, config: &Config, mom_preamble: &str) -> String {
+    let mde = meta_data_extractor::MetaDataExtractor::from(mom_preamble);
     let canon = canonicalize::Canonicalizer {};
     let chain = chain::Chain{ a : Box::new(canon), b : Box::new(mde) };
     let mut chain_outer =  chain::Chain{ a : Box::new(chain), b: Box::new(image_converter::ImageConverter{}) };
@@ -79,7 +79,7 @@ fn matogro_with_config(input: &str, config: &Config) -> String {
 }
 
 
-fn grotopdf(config: &Config, input: &str, mom_preamble: &str) -> Vec<u8> {
+fn grotopdf(config: &Config, input: &str) -> Vec<u8> {
     let mut child = Command::new("/usr/bin/env")
         .arg("pdfmom")
         .arg(format!("-m{}", config.lang))
@@ -93,9 +93,6 @@ fn grotopdf(config: &Config, input: &str, mom_preamble: &str) -> Vec<u8> {
     {
         // this lexical block is only here to let stdin run out of scope to be closed...
         let mut stdin = child.stdin.take().expect("Failed to open stdin for pdfmom");
-        stdin
-            .write_all(mom_preamble.as_bytes())
-            .expect("Failed to write preamble to stdin");
         stdin
             .write_all(input.as_bytes())
             .expect("Failed to write to stdin of pdfmom");
@@ -114,14 +111,18 @@ fn transform_and_render(config: &Config, source_file: &str, target_file: &str, m
     println!("read in:\t\t{:?}", start.elapsed());
 
     let start = Instant::now();
-    let groff_output = matogro_with_config(&input, config);
+    let groff_output = matogro_with_config(&input, config, mom_preamble);
     println!("transformed in:\t\t{:?}", start.elapsed());
     if config.dump {
-        println!("{groff_output}");
+        //println!("{groff_output}");
+        let path_source_file = Path::new(&config.source_file);
+        let mut path_target_file = path_source_file.to_path_buf();
+        path_target_file.set_extension("gro");
+        fs::write(path_target_file, groff_output.clone()).expect("Unable to write gro");
     }
 
     let start = Instant::now();
-    let pdf_output = grotopdf(config, &groff_output, mom_preamble);
+    let pdf_output = grotopdf(config, &groff_output);
     println!("groff rendering:\t{:?} ", start.elapsed());
 
     let start = Instant::now();
@@ -136,7 +137,7 @@ mod tests {
     use super::matogro_with_config;
 
     fn matogro(input: &str) -> String {
-        matogro_with_config(input, &Config::new())
+        matogro_with_config(input, &Config::new(), "")
     }
     
     #[test]
