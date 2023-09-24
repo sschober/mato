@@ -4,6 +4,8 @@ use super::Process;
 
 use crate::{Exp, config::Config};
 
+/// A Chain can be used to chain multiple processors
+/// together and form a transformation chain or pipeline.
 pub struct Chain {
     pub a: Box<dyn Process>,
     pub b: Box<dyn Process>

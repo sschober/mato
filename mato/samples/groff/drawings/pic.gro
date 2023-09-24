@@ -1,0 +1,13 @@
+.defcolor sssm_red_0 rgb #F3A2AD
+.defcolor sssm_red_1 rgb #CA6573
+.defcolor sssm_red_2 rgb #A23645
+.defcolor sssm_red_3 rgb #791422
+.defcolor sssm_red_4 rgb #51000B
+.defcolor sssm_green rgb #259e06
+.PS
+box "document" "<md>"  shaded "sssm_red_0" outline "sssm_red_4" thickness 1.3;
+arrow;
+ellipse "parser";
+arrow;
+box "AST";
+.PE

@@ -23,7 +23,7 @@ pub enum Exp {
     Italic(Box<Exp>),
     /// Encapsulates code placed as a separate block, set apart from
     /// normal, flowing text
-    CodeBlock(Box<Exp>),
+    CodeBlock(Box<Exp>, Box<Exp>),
     /// Encapsulates text rendered in non-proportional font, usually
     /// used for computer code, placed in line with normal text
     InlineCode(Box<Exp>),

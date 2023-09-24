@@ -6,6 +6,8 @@ use crate::config::Config;
 use crate::syntax::meta_data_block;
 use crate::Exp;
 
+/// The Canonicalizer processor removes unneeded AST 
+/// elements, like empty()s
 pub struct Canonicalizer {}
 
 /// descents the complete AST and erazes Empty() nodes
@@ -15,6 +17,7 @@ fn erase_empty(exp: Exp) -> Exp {
             Exp::Empty() => erase_empty(*b_exp2),
             _ => erase_empty(*b_exp1).cat(erase_empty(*b_exp2)),
         },
+        Exp::CodeBlock(b1, b2) => Exp::CodeBlock(b1, Box::new(erase_empty(*b2))),
         Exp::MetaDataBlock(b_exp) => meta_data_block(erase_empty(*b_exp)),
         _ => exp,
     }

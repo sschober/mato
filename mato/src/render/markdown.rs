@@ -58,7 +58,7 @@ impl Render for Renderer {
                 }
             },
             Exp::Italic(b_exp) => format!("_{}_", self.render(*b_exp, ctx)),
-            Exp::CodeBlock(b_exp) => format!("```\n{}```", self.render(*b_exp, ctx)),
+            Exp::CodeBlock(b1, b2) => format!("```{}\n{}```",self.render(*b1,ctx.clone()), self.render(*b2, ctx)),
             Exp::InlineCode(b_exp) => format!("`{}`", self.render(*b_exp, ctx)),
             Exp::Heading(b_exp, level) => {
                 let prefix = (0..level + 1).map(|_| "#").collect::<String>();

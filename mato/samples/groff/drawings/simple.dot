@@ -1,0 +1,14 @@
+digraph {
+	graph [ fontname="Iosevka Curly Slab" ];
+	node [ fontname="Iosevka Curly Slab" ];
+	label="B follows from A"
+	rankdir="LR";
+	u[label="User"];
+	j[label="Job Queue"];
+	o[label="Orchestrator"];
+	m[label="matogro"];
+	u -> j;
+	o -> j;
+	m -> j;
+	B -> D;
+}

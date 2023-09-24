@@ -2,6 +2,8 @@ use std::collections::HashMap;
 
 use super::Process;
 
+/// Identity processor does nothing and just returns an
+/// identical AST
 pub struct Identity {}
 
 impl Process for Identity {

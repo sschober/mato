@@ -102,9 +102,9 @@ impl Renderer {
             }
             // Currently there seems to be a bug: https://savannah.gnu.org/bugs/index.php?64561
             // Exp::CodeBlock(b_exp) => format!(".QUOTE_STYLE INDENT 1\n.QUOTE\n.CODE\n.BOX OUTLINED black INSET 18p\n{}.BOX OFF\n.QUOTE OFF", self.render(*b_exp)),
-            Exp::CodeBlock(b_exp) => format!(
+            Exp::CodeBlock(b1, b2) => format!(
                 ".QUOTE_STYLE INDENT 1\n.QUOTE\n.CODE\n{}.QUOTE OFF",
-                self.render_with_default_format(*b_exp)
+                self.render_with_default_format(*b2)
             ),
             Exp::InlineCode(b_exp) => format!(
                 "\\*[CODE]{}\\*[CODE OFF]",

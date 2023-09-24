@@ -337,6 +337,7 @@ impl Parser<'_> {
     fn parse_code(&mut self) -> Exp {
         self.consume(b'`'); // opening quote
         let mut is_code_block: bool = false;
+        let mut block_type = empty();
         // here, we need to peek 1 and 2 characters ahead to see if
         // they are also back ticks, and if so parse a code block
         // instead of an inline code snippet.
@@ -346,6 +347,10 @@ impl Parser<'_> {
             eprintln!("code block detected!");
             self.consume(b'`');
             self.consume(b'`');
+            if self.char != b'\n' {
+                block_type = self.parse_literal(b"\n");
+                eprintln!("detected block type: {:?}", block_type);
+            }
             self.consume(b'\n');
         }
 
@@ -373,7 +378,7 @@ impl Parser<'_> {
                 // end with a newline (been there, done that)
                 self.consume(b'\n'); // extra newline
             }
-            Exp::CodeBlock(Box::new(exp))
+            Exp::CodeBlock(Box::new(block_type),Box::new(exp))
         } else {
             Exp::InlineCode(Box::new(exp))
         }

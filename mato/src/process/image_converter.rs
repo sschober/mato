@@ -4,6 +4,9 @@ use crate::{syntax::{Exp, image, lit}, config::Config};
 
 use super::Process;
 
+/// ImageConverter processor currently only transforms
+/// path information in the image expression.
+/// Ultimately, we want it to do conversion and caching.
 #[derive(Default)]
 pub struct ImageConverter {}
 

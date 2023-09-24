@@ -4,6 +4,10 @@ use crate::{syntax::{Exp, meta_data_block, meta_data_item}, config::Config};
 
 use super::Process;
 
+/// The MetaDataExtractor takes the meta data header 
+/// block and fills a context object, which can
+/// later during rendering be used to govern stylistic
+/// decisions.
 pub struct MetaDataExtractor {
     ctx: HashMap<String, String>,
 }
