@@ -1,8 +1,9 @@
+use std::io::Write;
 use std::{
     collections::HashMap,
-    process::{Command, Stdio}, io,
+    io,
+    process::{Command, Stdio},
 };
-use std::io::Write;
 
 use super::Process;
 use crate::{
@@ -10,9 +11,8 @@ use crate::{
     syntax::{lit, Exp},
 };
 
-/// ImageConverter processor currently only transforms
-/// path information in the image expression.
-/// Ultimately, we want it to do conversion and caching.
+/// CodeBlock processor looks inside code blocks that it finds in the AST and
+/// if the type is pic will render the pic picture embedded inside of the block.
 #[derive(Default)]
 pub struct CodeBlockProcessor {}
 
@@ -36,17 +36,17 @@ impl CodeBlockProcessor {
                                 .stderr(Stdio::piped())
                                 .spawn()
                                 .expect("Failed to spawn pic");
-                            let code_block_contents =
-                            match *content {
+                            let code_block_contents = match *content {
                                 Exp::PreformattedLiteral(value) => value,
                                 Exp::Literal(value) => value,
-                                _ => "".to_string()
+                                _ => "".to_string(),
                             };
                             let pic_input = format!(".PS\n{}\n.PE\n", code_block_contents);
                             eprintln!("input: \n{}", pic_input);
                             {
                                 // this lexical block is only here to let stdin run out of scope to be closed...
-                                let mut stdin = child.stdin.take().expect("Failed to open stdin for pdfmom");
+                                let mut stdin =
+                                    child.stdin.take().expect("Failed to open stdin for pdfmom");
                                 stdin
                                     .write_all(pic_input.as_bytes())
                                     .expect("Failed to write to stdin of pdfmom");

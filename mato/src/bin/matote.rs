@@ -22,8 +22,8 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use mato::config::Config;
-    use mato::render::tex::Renderer;
     use mato::process::canonicalize;
+    use mato::render::tex::Renderer;
 
     #[test]
     fn literal() {

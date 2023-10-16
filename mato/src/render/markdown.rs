@@ -4,11 +4,13 @@ use super::Render;
 
 #[derive(Default)]
 pub struct Renderer {
-    char_index: usize
+    char_index: usize,
 }
 
 impl Renderer {
-    pub fn new() -> Self { Self { char_index: 0 } }
+    pub fn new() -> Self {
+        Self { char_index: 0 }
+    }
 
     fn wrap_at(&mut self, s: String, col: usize) -> String {
         let mut result = String::new();
@@ -49,16 +51,20 @@ impl Render for Renderer {
                 // if the text between the * chars would immediately
                 // start with a newline, we break the opening * onto
                 // the newline instead.
-                if bold_text.starts_with('\n'){
+                if bold_text.starts_with('\n') {
                     bold_text.remove(0);
                     self.char_index += 1;
                     format!("\n*{}*", bold_text)
                 } else {
                     format!("*{}*", bold_text)
                 }
-            },
+            }
             Exp::Italic(b_exp) => format!("_{}_", self.render(*b_exp, ctx)),
-            Exp::CodeBlock(b1, b2) => format!("```{}\n{}```",self.render(*b1,ctx.clone()), self.render(*b2, ctx)),
+            Exp::CodeBlock(b1, b2) => format!(
+                "```{}\n{}```",
+                self.render(*b1, ctx.clone()),
+                self.render(*b2, ctx)
+            ),
             Exp::InlineCode(b_exp) => format!("`{}`", self.render(*b_exp, ctx)),
             Exp::Heading(b_exp, level) => {
                 let prefix = (0..level + 1).map(|_| "#").collect::<String>();
@@ -80,11 +86,11 @@ impl Render for Renderer {
             Exp::Paragraph() => {
                 self.char_index = 0;
                 "\n".to_string()
-            },
+            }
             Exp::LineBreak() => {
                 self.char_index = 0;
                 "\n".to_string()
-            },
+            }
             Exp::Document() => String::new(),
             Exp::List(b_exp, _) => self.render(*b_exp, ctx),
             Exp::ListItem(b_exp, level) => {

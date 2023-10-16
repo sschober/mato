@@ -1,10 +1,13 @@
 use std::collections::HashMap;
 
-use crate::{syntax::{Exp, meta_data_block, meta_data_item}, config::Config};
+use crate::{
+    config::Config,
+    syntax::{meta_data_block, meta_data_item, Exp},
+};
 
 use super::Process;
 
-/// The MetaDataExtractor takes the meta data header 
+/// The MetaDataExtractor takes the meta data header
 /// block and fills a context object, which can
 /// later during rendering be used to govern stylistic
 /// decisions.
@@ -22,9 +25,7 @@ impl MetaDataExtractor {
     pub fn from(custom_preamble: &str) -> Self {
         let mut map = HashMap::new();
         map.insert("custom_preamble".to_string(), custom_preamble.to_string());
-        Self {
-            ctx: map,
-        }
+        Self { ctx: map }
     }
 
     fn extract_meta_data(&mut self, exp: Exp) -> Exp {
@@ -34,7 +35,7 @@ impl MetaDataExtractor {
             Exp::MetaDataItem(k, v) => {
                 eprintln!("inserting {} = {}", k, v);
                 self.ctx.insert(k.to_string(), v.to_string());
-                meta_data_item(k,v)
+                meta_data_item(k, v)
             }
             _ => exp,
         }

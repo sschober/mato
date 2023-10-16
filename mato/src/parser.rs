@@ -1,5 +1,6 @@
 use crate::syntax::{
-    bold, empty, escape_lit, footnote, heading, hyperref, list, list_item, lit, meta_data_item, Exp, image, prelit,
+    bold, empty, escape_lit, footnote, heading, hyperref, image, list, list_item, lit,
+    meta_data_item, prelit, Exp,
 };
 use std::str;
 
@@ -378,7 +379,7 @@ impl Parser<'_> {
                 // end with a newline (been there, done that)
                 self.consume(b'\n'); // extra newline
             }
-            Exp::CodeBlock(Box::new(block_type),Box::new(exp))
+            Exp::CodeBlock(Box::new(block_type), Box::new(exp))
         } else {
             Exp::InlineCode(Box::new(exp))
         }
@@ -391,7 +392,7 @@ impl Parser<'_> {
             let caption = self.parse_until(b"]");
             self.consume(b']');
             self.consume(b'(');
-            let path= self.parse_literal(b")");
+            let path = self.parse_literal(b")");
             self.consume(b')');
             image(caption, path)
         } else {

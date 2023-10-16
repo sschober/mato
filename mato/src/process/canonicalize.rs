@@ -6,7 +6,7 @@ use crate::config::Config;
 use crate::syntax::meta_data_block;
 use crate::Exp;
 
-/// The Canonicalizer processor removes unneeded AST 
+/// The Canonicalizer processor removes unneeded AST
 /// elements, like empty()s
 pub struct Canonicalizer {}
 

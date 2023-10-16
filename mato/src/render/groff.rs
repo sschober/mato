@@ -16,6 +16,11 @@ impl Default for Renderer {
     }
 }
 
+/// replaces each occurence of a space with three spaces
+fn extend_space(s: &str) -> String {
+    s.replace(" ", "   ").to_string()
+}
+
 impl Renderer {
     fn is_doctype(&self, doc_type: &str) -> bool {
         self.ctx.contains_key("doctype") && self.ctx.get("doctype").unwrap() == doc_type
@@ -161,6 +166,12 @@ impl Renderer {
                         format!(
                             ".SPACE -1v\n.MN LEFT\n\\!.ALD 1v\n{}\n.MN OFF",
                             self.render_with_default_format(*b_exp)
+                        )
+                    } else if 1 == level {
+                        format!(
+                            ".SPACE -.7v\n.EW 2\n.HEADING {} \"{}\"\n.EW 0\n",
+                            level + 1,
+                            extend_space(&self.render_with_default_format(*b_exp))
                         )
                     } else {
                         format!(

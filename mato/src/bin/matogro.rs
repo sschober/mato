@@ -8,12 +8,12 @@ use std::process::{Command, Stdio};
 use std::time::Instant;
 
 use mato::config::Config;
+use mato::process::canonicalize;
 use mato::process::chain;
 use mato::process::code_block;
 use mato::process::image_converter;
 use mato::process::meta_data_extractor;
 use mato::render::groff;
-use mato::process::canonicalize;
 use mato::watch;
 
 fn main() -> std::io::Result<()> {
@@ -69,10 +69,19 @@ fn main() -> std::io::Result<()> {
 fn matogro_with_config(input: &str, config: &Config, mom_preamble: &str) -> String {
     let mde = meta_data_extractor::MetaDataExtractor::from(mom_preamble);
     let canon = canonicalize::Canonicalizer {};
-    let code_block_proc = code_block::CodeBlockProcessor{};
-    let chain = chain::Chain{ a : Box::new(canon), b : Box::new(mde) };
-    let chain_outer =  chain::Chain{ a : Box::new(chain), b: Box::new(image_converter::ImageConverter{}) };
-    let mut chain_outer2 =  chain::Chain{ a : Box::new(chain_outer), b: Box::new(code_block_proc) };
+    let code_block_proc = code_block::CodeBlockProcessor {};
+    let chain = chain::Chain {
+        a: Box::new(canon),
+        b: Box::new(mde),
+    };
+    let chain_outer = chain::Chain {
+        a: Box::new(chain),
+        b: Box::new(image_converter::ImageConverter {}),
+    };
+    let mut chain_outer2 = chain::Chain {
+        a: Box::new(chain_outer),
+        b: Box::new(code_block_proc),
+    };
     mato::transform(
         &mut groff::Renderer::new(),
         &mut chain_outer2,
@@ -80,7 +89,6 @@ fn matogro_with_config(input: &str, config: &Config, mom_preamble: &str) -> Stri
         input,
     )
 }
-
 
 fn grotopdf(config: &Config, input: &str) -> Vec<u8> {
     let mut child = Command::new("/usr/bin/env")
@@ -142,7 +150,7 @@ mod tests {
     fn matogro(input: &str) -> String {
         matogro_with_config(input, &Config::new(), "")
     }
-    
+
     #[test]
     fn literal() {
         assert_eq!(matogro("hallo"), "hallo");

@@ -1,6 +1,9 @@
-use std::{path::Path, collections::HashMap};
+use std::{collections::HashMap, path::Path};
 
-use crate::{syntax::{Exp, image, lit}, config::Config};
+use crate::{
+    config::Config,
+    syntax::{image, lit, Exp},
+};
 
 use super::Process;
 
@@ -13,21 +16,28 @@ pub struct ImageConverter {}
 impl ImageConverter {
     fn process_images(&mut self, exp: Exp, config: &Config) -> Exp {
         match exp {
-            Exp::Cat(b1, b2) => self.process_images(*b1, config).cat(self.process_images(*b2, config)),
+            Exp::Cat(b1, b2) => self
+                .process_images(*b1, config)
+                .cat(self.process_images(*b2, config)),
             Exp::Image(caption, path) => {
                 let path = match *path {
                     Exp::Literal(p) => {
                         let mut resolved_path = p.clone();
-                        if ! p.starts_with("/") {
+                        if !p.starts_with("/") {
                             let parent_dir_path = Path::new(&config.parent_dir);
-                            resolved_path = parent_dir_path.join(p).as_os_str().to_str().unwrap().to_string();
+                            resolved_path = parent_dir_path
+                                .join(p)
+                                .as_os_str()
+                                .to_str()
+                                .unwrap()
+                                .to_string();
                         }
                         eprintln!("resolved path: {}", resolved_path);
                         lit(&resolved_path)
                     }
-                    _ => *path
+                    _ => *path,
                 };
-                image(*caption,path)
+                image(*caption, path)
             }
             _ => exp,
         }

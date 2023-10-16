@@ -2,13 +2,13 @@ use std::collections::HashMap;
 
 use super::Process;
 
-use crate::{Exp, config::Config};
+use crate::{config::Config, Exp};
 
 /// A Chain can be used to chain multiple processors
 /// together and form a transformation chain or pipeline.
 pub struct Chain {
     pub a: Box<dyn Process>,
-    pub b: Box<dyn Process>
+    pub b: Box<dyn Process>,
 }
 
 impl Process for Chain {
@@ -17,9 +17,8 @@ impl Process for Chain {
         self.b.process(result, config)
     }
 
-    fn get_context(& mut self) -> HashMap<String,String> {
+    fn get_context(&mut self) -> HashMap<String, String> {
         let result = self.a.get_context();
         result.into_iter().chain(self.b.get_context()).collect()
     }
 }
-

@@ -18,7 +18,7 @@ impl Renderer {
             Exp::CodeBlock(b1, b2) => {
                 format!("\\texttt{{{}}}", self.render_internal(*b2))
             }
-             Exp::InlineCode(b_exp) => {
+            Exp::InlineCode(b_exp) => {
                 format!("\\texttt{{{}}}", self.render_internal(*b_exp))
             }
             Exp::Heading(b_exp, level) => {
@@ -37,7 +37,11 @@ impl Renderer {
                 self.render_internal(*b_exp2),
                 self.render_internal(*b_exp1)
             ),
-            Exp::Cat(b_exp1, b_exp2) => format!("{}{}", self.render_internal(*b_exp1), self.render_internal(*b_exp2)),
+            Exp::Cat(b_exp1, b_exp2) => format!(
+                "{}{}",
+                self.render_internal(*b_exp1),
+                self.render_internal(*b_exp2)
+            ),
             Exp::Empty() | Exp::Paragraph() | Exp::Document() => String::new(),
             Exp::LineBreak() => "\n".to_string(),
             Exp::List(_b_exp, _) => String::new(),
@@ -49,7 +53,7 @@ impl Renderer {
     }
 }
 impl Render for Renderer {
-    fn render(&mut self, exp: Exp, _ : HashMap<String,String>) -> String {
+    fn render(&mut self, exp: Exp, _: HashMap<String, String>) -> String {
         self.render_internal(exp)
     }
 }

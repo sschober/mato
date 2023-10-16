@@ -39,7 +39,7 @@ impl Config {
         }
         let path_source_file = Path::new(&source_file);
         let mut parent_dir = String::new();
-        if ! source_file.is_empty() {
+        if !source_file.is_empty() {
             parent_dir = path_source_file
                 .parent()
                 .expect("could not establish parent path of file")

@@ -34,9 +34,9 @@ pub enum Exp {
     // this enables composition, forming the tree
     Cat(Box<Exp>, Box<Exp>),
     // Lists, should contain ListItems
-    List(Box<Exp>,u8),
+    List(Box<Exp>, u8),
     // singular items of lists
-    ListItem(Box<Exp>,u8),
+    ListItem(Box<Exp>, u8),
     // captures a meta data block, basically a list of key values
     // like title, author etc.
     MetaDataBlock(Box<Exp>),
