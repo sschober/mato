@@ -26,9 +26,7 @@ fn erase_empty(exp: Exp) -> Exp {
 
 impl Process for Canonicalizer {
     fn process(&mut self, exp: Exp, _: &Config) -> Exp {
-        // eprintln!("{:?}", exp);
         let canon = erase_empty(exp);
-        // eprintln!("{:?}", canon);
         canon
     }
 

@@ -345,12 +345,10 @@ impl Parser<'_> {
         if self.peek(0, b'`') && self.peek(1, b'`') {
             // parse code block
             is_code_block = true;
-            eprintln!("code block detected!");
             self.consume(b'`');
             self.consume(b'`');
             if self.char != b'\n' {
                 block_type = self.parse_literal(b"\n");
-                eprintln!("detected block type: {:?}", block_type);
             }
             self.consume(b'\n');
         }

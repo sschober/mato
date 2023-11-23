@@ -1,46 +1,66 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
+#[macro_export]
+macro_rules! log_dbg {
+    ($config:ident, $( $args:expr ), *) => {
+       if $config.debug {
+           eprintln!( $( $args ),* );
+       }
+    };
+}
 
 /// captures configuration parsed from command line arguments
-#[derive(Debug, PartialEq, Eq, Default)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Config {
     /// source file that is to be processed
     pub source_file: String,
+    pub target_file: String,
     /// parent directory of source file
     pub parent_dir: String,
     /// should watch mode be activated?
     pub watch: bool,
     /// dump intermediate representation (groff or latex)
     pub dump: bool,
+    pub debug: bool,
     /// language
     pub lang: String,
+    pub preamble: String,
 }
-
 impl Config {
-    pub fn new() -> Self {
-        Default::default()
+    pub const fn default() -> Self {
+        Config {
+            source_file: String::new(),
+            target_file: String::new(),
+            parent_dir: String::new(),
+            watch: false,
+            dump: false,
+            debug: false,
+            lang: String::new(),
+            preamble: String::new(),
+        }
     }
     /// create a configuration struct directly from `env::args.collect()`
     #[must_use]
     pub fn from(args: Vec<String>) -> Self {
-        let mut source_file = String::new();
-        let mut watch = false;
-        let mut dump: bool = false;
-        let mut lang: String = "den".to_string();
+        let mut result = Self::default();
+        result.lang = "den".to_string();
         if args.len() > 1 {
             for arg in args {
                 match arg.as_str() {
-                    "-w" => watch = true,
-                    "-d" => dump = true,
-                    "-len" | "-l en" => lang = "en".to_string(),
-                    "-" => source_file = String::new(),
-                    _ => source_file = arg,
+                    "-w" => result.watch = true,
+                    "--dump" => result.dump = true,
+                    "-d" => result.debug = true,
+                    "-len" | "-l en" => result.lang = "en".to_string(),
+                    "-" => result.source_file = String::new(),
+                    _ => result.source_file = arg,
                 }
             }
         }
-        let path_source_file = Path::new(&source_file);
-        let mut parent_dir = String::new();
-        if !source_file.is_empty() {
-            parent_dir = path_source_file
+        if !result.source_file.is_empty() {
+            if !Path::new(&result.source_file).exists() {
+                eprintln!("Could not open source file: {}", result.source_file);
+                std::process::exit(1);
+            }
+            result.parent_dir = Path::new(&result.source_file)
                 .parent()
                 .expect("could not establish parent path of file")
                 .as_os_str()
@@ -48,13 +68,18 @@ impl Config {
                 .unwrap()
                 .to_string();
         }
-        Self {
-            source_file,
-            parent_dir,
-            watch,
-            dump,
-            lang,
-        }
+        result
+    }
+
+    pub fn target_file(self: &Self, extentions: &str) -> PathBuf {
+        let path_source_file = Path::new(&self.source_file);
+        let mut path_target_file = path_source_file.to_path_buf();
+        path_target_file.set_extension(extentions);
+        path_target_file
+    }
+
+    pub fn set_target_file(self: &mut Self, extentions: &str) {
+        self.target_file = self.target_file(extentions).to_str().unwrap().to_string();
     }
 }
 
@@ -68,12 +93,13 @@ mod tests {
     }
     #[test]
     fn many_args() {
-        let config = Config::from(vec![
-            "-w".to_string(),
-            "-d".to_string(),
-            "source_file".to_string(),
-        ]);
-        assert_eq!(config.source_file, "source_file");
+        // test gets called in ./mato/ working directory
+        let readme = format!(
+            "{}/../README.md",
+            std::env::current_dir().unwrap().to_str().unwrap()
+        );
+        let config = Config::from(vec!["-w".to_string(), "-d".to_string(), readme.to_string()]);
+        assert_eq!(config.source_file, readme);
         assert!(config.watch);
         assert!(config.dump);
     }

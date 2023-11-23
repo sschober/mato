@@ -6,6 +6,7 @@ use std::path::Path;
 use std::time::Instant;
 
 use mato::config::Config;
+use mato::log_dbg;
 use mato::process::canonicalize;
 use mato::process::chain;
 use mato::process::code_block;
@@ -15,41 +16,36 @@ use mato::render::groff;
 use mato::watch;
 
 fn main() -> std::io::Result<()> {
-    let config = Config::from(env::args().collect());
-    eprintln!("config: {:#?}", config);
+    let mut config = Config::from(env::args().collect());
     let mut mom_preamble = include_str!("default-preamble.mom").to_string();
 
     // try to find preamble.mom located next to source file
     let sibbling_preamble = Path::new(&config.parent_dir).join("preamble.mom");
     if sibbling_preamble.as_path().is_file() {
-        eprintln!("found sibbling preamble: {}", sibbling_preamble.display());
+        log_dbg!(
+            config,
+            "found sibbling preamble: {}",
+            sibbling_preamble.display()
+        );
         mom_preamble = fs::read_to_string(sibbling_preamble)?;
     } else {
-        eprintln!("preamble:\t\tbuilt-in");
+        log_dbg!(config, "preamble:\t\tbuilt-in");
     }
-    if config.dump {
-        eprintln!("{mom_preamble}");
-    }
+    log_dbg!(config, "{mom_preamble}");
 
     // open source file to be able watch it (we need a file descriptor)
-    println!("source file:\t\t{}", &config.source_file);
-    if !Path::new(&config.source_file).exists() {
-        eprintln!("Could not open source file: {}", config.source_file);
-        std::process::exit(1);
-    }
-    let path_source_file = Path::new(&config.source_file);
-    let mut path_target_file = path_source_file.to_path_buf();
-    path_target_file.set_extension("pdf");
-    eprintln!("target file name:\t{}", path_target_file.display());
+    log_dbg!(config, "source file:\t\t{}", &config.source_file);
+    config.set_target_file("pdf");
+    log_dbg!(config, "target file name:\t{}", config.target_file);
 
     if config.watch {
         let kqueue = watch::Kqueue::create();
         loop {
-            transform_and_render(&config, path_target_file.to_str().unwrap(), &mom_preamble);
+            transform_and_render(&config, &mom_preamble);
             kqueue.wait_for_write_on_file_name(&config.source_file)?;
         }
     } else {
-        transform_and_render(&config, path_target_file.to_str().unwrap(), &mom_preamble);
+        transform_and_render(&config, &mom_preamble);
     };
     Ok(())
 }
@@ -61,30 +57,28 @@ fn matogro(config: &Config, input: &str, mom_preamble: &str) -> String {
     mato::transform(&mut groff::new(), &mut chain, config, input)
 }
 
-fn transform_and_render(config: &Config, target_file: &str, mom_preamble: &str) {
+fn transform_and_render(config: &Config, mom_preamble: &str) {
     let start = Instant::now();
     let input = mato::read_input(&config);
-    eprintln!("read in:\t\t{:?}", start.elapsed());
+    log_dbg!(config, "read in:\t\t{:?}", start.elapsed());
 
     let start = Instant::now();
     let groff_output = matogro(config, &input, mom_preamble);
-    eprintln!("transformed in:\t\t{:?}", start.elapsed());
+    log_dbg!(config, "transformed in:\t\t{:?}", start.elapsed());
 
     if config.dump {
         //println!("{groff_output}");
-        let path_source_file = Path::new(&config.source_file);
-        let mut path_target_file = path_source_file.to_path_buf();
-        path_target_file.set_extension("gro");
+        let path_target_file = config.target_file("gro");
         fs::write(path_target_file, groff_output.clone()).expect("Unable to write gro");
     }
 
     let start = Instant::now();
     let pdf_output = mato::grotopdf(config, &groff_output);
-    eprintln!("groff rendering:\t{:?} ", start.elapsed());
+    log_dbg!(config, "groff rendering:\t{:?} ", start.elapsed());
 
     let start = Instant::now();
-    fs::write(target_file, pdf_output).expect("Unable to write out.pdf");
-    eprintln!("written in:\t\t{:?} ", start.elapsed());
+    fs::write(&config.target_file, pdf_output).expect("Unable to write output pdf");
+    log_dbg!(config, "written in:\t\t{:?} ", start.elapsed());
 }
 
 #[cfg(test)]
@@ -92,7 +86,7 @@ mod tests {
     use mato::config::Config;
 
     fn matogro(input: &str) -> String {
-        super::matogro(&Config::new(), input, "")
+        super::matogro(&Config::default(), input, "")
     }
 
     #[test]

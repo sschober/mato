@@ -31,10 +31,7 @@ pub fn read_input(config: &Config) -> String {
     } else {
         std::fs::read_to_string(&config.source_file).unwrap()
     };
-    eprintln!("read in:\t\t{:?}", start.elapsed());
-    if config.dump {
-        eprintln!("{}", input);
-    }
+    log_dbg!(config, "read in:\t\t{:?}", start.elapsed());
     input
 }
 
@@ -46,7 +43,9 @@ pub fn transform<R: render::Render, P: process::Process>(
     input: &str,
 ) -> String {
     let mut exp = Parser::parse(input);
+    log_dbg!(config, "parsed: {:?}", exp);
     exp = process(p, exp, config);
+    log_dbg!(config, "processed: {:?}", exp);
     render(r, exp, p)
 }
 

@@ -12,7 +12,7 @@ fn main() {
             mato::transform(
                 &mut Renderer {},
                 &mut canonicalize::Canonicalizer {},
-                &Config::new(),
+                &Config::default(),
                 input.as_str()
             )
         );
@@ -31,7 +31,7 @@ mod tests {
             mato::transform(
                 &mut Renderer {},
                 &mut canonicalize::Canonicalizer {},
-                &Config::new(),
+                &Config::default(),
                 "hallo"
             ),
             "hallo"
@@ -43,7 +43,7 @@ mod tests {
             mato::transform(
                 &mut Renderer {},
                 &mut canonicalize::Canonicalizer {},
-                &Config::new(),
+                &Config::default(),
                 "_hallo_"
             ),
             "\\textit{hallo}"
@@ -55,7 +55,7 @@ mod tests {
             mato::transform(
                 &mut Renderer {},
                 &mut canonicalize::Canonicalizer {},
-                &Config::new(),
+                &Config::default(),
                 "*hallo*"
             ),
             "\\textbf{hallo}"

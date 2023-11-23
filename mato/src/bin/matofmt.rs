@@ -36,7 +36,7 @@ mod tests {
     use mato::config::Config;
 
     fn matofmt(input: &str) -> String {
-        super::matofmt(&Config::new(), input)
+        super::matofmt(&Config::default(), input)
     }
 
     #[test]

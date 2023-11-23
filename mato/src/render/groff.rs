@@ -61,7 +61,6 @@ impl Renderer {
 
                 if self.ctx.contains_key("custom_preamble") {
                     let value = self.ctx.get("custom_preamble").unwrap();
-                    eprintln!("custom preamble: {:?}", value);
                     result = format!("{}\n{}\n", result, value);
                     self.ctx.remove("custom_preamble");
                 }
@@ -71,7 +70,6 @@ impl Renderer {
                     if key == "doctype" && doctype_emitted {
                         continue;
                     }
-                    eprintln!("adding {}={}", key.to_uppercase(), value);
                     result = format!("{}.{} {}\n", result, key.to_uppercase(), value);
                 }
                 if !self.ctx.is_empty() && !self.ctx.contains_key("pdf title") {
@@ -84,7 +82,6 @@ impl Renderer {
                     result = format!("{}\n.START\n", result);
                     self.document_started = true;
                 }
-                eprintln!("Document: {:?}", result);
                 result
             }
             Exp::Paragraph() => "\n.PP".to_string(),
@@ -252,7 +249,6 @@ impl Renderer {
 impl Render for Renderer {
     fn render(&mut self, exp: Exp, ctx: HashMap<String, String>) -> String {
         self.ctx = ctx.clone();
-        eprintln!("rendering: {:?}", exp);
         self.render_with_default_format(exp)
     }
 }

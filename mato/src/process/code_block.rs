@@ -6,6 +6,7 @@ use std::{
 };
 
 use super::Process;
+use crate::log_dbg;
 use crate::{
     config::Config,
     syntax::{lit, Exp},
@@ -26,7 +27,7 @@ impl CodeBlockProcessor {
                 let match_copy = block_type.as_ref();
                 match match_copy {
                     Exp::Literal(type_string) => {
-                        eprintln!("processing code block of type {}", type_string);
+                        log_dbg!(config, "processing code block of type {}", type_string);
                         if type_string == "pic" {
                             // process pic contents by piping it through pic
                             let mut child = Command::new("/usr/bin/env")
@@ -42,7 +43,6 @@ impl CodeBlockProcessor {
                                 _ => "".to_string(),
                             };
                             let pic_input = format!(".PS\n{}\n.PE\n", code_block_contents);
-                            eprintln!("input: \n{}", pic_input);
                             {
                                 // this lexical block is only here to let stdin run out of scope to be closed...
                                 let mut stdin =
@@ -57,7 +57,7 @@ impl CodeBlockProcessor {
                                 let _ = io::stderr().write(&output.stderr);
                             }
                             let rendered_pic = String::from_utf8(output.stdout).unwrap();
-                            eprintln!("rendered: {}", rendered_pic);
+                            log_dbg!(config, "rendered: {}", rendered_pic);
                             lit(&rendered_pic)
                         } else {
                             Exp::CodeBlock(block_type, content)
