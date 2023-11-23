@@ -22,18 +22,12 @@ impl MetaDataExtractor {
         }
     }
 
-    pub fn from(custom_preamble: &str) -> Self {
-        let mut map = HashMap::new();
-        map.insert("custom_preamble".to_string(), custom_preamble.to_string());
-        Self { ctx: map }
-    }
-
     fn extract_meta_data(&mut self, exp: Exp) -> Exp {
         match exp {
             Exp::Cat(b1, b2) => self.extract_meta_data(*b1).cat(self.extract_meta_data(*b2)),
             Exp::MetaDataBlock(e) => meta_data_block(self.extract_meta_data(*e)),
             Exp::MetaDataItem(k, v) => {
-                eprintln!("inserting {} = {}", k, v);
+                // eprintln!("inserting {} = {}", k, v);
                 self.ctx.insert(k.to_string(), v.to_string());
                 meta_data_item(k, v)
             }
@@ -56,4 +50,13 @@ impl Process for MetaDataExtractor {
     fn get_context(&mut self) -> HashMap<String, String> {
         self.ctx.clone()
     }
+}
+
+pub fn new(custom_preamble: &str) -> Box<dyn Process> {
+    let mut map = HashMap::new();
+    let cp = custom_preamble.to_string();
+    if cp.len() > 0 {
+        map.insert("custom_preamble".to_string(), custom_preamble.to_string());
+    }
+    Box::new(MetaDataExtractor { ctx: map })
 }

@@ -1,10 +1,8 @@
 use std::env;
 
 use std::fs;
-use std::io;
-use std::io::Write;
+
 use std::path::Path;
-use std::process::{Command, Stdio};
 use std::time::Instant;
 
 use mato::config::Config;
@@ -24,13 +22,13 @@ fn main() -> std::io::Result<()> {
     // try to find preamble.mom located next to source file
     let sibbling_preamble = Path::new(&config.parent_dir).join("preamble.mom");
     if sibbling_preamble.as_path().is_file() {
-        println!("found sibbling preamble: {}", sibbling_preamble.display());
+        eprintln!("found sibbling preamble: {}", sibbling_preamble.display());
         mom_preamble = fs::read_to_string(sibbling_preamble)?;
     } else {
-        println!("preamble:\t\tbuilt-in");
+        eprintln!("preamble:\t\tbuilt-in");
     }
     if config.dump {
-        println!("{mom_preamble}");
+        eprintln!("{mom_preamble}");
     }
 
     // open source file to be able watch it (we need a file descriptor)
@@ -42,88 +40,36 @@ fn main() -> std::io::Result<()> {
     let path_source_file = Path::new(&config.source_file);
     let mut path_target_file = path_source_file.to_path_buf();
     path_target_file.set_extension("pdf");
-    println!("target file name:\t{}", path_target_file.display());
+    eprintln!("target file name:\t{}", path_target_file.display());
 
     if config.watch {
         let kqueue = watch::Kqueue::create();
         loop {
-            transform_and_render(
-                &config,
-                &config.source_file,
-                path_target_file.to_str().unwrap(),
-                &mom_preamble,
-            );
+            transform_and_render(&config, path_target_file.to_str().unwrap(), &mom_preamble);
             kqueue.wait_for_write_on_file_name(&config.source_file)?;
         }
     } else {
-        transform_and_render(
-            &config,
-            &config.source_file,
-            path_target_file.to_str().unwrap(),
-            &mom_preamble,
-        );
+        transform_and_render(&config, path_target_file.to_str().unwrap(), &mom_preamble);
     };
     Ok(())
 }
 
-fn matogro_with_config(input: &str, config: &Config, mom_preamble: &str) -> String {
-    let mde = meta_data_extractor::MetaDataExtractor::from(mom_preamble);
-    let canon = canonicalize::Canonicalizer {};
-    let code_block_proc = code_block::CodeBlockProcessor {};
-    let chain = chain::Chain {
-        a: Box::new(canon),
-        b: Box::new(mde),
-    };
-    let chain_outer = chain::Chain {
-        a: Box::new(chain),
-        b: Box::new(image_converter::ImageConverter {}),
-    };
-    let mut chain_outer2 = chain::Chain {
-        a: Box::new(chain_outer),
-        b: Box::new(code_block_proc),
-    };
-    mato::transform(
-        &mut groff::Renderer::new(),
-        &mut chain_outer2,
-        config,
-        input,
-    )
+fn matogro(config: &Config, input: &str, mom_preamble: &str) -> String {
+    let mut chain = chain::new(canonicalize::new(), meta_data_extractor::new(mom_preamble));
+    chain = chain.add(image_converter::new());
+    chain = chain.add(code_block::new());
+    mato::transform(&mut groff::new(), &mut chain, config, input)
 }
 
-fn grotopdf(config: &Config, input: &str) -> Vec<u8> {
-    let mut child = Command::new("/usr/bin/env")
-        .arg("pdfmom")
-        .arg(format!("-m{}", config.lang))
-        .args(["-K", "UTF-8"]) // process with preconv to support utf-8
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-        .expect("Failed to spawn pdfmom");
-
-    {
-        // this lexical block is only here to let stdin run out of scope to be closed...
-        let mut stdin = child.stdin.take().expect("Failed to open stdin for pdfmom");
-        stdin
-            .write_all(input.as_bytes())
-            .expect("Failed to write to stdin of pdfmom");
-    }
-    // ... otherwise this call would not terminate
-    let output = child.wait_with_output().expect("Failed to read stdout");
-    if !output.stderr.is_empty() {
-        let _ = io::stderr().write(&output.stderr);
-    }
-    output.stdout
-}
-
-fn transform_and_render(config: &Config, source_file: &str, target_file: &str, mom_preamble: &str) {
+fn transform_and_render(config: &Config, target_file: &str, mom_preamble: &str) {
     let start = Instant::now();
-    let input = std::fs::read_to_string(source_file).unwrap();
-    println!("read in:\t\t{:?}", start.elapsed());
+    let input = mato::read_input(&config);
+    eprintln!("read in:\t\t{:?}", start.elapsed());
 
     let start = Instant::now();
-    let groff_output = matogro_with_config(&input, config, mom_preamble);
-    println!("transformed in:\t\t{:?}", start.elapsed());
+    let groff_output = matogro(config, &input, mom_preamble);
+    eprintln!("transformed in:\t\t{:?}", start.elapsed());
+
     if config.dump {
         //println!("{groff_output}");
         let path_source_file = Path::new(&config.source_file);
@@ -133,22 +79,20 @@ fn transform_and_render(config: &Config, source_file: &str, target_file: &str, m
     }
 
     let start = Instant::now();
-    let pdf_output = grotopdf(config, &groff_output);
-    println!("groff rendering:\t{:?} ", start.elapsed());
+    let pdf_output = mato::grotopdf(config, &groff_output);
+    eprintln!("groff rendering:\t{:?} ", start.elapsed());
 
     let start = Instant::now();
     fs::write(target_file, pdf_output).expect("Unable to write out.pdf");
-    println!("written in:\t\t{:?} ", start.elapsed());
+    eprintln!("written in:\t\t{:?} ", start.elapsed());
 }
 
 #[cfg(test)]
 mod tests {
     use mato::config::Config;
 
-    use super::matogro_with_config;
-
     fn matogro(input: &str) -> String {
-        matogro_with_config(input, &Config::new(), "")
+        super::matogro(&Config::new(), input, "")
     }
 
     #[test]
@@ -190,7 +134,7 @@ mod tests {
             matogro(
                 "# heading\n\n## subheading"
             ),
-            ".SPACE -.7v\n.EW 2\n.HEADING 1 \"heading\"\n.EW 0\n\n.SPACE -.7v\n.EW 2\n.HEADING 2 \"subheading\"\n.EW 0\n"
+            ".SPACE -.7v\n.FT B\n.EW 2\n.HEADING 1 \"heading\"\n.EW 0\n.FT R\n.DRH\n\n.SPACE -.7v\n.FT B\n.EW 2\n.HEADING 2 \"subheading\"\n.EW 0\n.FT R\n"
         );
     }
 
@@ -198,14 +142,14 @@ mod tests {
     fn heading_and_paragraph() {
         assert_eq!(
             matogro("# heading\n\nA new paragraph"),
-            ".SPACE -.7v\n.EW 2\n.HEADING 1 \"heading\"\n.EW 0\n\n.PP\nA new paragraph"
+            ".SPACE -.7v\n.FT B\n.EW 2\n.HEADING 1 \"heading\"\n.EW 0\n.FT R\n.DRH\n\n.PP\nA new paragraph"
         );
     }
     #[test]
     fn paragraph_and_heading() {
         assert_eq!(
             matogro("A new paragraph\n\n# heading"),
-            "A new paragraph\n\n.SPACE -.7v\n.EW 2\n.HEADING 1 \"heading\"\n.EW 0\n"
+            "A new paragraph\n\n.SPACE -.7v\n.FT B\n.EW 2\n.HEADING 1 \"heading\"\n.EW 0\n.FT R\n.DRH\n"
         );
     }
 

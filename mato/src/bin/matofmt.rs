@@ -1,5 +1,4 @@
 use std::env;
-use std::io;
 
 use std::path::Path;
 use std::time::Instant;
@@ -18,60 +17,30 @@ fn main() -> std::io::Result<()> {
         eprintln!("Could not open source file: {}", config.source_file);
         std::process::exit(1);
     }
-
-    transform_and_render(&config, &config.source_file);
+    let input = mato::read_input(&config);
+    println!("{}", matofmt(&config, &input));
     Ok(())
 }
 
-fn matofmt(input: &str, config: &Config) -> String {
+fn matofmt(config: &Config, input: &str) -> String {
+    let start = Instant::now();
     let mut processor = identity::Identity {};
-    mato::transform(
-        &mut markdown::Renderer::new(),
-        &mut processor,
-        config,
-        input,
-    )
-}
-
-fn read_all_from_stdin() -> String {
-    let lines = io::stdin().lines();
-    let mut result = String::new();
-    for line in lines {
-        result.push_str(line.unwrap().as_str());
-        result.push('\n');
-    }
-    result
-}
-fn transform_and_render(config: &Config, source_file: &str) {
-    let start = Instant::now();
-    let input = if source_file.is_empty() {
-        read_all_from_stdin()
-    } else {
-        std::fs::read_to_string(source_file).unwrap()
-    };
-    eprintln!("read in:\t\t{:?}", start.elapsed());
-    if config.dump {
-        eprintln!("{}", input);
-    }
-    let start = Instant::now();
-    let output = matofmt(&input, config);
+    let mut renderer = markdown::Renderer::new();
+    let output = mato::transform(&mut renderer, &mut processor, config, input);
     eprintln!("transformed in:\t\t{:?}", start.elapsed());
-
-    println!("{output}");
+    output
 }
 
 #[cfg(test)]
 mod tests {
     use mato::config::Config;
 
-    use super::matofmt;
-
-    fn matogro(input: &str) -> String {
-        matofmt(input, &Config::new())
+    fn matofmt(input: &str) -> String {
+        super::matofmt(&Config::new(), input)
     }
 
     #[test]
     fn literal() {
-        assert_eq!(matogro("hallo"), "hallo");
+        assert_eq!(matofmt("hallo"), "hallo");
     }
 }

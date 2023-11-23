@@ -19,3 +19,6 @@ impl Process for Identity {
         HashMap::new()
     }
 }
+pub fn new() -> Box<dyn Process> {
+    Box::new(Identity {})
+}

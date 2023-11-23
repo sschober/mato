@@ -12,7 +12,7 @@ pub struct Renderer {
 
 impl Default for Renderer {
     fn default() -> Self {
-        Self::new()
+        new()
     }
 }
 
@@ -21,16 +21,16 @@ fn extend_space(s: &str) -> String {
     s.replace(" ", "   ").to_string()
 }
 
+pub fn new() -> Renderer {
+    Renderer {
+        ctx: HashMap::new(),
+        document_started: false,
+    }
+}
+
 impl Renderer {
     fn is_doctype(&self, doc_type: &str) -> bool {
         self.ctx.contains_key("doctype") && self.ctx.get("doctype").unwrap() == doc_type
-    }
-
-    pub fn new() -> Self {
-        Self {
-            ctx: HashMap::new(),
-            document_started: false,
-        }
     }
 
     /// groff does not support nested formattings, because it has no
@@ -40,7 +40,7 @@ impl Renderer {
     fn render_with_parent_format(&mut self, exp: Exp, parent_format: &str) -> String {
         match exp {
             Exp::Document() => {
-                eprintln!("{:?}", self.ctx);
+                // eprintln!("{:?}", self.ctx);
                 let mut result = String::new();
                 let mut doctype_emitted = false;
                 // doctype needs to be first emitted
@@ -61,6 +61,7 @@ impl Renderer {
 
                 if self.ctx.contains_key("custom_preamble") {
                     let value = self.ctx.get("custom_preamble").unwrap();
+                    eprintln!("custom preamble: {:?}", value);
                     result = format!("{}\n{}\n", result, value);
                     self.ctx.remove("custom_preamble");
                 }
@@ -70,6 +71,7 @@ impl Renderer {
                     if key == "doctype" && doctype_emitted {
                         continue;
                     }
+                    eprintln!("adding {}={}", key.to_uppercase(), value);
                     result = format!("{}.{} {}\n", result, key.to_uppercase(), value);
                 }
                 if !self.ctx.is_empty() && !self.ctx.contains_key("pdf title") {
@@ -82,6 +84,7 @@ impl Renderer {
                     result = format!("{}\n.START\n", result);
                     self.document_started = true;
                 }
+                eprintln!("Document: {:?}", result);
                 result
             }
             Exp::Paragraph() => "\n.PP".to_string(),
@@ -107,7 +110,7 @@ impl Renderer {
             }
             // Currently there seems to be a bug: https://savannah.gnu.org/bugs/index.php?64561
             // Exp::CodeBlock(b_exp) => format!(".QUOTE_STYLE INDENT 1\n.QUOTE\n.CODE\n.BOX OUTLINED black INSET 18p\n{}.BOX OFF\n.QUOTE OFF", self.render(*b_exp)),
-            Exp::CodeBlock(b1, b2) => format!(
+            Exp::CodeBlock(_b1, b2) => format!(
                 ".QUOTE_STYLE INDENT 1\n.QUOTE\n.CODE\n{}.QUOTE OFF",
                 self.render_with_default_format(*b2)
             ),
@@ -167,9 +170,15 @@ impl Renderer {
                             ".SPACE -1v\n.MN LEFT\n\\!.ALD 1v\n{}\n.MN OFF",
                             self.render_with_default_format(*b_exp)
                         )
+                    } else if 0 == level {
+                        format!(
+                            ".SPACE -.7v\n.FT B\n.EW 2\n.HEADING {} \"{}\"\n.EW 0\n.FT R\n.DRH\n",
+                            level + 1,
+                            &self.render_with_default_format(*b_exp)
+                        )
                     } else if 1 == level {
                         format!(
-                            ".SPACE -.7v\n.EW 2\n.HEADING {} \"{}\"\n.EW 0\n",
+                            ".SPACE -.7v\n.FT B\n.EW 2\n.HEADING {} \"{}\"\n.EW 0\n.FT R\n",
                             level + 1,
                             extend_space(&self.render_with_default_format(*b_exp))
                         )
@@ -243,6 +252,7 @@ impl Renderer {
 impl Render for Renderer {
     fn render(&mut self, exp: Exp, ctx: HashMap<String, String>) -> String {
         self.ctx = ctx.clone();
+        eprintln!("rendering: {:?}", exp);
         self.render_with_default_format(exp)
     }
 }

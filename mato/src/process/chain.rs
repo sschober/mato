@@ -22,3 +22,13 @@ impl Process for Chain {
         result.into_iter().chain(self.b.get_context()).collect()
     }
 }
+
+impl Chain {
+    pub fn add(self, p: Box<dyn Process>) -> Self {
+        new(Box::new(self), p)
+    }
+}
+
+pub fn new(a: Box<dyn Process>, b: Box<dyn Process>) -> Chain {
+    Chain { a, b }
+}

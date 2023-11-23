@@ -15,7 +15,7 @@ impl Renderer {
             Exp::EscapeLit(s) => format!("\\{s}"),
             Exp::Bold(b_exp) => format!("\\textbf{{{}}}", self.render_internal(*b_exp)),
             Exp::Italic(b_exp) => format!("\\textit{{{}}}", self.render_internal(*b_exp)),
-            Exp::CodeBlock(b1, b2) => {
+            Exp::CodeBlock(_b1, b2) => {
                 format!("\\texttt{{{}}}", self.render_internal(*b2))
             }
             Exp::InlineCode(b_exp) => {

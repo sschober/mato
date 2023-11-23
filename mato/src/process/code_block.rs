@@ -76,11 +76,15 @@ impl Process for CodeBlockProcessor {
         exp: crate::syntax::Exp,
         config: &crate::config::Config,
     ) -> crate::syntax::Exp {
-        eprintln!("code block proc");
+        // eprintln!("code block proc");
         self.process_code_blocks(exp, config)
     }
 
     fn get_context(&mut self) -> std::collections::HashMap<String, String> {
         HashMap::new()
     }
+}
+
+pub fn new() -> Box<dyn Process> {
+    Box::new(CodeBlockProcessor {})
 }

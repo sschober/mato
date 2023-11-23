@@ -19,19 +19,24 @@ fn erase_empty(exp: Exp) -> Exp {
         },
         Exp::CodeBlock(b1, b2) => Exp::CodeBlock(b1, Box::new(erase_empty(*b2))),
         Exp::MetaDataBlock(b_exp) => meta_data_block(erase_empty(*b_exp)),
+        Exp::ChapterMark(b_exp) => Exp::ChapterMark(Box::new(erase_empty(*b_exp))),
         _ => exp,
     }
 }
 
 impl Process for Canonicalizer {
     fn process(&mut self, exp: Exp, _: &Config) -> Exp {
-        eprintln!("{:?}", exp);
+        // eprintln!("{:?}", exp);
         let canon = erase_empty(exp);
-        eprintln!("{:?}", canon);
+        // eprintln!("{:?}", canon);
         canon
     }
 
     fn get_context(&mut self) -> std::collections::HashMap<String, String> {
         HashMap::new()
     }
+}
+
+pub fn new() -> Box<dyn Process> {
+    Box::new(Canonicalizer {})
 }

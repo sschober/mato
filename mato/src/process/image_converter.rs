@@ -56,3 +56,7 @@ impl Process for ImageConverter {
         HashMap::new()
     }
 }
+
+pub fn new() -> Box<dyn Process> {
+    Box::new(ImageConverter {})
+}
