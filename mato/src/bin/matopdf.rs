@@ -44,12 +44,14 @@ fn main() -> std::io::Result<()> {
 }
 
 fn matogro(config: &Config, input: &str) -> String {
+    log_dbg!(config, "construction chain...");
     let mut chain = chain::new(
         canonicalize::new(),
         meta_data_extractor::new(&config.preamble),
     );
     chain = chain.add(image_converter::new());
     chain = chain.add(code_block::new());
+    log_dbg!(config, "done");
     mato::transform(&mut groff::new(), &mut chain, config, input)
 }
 
