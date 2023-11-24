@@ -38,7 +38,9 @@ pub struct Config {
     /// should watch mode be activated?
     pub watch: bool,
     /// dump intermediate representation (groff or latex)
-    pub dump: bool,
+    pub dump_groff: bool,
+    pub dump_groff_file: bool,
+    pub skip_rendering: bool,
     pub log_level: u8,
     /// language
     pub lang: String,
@@ -51,7 +53,9 @@ impl Config {
             target_file: String::new(),
             parent_dir: String::new(),
             watch: false,
-            dump: false,
+            dump_groff: false,
+            dump_groff_file: false,
+            skip_rendering: false,
             log_level: 0,
             lang: String::new(),
             preamble: String::new(),
@@ -66,7 +70,11 @@ impl Config {
             for arg in args {
                 match arg.as_str() {
                     "-w" => result.watch = true,
-                    "--dump" => result.dump = true,
+                    "--dump-groff-file" => result.dump_groff_file = true,
+                    "-Z" => {
+                        result.skip_rendering = true;
+                        result.dump_groff = true;
+                    }
                     "-v" | "--verbose" => result.log_level = 1,
                     "-d" | "--debug" => result.log_level = 2,
                     "-t" | "--trace" => result.log_level = 3,
@@ -121,11 +129,11 @@ mod tests {
         );
         let config = Config::from(vec![
             "-w".to_string(),
-            "--dump".to_string(),
+            "--dump-groff-file".to_string(),
             readme.to_string(),
         ]);
         assert_eq!(config.source_file, readme);
         assert!(config.watch);
-        assert!(config.dump);
+        assert!(config.dump_groff_file);
     }
 }

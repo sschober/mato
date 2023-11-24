@@ -69,18 +69,23 @@ fn transform_and_render(config: &Config, mom_preamble: &str) {
     let groff_output = matogro(config, &input, mom_preamble);
     log_inf!(config, "transformed in:\t\t{:?}", start.elapsed());
 
-    if config.dump {
+    if config.dump_groff {
+        println!("{groff_output}");
+    }
+    if config.dump_groff_file {
         let path_target_file = config.target_file("gro");
         fs::write(path_target_file, groff_output.clone()).expect("Unable to write gro");
     }
 
-    let start = Instant::now();
-    let pdf_output = mato::grotopdf(config, &groff_output);
-    log_inf!(config, "groff rendering:\t{:?} ", start.elapsed());
+    if !config.skip_rendering {
+        let start = Instant::now();
+        let pdf_output = mato::grotopdf(config, &groff_output);
+        log_inf!(config, "groff rendering:\t{:?} ", start.elapsed());
 
-    let start = Instant::now();
-    fs::write(&config.target_file, pdf_output).expect("Unable to write output pdf");
-    log_inf!(config, "written in:\t\t{:?} ", start.elapsed());
+        let start = Instant::now();
+        fs::write(&config.target_file, pdf_output).expect("Unable to write output pdf");
+        log_inf!(config, "written in:\t\t{:?} ", start.elapsed());
+    }
 }
 
 #[cfg(test)]
