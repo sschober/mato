@@ -2,13 +2,11 @@ use std::env;
 
 use std::fs;
 
-use std::path::Path;
 use std::time::Instant;
 
 use mato::config::Config;
 use mato::log_dbg;
 use mato::log_inf;
-use mato::log_trc;
 use mato::process::canonicalize;
 use mato::process::chain;
 use mato::process::code_block;
@@ -20,21 +18,9 @@ use mato::watch;
 fn main() -> std::io::Result<()> {
     let mut config = Config::from(env::args().collect());
     log_dbg!(config, "config: {:?}", config);
-    let mut mom_preamble = include_str!("default-preamble.mom").to_string();
 
-    // try to find preamble.mom located next to source file
-    let sibbling_preamble = Path::new(&config.parent_dir).join("preamble.mom");
-    if sibbling_preamble.as_path().is_file() {
-        log_dbg!(
-            config,
-            "found sibbling preamble: {}",
-            sibbling_preamble.display()
-        );
-        mom_preamble = fs::read_to_string(sibbling_preamble)?;
-    } else {
-        log_dbg!(config, "preamble:\t\tbuilt-in");
-    }
-    log_trc!(config, "{mom_preamble}");
+    let default_mom_preamble = include_str!("default-preamble.mom").to_string();
+    config.locate_and_load_preamble("preamble.mom", &default_mom_preamble);
 
     // open source file to be able watch it (we need a file descriptor)
     log_dbg!(config, "source file:\t\t{}", &config.source_file);
@@ -44,29 +30,30 @@ fn main() -> std::io::Result<()> {
     if config.watch {
         let kqueue = watch::Kqueue::create();
         loop {
-            transform_and_render(&config, &mom_preamble);
+            transform_and_render(&config);
             kqueue.wait_for_write_on_file_name(&config.source_file)?;
         }
     } else {
-        transform_and_render(&config, &mom_preamble);
+        transform_and_render(&config);
     };
     Ok(())
 }
 
-fn matogro(config: &Config, input: &str, mom_preamble: &str) -> String {
-    let mut chain = chain::new(canonicalize::new(), meta_data_extractor::new(mom_preamble));
+fn matogro(config: &Config, input: &str) -> String {
+    let mut chain = chain::new(
+        canonicalize::new(),
+        meta_data_extractor::new(&config.preamble),
+    );
     chain = chain.add(image_converter::new());
     chain = chain.add(code_block::new());
     mato::transform(&mut groff::new(), &mut chain, config, input)
 }
 
-fn transform_and_render(config: &Config, mom_preamble: &str) {
-    let start = Instant::now();
+fn transform_and_render(config: &Config) {
     let input = mato::read_input(&config);
-    log_inf!(config, "read in:\t\t{:?}", start.elapsed());
 
     let start = Instant::now();
-    let groff_output = matogro(config, &input, mom_preamble);
+    let groff_output = matogro(config, &input);
     log_inf!(config, "transformed in:\t\t{:?}", start.elapsed());
 
     if config.dump_groff {
@@ -93,7 +80,7 @@ mod tests {
     use mato::config::Config;
 
     fn matogro(input: &str) -> String {
-        super::matogro(&Config::default(), input, "")
+        super::matogro(&Config::default(), input)
     }
 
     #[test]

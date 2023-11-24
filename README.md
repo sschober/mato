@@ -87,7 +87,7 @@ the language. So, if you find any non-idiomatic stuff, feel
 free to create a pull request.
 
 To start reading the code, you might jump into one of the 
-binary sources, I'd recommend [mato/src/bin/matogro.rs](mato/src/bin/matogro.rs).
+binary sources, I'd recommend [mato/src/bin/matopdf.rs](mato/src/bin/matopdf.rs).
 
 There, mato is used to create groff source code from markdown
 markup and then `pdfmom`, a groff-based tool, is used to

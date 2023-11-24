@@ -1,4 +1,7 @@
-use std::path::{Path, PathBuf};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 
 #[macro_export]
 macro_rules! log_inf {
@@ -109,6 +112,21 @@ impl Config {
 
     pub fn set_target_file(self: &mut Self, extentions: &str) {
         self.target_file = self.target_file(extentions).to_str().unwrap().to_string();
+    }
+
+    pub fn locate_and_load_preamble(self: &mut Self, name: &str, default: &str) {
+        let sibbling_preamble = Path::new(&self.parent_dir).join(name);
+        if sibbling_preamble.as_path().is_file() {
+            log_dbg!(
+                self,
+                "found sibbling preamble: {}",
+                sibbling_preamble.display()
+            );
+            self.preamble = fs::read_to_string(sibbling_preamble).unwrap();
+        } else {
+            self.preamble = default.to_string();
+            log_dbg!(self, "preamble:\t\tbuilt-in");
+        }
     }
 }
 
