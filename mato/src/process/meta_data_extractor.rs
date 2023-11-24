@@ -51,11 +51,11 @@ impl Process for MetaDataExtractor {
     }
 }
 
-pub fn new(custom_preamble: &str) -> Box<dyn Process> {
+pub fn new(preamble: &str) -> Box<dyn Process> {
     let mut map = HashMap::new();
-    let cp = custom_preamble.to_string();
-    if cp.len() > 0 {
-        map.insert("custom_preamble".to_string(), custom_preamble.to_string());
+    let cp = preamble.to_string();
+    if !cp.is_empty() {
+        map.insert("preamble".to_string(), preamble.to_string());
     }
     Box::new(MetaDataExtractor { ctx: map })
 }

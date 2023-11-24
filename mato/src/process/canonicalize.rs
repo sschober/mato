@@ -26,8 +26,7 @@ fn erase_empty(exp: Exp) -> Exp {
 
 impl Process for Canonicalizer {
     fn process(&mut self, exp: Exp, _: &Config) -> Exp {
-        let canon = erase_empty(exp);
-        canon
+        erase_empty(exp)
     }
 
     fn get_context(&mut self) -> std::collections::HashMap<String, String> {
