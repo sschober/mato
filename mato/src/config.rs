@@ -49,6 +49,7 @@ pub struct Config {
     pub lang: String,
     pub preamble: String,
 }
+
 impl Config {
     pub const fn default() -> Self {
         Config {
@@ -64,9 +65,9 @@ impl Config {
             preamble: String::new(),
         }
     }
+
     /// create a configuration struct directly from `env::args.collect()`
-    #[must_use]
-    pub fn from(args: Vec<String>) -> Self {
+    pub fn from(args: Vec<String>) -> Result<Config, std::io::Error> {
         let mut result = Self::default();
         result.lang = "den".to_string();
         if args.len() > 1 {
@@ -94,27 +95,30 @@ impl Config {
             }
             result.parent_dir = Path::new(&result.source_file)
                 .parent()
-                .expect("could not establish parent path of file")
+                .ok_or(std::io::Error::new(
+                    std::io::ErrorKind::NotFound,
+                    "could not establish parent of source file",
+                ))?
                 .as_os_str()
                 .to_str()
                 .unwrap()
                 .to_string();
         }
-        result
+        Ok(result)
     }
 
-    pub fn target_file(self: &Self, extentions: &str) -> PathBuf {
+    pub fn target_file(&self, extentions: &str) -> PathBuf {
         let path_source_file = Path::new(&self.source_file);
         let mut path_target_file = path_source_file.to_path_buf();
         path_target_file.set_extension(extentions);
         path_target_file
     }
 
-    pub fn set_target_file(self: &mut Self, extentions: &str) {
+    pub fn set_target_file(&mut self, extentions: &str) {
         self.target_file = self.target_file(extentions).to_str().unwrap().to_string();
     }
 
-    pub fn locate_and_load_preamble(self: &mut Self, name: &str, default: &str) {
+    pub fn locate_and_load_preamble(&mut self, name: &str, default: &str) {
         let sibbling_preamble = Path::new(&self.parent_dir).join(name);
         if sibbling_preamble.as_path().is_file() {
             log_dbg!(
@@ -135,7 +139,7 @@ mod tests {
     use super::Config;
     #[test]
     fn empty_args() {
-        let config = Config::from(vec![]);
+        let config = Config::from(vec![]).unwrap();
         assert_eq!(config.source_file, "");
     }
     #[test]
@@ -149,7 +153,8 @@ mod tests {
             "-w".to_string(),
             "--dump-groff-file".to_string(),
             readme.to_string(),
-        ]);
+        ])
+        .unwrap();
         assert_eq!(config.source_file, readme);
         assert!(config.watch);
         assert!(config.dump_groff_file);

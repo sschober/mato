@@ -15,16 +15,20 @@ use mato::process::meta_data_extractor;
 use mato::render::groff;
 use mato::watch;
 
+const PREAMBLE_FILE_NAME: &str = "preamble.mom";
+const TARGET_FILE_EXTENSION_PDF: &str = "pdf";
+const TARGET_FILE_EXTENSION_GRO: &str = "gro";
+
 fn main() -> std::io::Result<()> {
-    let mut config = Config::from(env::args().collect());
+    let mut config = Config::from(env::args().collect())?;
     log_dbg!(config, "config: {:?}", config);
 
     let default_mom_preamble = include_str!("default-preamble.mom").to_string();
-    config.locate_and_load_preamble("preamble.mom", &default_mom_preamble);
+    config.locate_and_load_preamble(PREAMBLE_FILE_NAME, &default_mom_preamble);
 
     // open source file to be able watch it (we need a file descriptor)
     log_dbg!(config, "source file:\t\t{}", &config.source_file);
-    config.set_target_file("pdf");
+    config.set_target_file(TARGET_FILE_EXTENSION_PDF);
     log_dbg!(config, "target file name:\t{}", config.target_file);
 
     if config.watch {
@@ -50,7 +54,7 @@ fn matogro(config: &Config, input: &str) -> String {
 }
 
 fn transform_and_render(config: &Config) {
-    let input = mato::read_input(&config);
+    let input = mato::read_input(config);
 
     let start = Instant::now();
     let groff_output = matogro(config, &input);
@@ -60,7 +64,7 @@ fn transform_and_render(config: &Config) {
         println!("{groff_output}");
     }
     if config.dump_groff_file {
-        let path_target_file = config.target_file("gro");
+        let path_target_file = config.target_file(TARGET_FILE_EXTENSION_GRO);
         fs::write(path_target_file, groff_output.clone()).expect("Unable to write gro");
     }
 

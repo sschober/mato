@@ -8,7 +8,7 @@ use mato::process::identity;
 use mato::render::markdown;
 
 fn main() -> std::io::Result<()> {
-    let config = Config::from(env::args().collect());
+    let config = Config::from(env::args().collect())?;
     eprintln!("config: {:#?}", config);
 
     // open source file to be able watch it (we need a file descriptor)
