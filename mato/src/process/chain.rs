@@ -24,7 +24,7 @@ impl Process for Chain {
 }
 
 impl Chain {
-    pub fn add(self, p: Box<dyn Process>) -> Self {
+    pub fn append(self, p: Box<dyn Process>) -> Self {
         new(Box::new(self), p)
     }
 }

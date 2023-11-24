@@ -49,8 +49,8 @@ fn matogro(config: &Config, input: &str) -> String {
         canonicalize::new(),
         meta_data_extractor::new(&config.preamble),
     );
-    chain = chain.add(image_converter::new());
-    chain = chain.add(code_block::new());
+    chain = chain.append(image_converter::new());
+    chain = chain.append(code_block::new());
     log_dbg!(config, "done");
     mato::transform(&mut groff::new(), &mut chain, config, input)
 }
