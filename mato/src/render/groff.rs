@@ -16,11 +16,6 @@ impl Default for Renderer {
     }
 }
 
-/// replaces each occurence of a space with three spaces
-fn extend_space(s: &str) -> String {
-    s.replace(" ", "   ").to_string()
-}
-
 pub fn new() -> Renderer {
     Renderer {
         ctx: HashMap::new(),
@@ -59,10 +54,10 @@ impl Renderer {
                     doctype_emitted = true;
                 }
 
-                if self.ctx.contains_key("custom_preamble") {
-                    let value = self.ctx.get("custom_preamble").unwrap();
+                if self.ctx.contains_key("preamble") {
+                    let value = self.ctx.get("preamble").unwrap();
                     result = format!("{}\n{}\n", result, value);
-                    self.ctx.remove("custom_preamble");
+                    self.ctx.remove("preamble");
                 }
 
                 for (key, value) in self.ctx.clone().into_iter() {
@@ -177,7 +172,7 @@ impl Renderer {
                         format!(
                             ".SPACE -.7v\n.FT B\n.EW 2\n.HEADING {} \"{}\"\n.EW 0\n.FT R\n",
                             level + 1,
-                            extend_space(&self.render_with_default_format(*b_exp))
+                            &self.render_with_default_format(*b_exp)
                         )
                     } else {
                         format!(
