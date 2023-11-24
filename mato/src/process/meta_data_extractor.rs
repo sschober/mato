@@ -27,7 +27,6 @@ impl MetaDataExtractor {
             Exp::Cat(b1, b2) => self.extract_meta_data(*b1).cat(self.extract_meta_data(*b2)),
             Exp::MetaDataBlock(e) => meta_data_block(self.extract_meta_data(*e)),
             Exp::MetaDataItem(k, v) => {
-                // eprintln!("inserting {} = {}", k, v);
                 self.ctx.insert(k.to_string(), v.to_string());
                 meta_data_item(k, v)
             }

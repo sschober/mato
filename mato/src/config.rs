@@ -1,8 +1,27 @@
 use std::path::{Path, PathBuf};
+
+#[macro_export]
+macro_rules! log_inf {
+    ($config:ident, $( $args:expr ), *) => {
+       if $config.log_level >= 1 {
+           eprintln!( $( $args ),* );
+       }
+    };
+}
+
 #[macro_export]
 macro_rules! log_dbg {
     ($config:ident, $( $args:expr ), *) => {
-       if $config.debug {
+       if $config.log_level >= 2 {
+           eprintln!( $( $args ),* );
+       }
+    };
+}
+
+#[macro_export]
+macro_rules! log_trc {
+    ($config:ident, $( $args:expr ), *) => {
+       if $config.log_level >= 3 {
            eprintln!( $( $args ),* );
        }
     };
@@ -20,7 +39,7 @@ pub struct Config {
     pub watch: bool,
     /// dump intermediate representation (groff or latex)
     pub dump: bool,
-    pub debug: bool,
+    pub log_level: u8,
     /// language
     pub lang: String,
     pub preamble: String,
@@ -33,7 +52,7 @@ impl Config {
             parent_dir: String::new(),
             watch: false,
             dump: false,
-            debug: false,
+            log_level: 0,
             lang: String::new(),
             preamble: String::new(),
         }
@@ -48,7 +67,9 @@ impl Config {
                 match arg.as_str() {
                     "-w" => result.watch = true,
                     "--dump" => result.dump = true,
-                    "-d" => result.debug = true,
+                    "-v" | "--verbose" => result.log_level = 1,
+                    "-d" | "--debug" => result.log_level = 2,
+                    "-t" | "--trace" => result.log_level = 3,
                     "-len" | "-l en" => result.lang = "en".to_string(),
                     "-" => result.source_file = String::new(),
                     _ => result.source_file = arg,

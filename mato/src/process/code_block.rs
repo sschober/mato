@@ -6,11 +6,11 @@ use std::{
 };
 
 use super::Process;
-use crate::log_dbg;
 use crate::{
     config::Config,
     syntax::{lit, Exp},
 };
+use crate::{log_dbg, log_trc};
 
 /// CodeBlock processor looks inside code blocks that it finds in the AST and
 /// if the type is pic will render the pic picture embedded inside of the block.
@@ -57,7 +57,7 @@ impl CodeBlockProcessor {
                                 let _ = io::stderr().write(&output.stderr);
                             }
                             let rendered_pic = String::from_utf8(output.stdout).unwrap();
-                            log_dbg!(config, "rendered: {}", rendered_pic);
+                            log_trc!(config, "rendered: {}", rendered_pic);
                             lit(&rendered_pic)
                         } else {
                             Exp::CodeBlock(block_type, content)
@@ -76,7 +76,6 @@ impl Process for CodeBlockProcessor {
         exp: crate::syntax::Exp,
         config: &crate::config::Config,
     ) -> crate::syntax::Exp {
-        // eprintln!("code block proc");
         self.process_code_blocks(exp, config)
     }
 

@@ -7,6 +7,8 @@ use std::time::Instant;
 
 use mato::config::Config;
 use mato::log_dbg;
+use mato::log_inf;
+use mato::log_trc;
 use mato::process::canonicalize;
 use mato::process::chain;
 use mato::process::code_block;
@@ -17,6 +19,7 @@ use mato::watch;
 
 fn main() -> std::io::Result<()> {
     let mut config = Config::from(env::args().collect());
+    log_dbg!(config, "config: {:?}", config);
     let mut mom_preamble = include_str!("default-preamble.mom").to_string();
 
     // try to find preamble.mom located next to source file
@@ -31,7 +34,7 @@ fn main() -> std::io::Result<()> {
     } else {
         log_dbg!(config, "preamble:\t\tbuilt-in");
     }
-    log_dbg!(config, "{mom_preamble}");
+    log_trc!(config, "{mom_preamble}");
 
     // open source file to be able watch it (we need a file descriptor)
     log_dbg!(config, "source file:\t\t{}", &config.source_file);
@@ -60,25 +63,24 @@ fn matogro(config: &Config, input: &str, mom_preamble: &str) -> String {
 fn transform_and_render(config: &Config, mom_preamble: &str) {
     let start = Instant::now();
     let input = mato::read_input(&config);
-    log_dbg!(config, "read in:\t\t{:?}", start.elapsed());
+    log_inf!(config, "read in:\t\t{:?}", start.elapsed());
 
     let start = Instant::now();
     let groff_output = matogro(config, &input, mom_preamble);
-    log_dbg!(config, "transformed in:\t\t{:?}", start.elapsed());
+    log_inf!(config, "transformed in:\t\t{:?}", start.elapsed());
 
     if config.dump {
-        //println!("{groff_output}");
         let path_target_file = config.target_file("gro");
         fs::write(path_target_file, groff_output.clone()).expect("Unable to write gro");
     }
 
     let start = Instant::now();
     let pdf_output = mato::grotopdf(config, &groff_output);
-    log_dbg!(config, "groff rendering:\t{:?} ", start.elapsed());
+    log_inf!(config, "groff rendering:\t{:?} ", start.elapsed());
 
     let start = Instant::now();
     fs::write(&config.target_file, pdf_output).expect("Unable to write output pdf");
-    log_dbg!(config, "written in:\t\t{:?} ", start.elapsed());
+    log_inf!(config, "written in:\t\t{:?} ", start.elapsed());
 }
 
 #[cfg(test)]

@@ -43,9 +43,9 @@ pub fn transform<R: render::Render, P: process::Process>(
     input: &str,
 ) -> String {
     let mut exp = Parser::parse(input);
-    log_dbg!(config, "parsed: {:?}", exp);
+    log_trc!(config, "parsed: {:?}", exp);
     exp = process(p, exp, config);
-    log_dbg!(config, "processed: {:?}", exp);
+    log_trc!(config, "processed: {:?}", exp);
     render(r, exp, p)
 }
 

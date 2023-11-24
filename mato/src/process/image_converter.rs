@@ -2,6 +2,7 @@ use std::{collections::HashMap, path::Path};
 
 use crate::{
     config::Config,
+    log_dbg,
     syntax::{image, lit, Exp},
 };
 
@@ -32,7 +33,7 @@ impl ImageConverter {
                                 .unwrap()
                                 .to_string();
                         }
-                        eprintln!("resolved path: {}", resolved_path);
+                        log_dbg!(config, "resolved path: {}", resolved_path);
                         lit(&resolved_path)
                     }
                     _ => *path,
