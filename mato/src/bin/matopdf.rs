@@ -7,6 +7,7 @@ use std::time::Instant;
 use mato::config::Config;
 use mato::log_dbg;
 use mato::log_inf;
+use mato::log_trc;
 use mato::process::canonicalize;
 use mato::process::chain;
 use mato::process::code_block;
@@ -21,7 +22,7 @@ const TARGET_FILE_EXTENSION_GRO: &str = "gro";
 
 fn main() -> std::io::Result<()> {
     let mut config = Config::from(env::args().collect())?;
-    log_dbg!(config, "config: {:?}", config);
+    log_dbg!(config, "config: {:#?}", config);
 
     let default_mom_preamble = include_str!("default-preamble.mom").to_string();
     config.locate_and_load_preamble(PREAMBLE_FILE_NAME, &default_mom_preamble);
@@ -44,14 +45,14 @@ fn main() -> std::io::Result<()> {
 }
 
 fn matogro(config: &Config, input: &str) -> String {
-    log_dbg!(config, "construction chain...");
+    log_trc!(config, "construction chain...");
     let mut chain = chain::new(
         canonicalize::new(),
         meta_data_extractor::new(&config.preamble),
     );
     chain = chain.append(image_converter::new());
     chain = chain.append(code_block::new());
-    log_dbg!(config, "done");
+    log_trc!(config, "done");
     mato::transform(&mut groff::new(), &mut chain, config, input)
 }
 
