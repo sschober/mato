@@ -5,7 +5,7 @@ and even more.
 
 ```mermaid
 graph LR
-md -- mato --> PDF
+md -- matopdf --> PDF
 ```
 
 Mato currently comprises a markdown parsing frontend part, 
