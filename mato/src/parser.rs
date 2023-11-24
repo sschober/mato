@@ -213,7 +213,6 @@ impl Parser<'_> {
     }
 
     fn is_all_space_until(&self, index: u8) -> bool {
-        eprintln!("all_white_space_until({})", index);
         for i in 0..index as usize {
             if !self.peek(i, b' ') {
                 return false;
@@ -224,7 +223,6 @@ impl Parser<'_> {
 
     fn consume_all_space_until(&mut self, index: u8) {
         for _ in 0..index {
-            eprintln!("consuming space");
             self.consume(b' ');
         }
     }
@@ -258,7 +256,6 @@ impl Parser<'_> {
             }
             self.consume(b'\n');
             let items = self.parse_meta_data_items();
-            eprintln!("mdb: {} {}", self.i, self.char as char);
             if self.char == b'-' {
                 self.consume(b'-');
                 self.consume(b'-');
@@ -270,31 +267,24 @@ impl Parser<'_> {
             }
             Exp::MetaDataBlock(Box::new(items))
         } else {
+            self.advance();
             lit("-")
         }
     }
 
     fn parse_list_item(&mut self, level: u8) -> Exp {
-        eprintln!("parse_list_item({})", level);
         let mut item = empty();
         self.consume_all_space_until(level * LIST_INDENT);
         self.consume(b'*');
         self.consume(b' ');
         loop {
             item = item.cat(self.parse_until(b"\n"));
-            eprintln!(
-                "parse_list_item({}): back from parse_until at {} '{}'",
-                level, self.i, self.char
-            );
             if !self.at_end() {
-                eprintln!("parse_list_item(): consuming newline");
                 self.consume(b'\n');
             }
-            eprintln!("cheking for continuation at {} {}", self.i, self.char);
             if self.is_all_space_until((level * LIST_INDENT) + LIST_INDENT)
                 && !self.peek((level * LIST_INDENT) as usize + LIST_INDENT as usize, b'*')
             {
-                eprintln!("found item continuation");
                 self.consume_all_space_until((level * LIST_INDENT) + LIST_INDENT);
                 // reappend the newline we swallowed above
                 item = item.cat(lit("\n"));
@@ -306,22 +296,18 @@ impl Parser<'_> {
     }
 
     fn parse_list(&mut self, level: u8) -> Exp {
-        eprintln!("parse_list({})", level);
         if self.peek((level * LIST_INDENT) as usize + 1, b' ') {
-            eprintln!("found space at {}", level * 2);
             // if * is followed by white space
             let mut iterator = empty();
             loop {
                 if self.peek((level * LIST_INDENT) as usize, b'*')
                     && self.peek((level * LIST_INDENT) as usize + 1, b' ')
                 {
-                    eprintln!("found list item on level {}", level);
                     iterator = iterator.cat(self.parse_list_item(level));
                     continue;
                 } else if self.peek(((level + 1) * LIST_INDENT) as usize, b'*')
                     && self.peek(((level + 1) * LIST_INDENT) as usize + 1, b' ')
                 {
-                    eprintln!("found sub list on level {}", level + 1);
                     iterator = iterator.cat(self.parse_list(level + 1));
                 } else {
                     break;
@@ -329,7 +315,6 @@ impl Parser<'_> {
             }
             list(iterator, level)
         } else {
-            eprintln!("bold at level {}", level);
             // assume emphasize (*word*)
             bold(self.parse_symmetric_quoted())
         }
@@ -403,6 +388,7 @@ impl Parser<'_> {
                                            // "nothing", as rust has
                                            // no null values
         while !self.at_end() && !break_chars.contains(&self.char) {
+            eprintln!("{}", self.char);
             let expr = match self.char {
                 b'-' => self.parse_meta_data_block(),
                 b'#' => self.parse_heading(),
