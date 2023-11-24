@@ -388,7 +388,6 @@ impl Parser<'_> {
                                            // "nothing", as rust has
                                            // no null values
         while !self.at_end() && !break_chars.contains(&self.char) {
-            eprintln!("{}", self.char);
             let expr = match self.char {
                 b'-' => self.parse_meta_data_block(),
                 b'#' => self.parse_heading(),
