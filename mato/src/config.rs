@@ -119,7 +119,11 @@ mod tests {
             "{}/../README.md",
             std::env::current_dir().unwrap().to_str().unwrap()
         );
-        let config = Config::from(vec!["-w".to_string(), "-d".to_string(), readme.to_string()]);
+        let config = Config::from(vec![
+            "-w".to_string(),
+            "--dump".to_string(),
+            readme.to_string(),
+        ]);
         assert_eq!(config.source_file, readme);
         assert!(config.watch);
         assert!(config.dump);
