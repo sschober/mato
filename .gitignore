@@ -1,4 +1,4 @@
-target/
-coverage/
+/target
+test*
+.DS_Store
 termpdf.log
-**/.DS_Store

@@ -146,7 +146,7 @@ mod tests {
     fn many_args() {
         // test gets called in ./mato/ working directory
         let readme = format!(
-            "{}/../README.md",
+            "{}/README.md",
             std::env::current_dir().unwrap().to_str().unwrap()
         );
         let config = Config::from(vec![
