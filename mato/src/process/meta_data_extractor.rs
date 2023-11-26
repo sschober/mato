@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use crate::{
     config::Config,
+    log_trc,
     syntax::{meta_data_block, meta_data_item, Exp},
 };
 
@@ -42,12 +43,17 @@ impl Default for MetaDataExtractor {
 }
 
 impl Process for MetaDataExtractor {
-    fn process(&mut self, exp: Exp, _: &Config) -> crate::syntax::Exp {
+    fn process(&mut self, exp: Exp, config: &Config) -> crate::syntax::Exp {
+        log_trc!(config, "{}", self.get_name());
         self.extract_meta_data(exp)
     }
 
     fn get_context(&mut self) -> HashMap<String, String> {
         self.ctx.clone()
+    }
+
+    fn get_name(&self) -> String {
+        "MetaDataExtractor".to_string()
     }
 }
 

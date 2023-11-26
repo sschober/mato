@@ -1,8 +1,9 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, time::Instant};
 
 use super::Process;
 
-use crate::{config::Config, Exp};
+use crate::{config::Config, log_trc, Exp};
+use core::fmt::Debug;
 
 /// A Chain can be used to chain multiple processors
 /// together and form a transformation chain or pipeline.
@@ -13,13 +14,31 @@ pub struct Chain {
 
 impl Process for Chain {
     fn process(&mut self, exp: Exp, config: &Config) -> Exp {
+        let start = Instant::now();
         let result = self.a.process(exp, config);
-        self.b.process(result, config)
+        if config.log_level >= 2 {
+            log_trc!(config, "{}: {:?}", self.a.get_name(), start.elapsed());
+        }
+        let result = self.b.process(result, config);
+        if config.log_level >= 2 {
+            log_trc!(config, "{}: {:?}", self.b.get_name(), start.elapsed());
+        }
+        result
     }
 
     fn get_context(&mut self) -> HashMap<String, String> {
         let result = self.a.get_context();
         result.into_iter().chain(self.b.get_context()).collect()
+    }
+
+    fn get_name(&self) -> String {
+        format!("{:?} -> {:?}", self.a, self.b)
+    }
+}
+
+impl Debug for Chain {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?} -> {:?}", self.a, self.b)
     }
 }
 

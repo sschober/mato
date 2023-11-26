@@ -2,7 +2,7 @@ use std::{collections::HashMap, path::Path};
 
 use crate::{
     config::Config,
-    log_dbg,
+    log_dbg, log_trc,
     syntax::{image, lit, Exp},
 };
 
@@ -46,11 +46,16 @@ impl Process for ImageConverter {
         exp: crate::syntax::Exp,
         config: &crate::config::Config,
     ) -> crate::syntax::Exp {
+        log_trc!(config, "{}", self.get_name());
         process_images(exp, config)
     }
 
     fn get_context(&mut self) -> std::collections::HashMap<String, String> {
         HashMap::new()
+    }
+
+    fn get_name(&self) -> String {
+        "ImageConverter".to_string()
     }
 }
 

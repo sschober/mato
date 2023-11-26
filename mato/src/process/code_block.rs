@@ -72,11 +72,16 @@ impl Process for CodeBlockProcessor {
         exp: crate::syntax::Exp,
         config: &crate::config::Config,
     ) -> crate::syntax::Exp {
+        log_trc!(config, "{}", self.get_name());
         process_code_blocks(exp, config)
     }
 
     fn get_context(&mut self) -> std::collections::HashMap<String, String> {
         HashMap::new()
+    }
+
+    fn get_name(&self) -> String {
+        "CodeBlockProcessor".to_string()
     }
 }
 

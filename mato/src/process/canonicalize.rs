@@ -4,7 +4,7 @@ use super::Process;
 
 use crate::config::Config;
 use crate::syntax::meta_data_block;
-use crate::Exp;
+use crate::{log_trc, Exp};
 
 /// The Canonicalizer processor removes unneeded AST
 /// elements, like empty()s
@@ -25,12 +25,17 @@ fn erase_empty(exp: Exp) -> Exp {
 }
 
 impl Process for Canonicalizer {
-    fn process(&mut self, exp: Exp, _: &Config) -> Exp {
+    fn process(&mut self, exp: Exp, config: &Config) -> Exp {
+        log_trc!(config, "{}", self.get_name());
         erase_empty(exp)
     }
 
     fn get_context(&mut self) -> std::collections::HashMap<String, String> {
         HashMap::new()
+    }
+
+    fn get_name(&self) -> String {
+        "Canonicalizer".to_string()
     }
 }
 

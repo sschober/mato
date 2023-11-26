@@ -10,6 +10,7 @@ use mato::log_inf;
 use mato::log_trc;
 use mato::process::canonicalize;
 use mato::process::chain;
+use mato::process::chain::Chain;
 use mato::process::code_block;
 use mato::process::image_converter;
 use mato::process::meta_data_extractor;
@@ -23,44 +24,46 @@ const TARGET_FILE_EXTENSION_GRO: &str = "gro";
 fn main() -> std::io::Result<()> {
     let mut config = Config::from(env::args().collect())?;
     log_dbg!(config, "config: {:#?}", config);
+    log_dbg!(config, "source file:\t\t{}", &config.source_file);
 
     let default_mom_preamble = include_str!("default-preamble.mom").to_string();
     config.locate_and_load_preamble(PREAMBLE_FILE_NAME, &default_mom_preamble);
 
-    // open source file to be able watch it (we need a file descriptor)
-    log_dbg!(config, "source file:\t\t{}", &config.source_file);
     config.set_target_file(TARGET_FILE_EXTENSION_PDF);
     log_dbg!(config, "target file name:\t{}", config.target_file);
 
     if config.watch {
         let kqueue = watch::Kqueue::create();
         loop {
-            transform_and_render(&config);
+            matogro(&config);
             kqueue.wait_for_write_on_file_name(&config.source_file)?;
         }
     } else {
-        transform_and_render(&config);
+        matogro(&config);
     };
     Ok(())
 }
 
-fn matogro(config: &Config, input: &str) -> String {
-    log_trc!(config, "construction chain...");
-    let mut chain = chain::new(
+fn create_chain(config: &Config) -> Chain {
+    log_trc!(config, "constructing chain...");
+    let chain = chain::new(
         canonicalize::new(),
         meta_data_extractor::new(&config.preamble),
-    );
-    chain = chain.append(image_converter::new());
-    chain = chain.append(code_block::new());
+    )
+    .append(image_converter::new())
+    .append(code_block::new());
     log_trc!(config, "done");
-    mato::transform(&mut groff::new(), &mut chain, config, input)
+    log_dbg!(config, "{:?}", chain);
+    chain
 }
 
-fn transform_and_render(config: &Config) {
+fn matogro(config: &Config) {
     let input = mato::read_input(config);
 
+    let mut chain = create_chain(config);
+
     let start = Instant::now();
-    let groff_output = matogro(config, &input);
+    let groff_output = mato::transform(&mut groff::new(), &mut chain, config, &input);
     log_inf!(config, "transformed in:\t\t{:?}", start.elapsed());
 
     if config.dump_groff {
@@ -87,7 +90,9 @@ mod tests {
     use mato::config::Config;
 
     fn matogro(input: &str) -> String {
-        super::matogro(&Config::default(), input)
+        let config = Config::default();
+        let mut chain = super::create_chain(&config);
+        mato::transform(&mut super::groff::new(), &mut chain, &config, input)
     }
 
     #[test]
