@@ -31,9 +31,13 @@ impl Parser<'_> {
 
     #[must_use]
     pub fn parse(input: &str) -> Exp {
-        let mut parser = Parser::new(input);
-        // passing "" as bytes parses until the end of file
-        Exp::Document().cat(parser.parse_until(b""))
+        if input.is_empty() {
+            Exp::Document()
+        } else {
+            let mut parser = Parser::new(input);
+            // passing "" as bytes parses until the end of file
+            Exp::Document().cat(parser.parse_until(b""))
+        }
     }
 
     /// increases index and updates current char
