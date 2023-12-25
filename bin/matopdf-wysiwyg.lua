@@ -14,6 +14,10 @@ function create_empty_file(name)
   local f <close> = io.open(name, "w")
 end
 
+function wt_cli(cmd)
+  return io.popen("wezterm cli " .. cmd):read("*a"):gsub("[\n]","")
+end
+
 file_to_open=arg[1]
 
 if( not file_exists( file_to_open )) then
@@ -25,21 +29,16 @@ print("file_name: " .. file_name)
 
 local origin_pane_id = os.getenv("WEZTERM_PANE")
 
-local wt_cli = "wezterm cli"
-local new_pane = wt_cli .. " split-pane"
-
-local micro_pane_id = io.popen(wt_cli 
-  .. " spawn zsh -c \"micro " 
-  .. file_to_open
-  .. "\""):read("*a"):gsub("[\n]","")
+local micro_pane_id = wt_cli("spawn zsh -c \"micro " 
+      .. file_to_open .. "\"")
 print("micro_pane_id: " .. micro_pane_id)
 
 local matopdf_cmd = "$HOME/.cargo/bin/matopdf -w -v "
-local matopdf_pane_id = io.popen( new_pane 
-  .. " --pane-id " .. micro_pane_id
+local matopdf_pane_id = wt_cli( "split-pane --pane-id " 
+  .. micro_pane_id
   .. " --percent 10 --bottom zsh -c \""
   .. matopdf_cmd 
-  .. file_to_open .. "\"" ):read("*a"):gsub("[\n]", "")
+  .. file_to_open .. "\"" )
 print( "matopdf_pane_id: " .. matopdf_pane_id)
 
 
@@ -49,12 +48,10 @@ print( "matopdf_pane_id: " .. matopdf_pane_id)
 os.execute( "sleep 1" )
 
 local termpdf_cmd = "$HOME/bin/termpdf.py " 
-local termpdf_pane_id = 
-  io.popen( new_pane 
-    .. " --pane-id " .. micro_pane_id
+local termpdf_pane_id = wt_cli("split-pane --pane-id " .. micro_pane_id
     .. " --top-level --right zsh -c \""
     .. termpdf_cmd 
     .. file_name 
-    .. "\""):read("*a"):gsub("[\n]","")
+    .. "\"")
 
-os.execute(wt_cli .. " activate-pane --pane-id " .. micro_pane_id)
+wt_cli("activate-pane --pane-id " .. micro_pane_id)
