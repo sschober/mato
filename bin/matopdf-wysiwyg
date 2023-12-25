@@ -1,0 +1,2 @@
+#!/usr/bin/env sh
+LUA_PATH="$HOME/bin/?.lua;;" $HOME/bin/matopdf-wysiwyg.lua $*

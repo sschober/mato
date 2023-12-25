@@ -1,44 +1,24 @@
 #!/usr/bin/env lua
+local file_helper = require "file_helper"
+local wt_cli = require "wt_cli"
+
 if( #arg < 1 ) then
   error("expected file name as first arg")
 end
 
--- crazy, we have to implement it
-function file_exists(name)
-  local f <close> = io.open(name, "r")
-  return f ~= nil
-end
+local file_to_open=arg[1]
 
--- creating the file by opening it for writing
-function create_empty_file(name)
-  local f <close> = io.open(name, "w")
-end
+file_helper.create_if_not_exists(file_to_open)
 
-function wt_cli(cmd)
-  return io.popen("wezterm cli " .. cmd):read("*a"):gsub("[\n]","")
-end
+local pdf_file_name = file_helper.replace_extension(file_to_open, ".pdf")
+print("pdf_file_name: " .. pdf_file_name)
 
-file_to_open=arg[1]
-
-if( not file_exists( file_to_open )) then
-  create_empty_file(file_to_open)
-end
-
-file_name = file_to_open:gsub("([^.]*)%..*", "%1") .. ".pdf"
-print("file_name: " .. file_name)
-
-local origin_pane_id = os.getenv("WEZTERM_PANE")
-
-local micro_pane_id = wt_cli("spawn zsh -c \"micro " 
-      .. file_to_open .. "\"")
+local micro_pane_id = wt_cli.spawn("micro "..file_to_open)
 print("micro_pane_id: " .. micro_pane_id)
 
-local matopdf_cmd = "$HOME/.cargo/bin/matopdf -w -v "
-local matopdf_pane_id = wt_cli( "split-pane --pane-id " 
-  .. micro_pane_id
-  .. " --percent 10 --bottom zsh -c \""
-  .. matopdf_cmd 
-  .. file_to_open .. "\"" )
+local matopdf_cmd = "$HOME/.cargo/bin/matopdf -w -v " .. file_to_open
+local matopdf_pane_id = wt_cli.split_pane_id(micro_pane_id,
+  " --percent 10 --bottom ", matopdf_cmd )
 print( "matopdf_pane_id: " .. matopdf_pane_id)
 
 
@@ -47,11 +27,8 @@ print( "matopdf_pane_id: " .. matopdf_pane_id)
 -- not exist
 os.execute( "sleep 1" )
 
-local termpdf_cmd = "$HOME/bin/termpdf.py " 
-local termpdf_pane_id = wt_cli("split-pane --pane-id " .. micro_pane_id
-    .. " --top-level --right zsh -c \""
-    .. termpdf_cmd 
-    .. file_name 
-    .. "\"")
+local termpdf_cmd = "$HOME/bin/termpdf.py " .. pdf_file_name
+local termpdf_pane_id = wt_cli.split_pane_id(micro_pane_id,
+  " --top-level --right ", termpdf_cmd )
 
-wt_cli("activate-pane --pane-id " .. micro_pane_id)
+wt_cli.activate_pane(micro_pane_id)
