@@ -107,11 +107,8 @@ impl Config {
         Ok(result)
     }
 
-    pub fn target_file(&self, extentions: &str) -> PathBuf {
-        let path_source_file = Path::new(&self.source_file);
-        let mut path_target_file = path_source_file.to_path_buf();
-        path_target_file.set_extension(extentions);
-        path_target_file
+    pub fn target_file(&self, extention: &str) -> PathBuf {
+        crate::replace_file_extension(&self.source_file, extention)
     }
 
     pub fn set_target_file(&mut self, extentions: &str) {

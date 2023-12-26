@@ -50,17 +50,24 @@ pub struct Pane {
     pub id: String,
 }
 impl Pane {
+    fn pane_id_vec(&self) -> Vec<&str> {
+        vec!["--pane-id", self.id.as_str()]
+    }
     pub fn split(&self, opts: Vec<&str>, cmd: &str) -> Pane {
         let pane_id = exec(
             [
                 wezterm_cli_vec(),
-                vec!["split-pane", "--pane-id", self.id.as_str()],
+                vec!["split-pane"],
+                self.pane_id_vec(),
                 current_dir_vec(&current_dir()),
                 opts,
                 zsh_c_vec(cmd),
-                ]
+            ]
             .concat(),
         );
         Pane { id: pane_id }
+    }
+    pub fn activate(&self) {
+        exec([wezterm_cli_vec(), vec!["activate-pane"], self.pane_id_vec()].concat());
     }
 }

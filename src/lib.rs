@@ -1,6 +1,8 @@
 //! markdown transformer toolkit
 
+use std::fs::File;
 use std::io::{self, Write};
+use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::time::Instant;
 
@@ -34,6 +36,21 @@ pub fn read_input(config: &Config) -> String {
     };
     log_dbg!(config, "input read in:\t\t{:?}", start.elapsed());
     input
+}
+
+pub fn replace_file_extension(file_name: &str, extension: &str ) -> PathBuf {
+    let path_source_file = Path::new(&file_name);
+    let mut path_target_file = path_source_file.to_path_buf();
+    path_target_file.set_extension(extension);
+    path_target_file
+}
+
+pub fn create_if_not_exists(file_name: &str) {
+    let path_source_file = Path::new(file_name);
+    if !path_source_file.is_file() {
+        eprintln!("creating {}", file_name);
+        File::create(file_name).unwrap();
+    }
 }
 
 /// top-level helper method to transform a given input string into a target language specified by the passed in renderer
