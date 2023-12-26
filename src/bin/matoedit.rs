@@ -12,7 +12,12 @@ fn main() -> std::io::Result<()> {
 
     mato::create_if_not_exists(source_file);
 
-    let editor_pane = wezterm_cli::spawn(&format!("micro {}", source_file));
+    let editor_cmd = match env::var("EDITOR") {
+        Ok(val) => val,
+        Err(_) => "nvim".to_string(),
+    };
+
+    let editor_pane = wezterm_cli::spawn(&format!("{} {}", editor_cmd, source_file));
     eprintln!("editor pane id: {}", editor_pane.id);
 
     let mato_pane = editor_pane.split(
