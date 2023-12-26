@@ -16,11 +16,15 @@ fn exec(cmd: Vec<&str>) -> String {
         .output()
         .expect("error executing spawn command")
         .stdout;
-    String::from_utf8(out)
-        .unwrap()
-        .strip_suffix('\n')
-        .unwrap()
-        .to_string()
+    if !out.is_empty() {
+        String::from_utf8(out)
+            .unwrap()
+            .strip_suffix('\n')
+            .unwrap()
+            .to_string()
+    } else {
+        String::new()
+    }
 }
 fn wezterm_cli_vec() -> Vec<&'static str> {
     vec!["wezterm", "cli"]
