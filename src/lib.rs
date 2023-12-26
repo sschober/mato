@@ -13,6 +13,7 @@ pub mod process;
 pub mod render;
 pub mod syntax;
 pub mod watch;
+pub mod wezterm_cli;
 
 fn read_all_from_stdin() -> String {
     let lines = io::stdin().lines();

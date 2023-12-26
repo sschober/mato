@@ -1,58 +1,5 @@
-use std::{env, fs::File, path::Path, process::Command};
-fn exec(cmd: Vec<&str>) -> String {
-    eprintln!("exec: {:?}", cmd);
-    let out = Command::new("/usr/bin/env")
-        .args(cmd)
-        .output()
-        .expect("error executing spawn command")
-        .stdout;
-    String::from_utf8(out)
-        .unwrap()
-        .strip_suffix('\n')
-        .unwrap()
-        .to_string()
-}
-fn current_dir() -> String {
-    env::current_dir()
-        .unwrap()
-        .as_os_str()
-        .to_str()
-        .unwrap()
-        .to_string()
-}
-fn spawn(cmd: &str) -> String {
-    exec(vec![
-        "wezterm",
-        "cli",
-        "spawn",
-        "--cwd",
-        current_dir().as_str(),
-        "zsh",
-        "-c",
-        cmd,
-    ])
-}
-fn split_pane_id(id: &str, opts: Vec<&str>, cmd: &str) -> String {
-    exec(
-        [
-            vec![
-                "wezterm",
-                "cli",
-                "split-pane",
-                "--pane-id",
-                id,
-                "--cwd",
-                current_dir().as_str(),
-            ],
-            opts,
-            zsh_c_vec(cmd),
-        ]
-        .concat(),
-    )
-}
-fn zsh_c_vec(cmd: &str) -> Vec<&str> {
-    vec!["zsh", "-c", cmd]
-}
+use mato::wezterm_cli;
+use std::{env, fs::File, path::Path, thread, time};
 
 fn main() -> std::io::Result<()> {
     let args: Vec<String> = env::args().collect();
@@ -72,15 +19,23 @@ fn main() -> std::io::Result<()> {
     eprintln!("target file: {}", path_target_file.display());
 
     let cmd_micro = format!("micro {}", source_file);
-    let micro_pane_id = spawn(cmd_micro.as_str());
-    eprintln!("{}", micro_pane_id);
+    let micro_pane = wezterm_cli::spawn(cmd_micro.as_str());
+    eprintln!("{}", micro_pane.id);
 
-    let mato_pane_id = split_pane_id(
-        micro_pane_id.as_str(),
+    let mato_pane = micro_pane.split(
         vec!["--percent", "10", "--bottom"],
         format!("matopdf -w -v {}", source_file).as_str(),
     );
-    eprintln!("mato pane id: {}", mato_pane_id);
+    eprintln!("mato pane id: {}", mato_pane.id);
 
+    // this is ugly, but we need to sleep 1 sec to give
+    // matopdf time to transform the source file,
+    // otherwise termpdf would bail out
+    let one_sec = time::Duration::from_secs(1);
+    thread::sleep(one_sec);
+
+    let termpdf_cmd = format!("termpdf.py {}", path_target_file.display());
+    let termpdf_pane = micro_pane.split(vec!["--top-level", "--right"], &termpdf_cmd);
+    eprintln!("termpdf pane id: {}", termpdf_pane.id);
     Ok(())
 }
