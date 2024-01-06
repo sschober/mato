@@ -1,4 +1,6 @@
 use std::{env, process::Command};
+//! a small library of utility functions for interacting with the
+//! wezterm command line interface
 
 /// acquires and returns the current directory as a `String``
 fn current_dir() -> String {

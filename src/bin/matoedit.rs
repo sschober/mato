@@ -1,10 +1,12 @@
 use mato::wezterm_cli;
 use std::{env, thread, time};
 
+const DEFAULT_EDITOR: str = "nvim";
+
 /// spawns a new wezterm pane in a new tab and opens the
 /// passed in file in and editor in said pane.
 /// then splits the pane and launches `matopdf` on the file.
-/// then waits for a sec to let `matopdf` finish, then 
+/// then waits for a sec to let `matopdf` finish, then
 /// proceeds to create a toplevel split pane to the right,
 /// wehere `termpdf.py` is launched on the resulting pdf.
 fn main() -> std::io::Result<()> {
@@ -16,11 +18,15 @@ fn main() -> std::io::Result<()> {
     let source_file = args.get(1).unwrap();
     eprintln!("file to open: {}", source_file);
 
+    // we create the source file in any case, so that we can
+    // immediately transform it.
     mato::create_if_not_exists(source_file);
 
+    // we look up the users preferred editor via the environment
+    // variable.
     let editor_cmd = match env::var("EDITOR") {
         Ok(val) => val,
-        Err(_) => "nvim".to_string(),
+        Err(_) => DEFAULT_EDITOR.to_string(),
     };
 
     // SPAWN the EDITOR pane!
@@ -41,6 +47,7 @@ fn main() -> std::io::Result<()> {
     let one_sec = time::Duration::from_secs(1);
     thread::sleep(one_sec);
 
+    // we need to figure out the target file name for termpdf to call on
     let target_file_path = mato::replace_file_extension(source_file, "pdf");
     eprintln!("target file: {}", target_file_path.display());
 
@@ -52,7 +59,7 @@ fn main() -> std::io::Result<()> {
     eprintln!("termpdf pane id: {}", termpdf_pane.id);
 
     // FOCUS the EDITOR
-    // split and spawn move focus to the newly created panes, 
+    // split and spawn move focus to the newly created panes,
     // so we need to refocus on the editor
     editor_pane.activate();
 
