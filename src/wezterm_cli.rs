@@ -1,6 +1,6 @@
-use std::{env, process::Command};
 //! a small library of utility functions for interacting with the
 //! wezterm command line interface
+use std::{env, process::Command, usize};
 
 /// acquires and returns the current directory as a `String``
 fn current_dir() -> String {
@@ -71,9 +71,39 @@ pub fn spawn(cmd: &str) -> Pane {
 /// encapsulates a wezterm pane id.
 /// has method to split pane
 pub struct Pane {
+    /// the wezterm pane id
     pub id: String,
 }
 
+pub struct SplitOpts {
+    opts: Vec<String>,
+}
+
+impl SplitOpts {
+    pub fn new() -> SplitOpts {
+        SplitOpts { opts: Vec::new() }
+    }
+    pub fn percent(&mut self, percentage: usize) -> &mut SplitOpts {
+        self.opts.push("--percent".to_string());
+        self.opts.push(format!("{}", percentage));
+        self
+    }
+    pub fn bottom(&mut self) -> &mut SplitOpts {
+        self.opts.push("--bottom".to_string());
+        self
+    }
+    pub fn right(&mut self) -> &mut SplitOpts {
+        self.opts.push("--right".to_string());
+        self
+    }
+    pub fn top_level(&mut self) -> &mut SplitOpts {
+        self.opts.push("--top-level".to_string());
+        self
+    }
+    pub fn as_vec(&self) -> Vec<&str> {
+        self.opts.iter().map(AsRef::as_ref).collect()
+    }
+}
 impl Pane {
     /// returns a vector with `--pane-id` and the
     /// pane id as members
@@ -84,14 +114,14 @@ impl Pane {
     /// the passed in vector of `opts` allows for customization:
     /// how big the new split is supposed to be and where should
     /// it be located.
-    pub fn split(&self, opts: Vec<&str>, cmd: &str) -> Pane {
+    pub fn split(&self, opts: &SplitOpts, cmd: &str) -> Pane {
         let pane_id = exec(
             [
                 wezterm_cli_vec(),
                 vec!["split-pane"],
                 self.pane_id_vec(),
                 current_dir_vec(&current_dir()),
-                opts,
+                opts.as_vec(),
                 zsh_c_vec(cmd),
             ]
             .concat(),

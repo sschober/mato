@@ -1,7 +1,7 @@
-use mato::wezterm_cli;
+use mato::wezterm_cli::{self, SplitOpts};
 use std::{env, thread, time};
 
-const DEFAULT_EDITOR: str = "nvim";
+const DEFAULT_EDITOR: &str = "nvim";
 
 /// spawns a new wezterm pane in a new tab and opens the
 /// passed in file in and editor in said pane.
@@ -33,9 +33,12 @@ fn main() -> std::io::Result<()> {
     let editor_pane = wezterm_cli::spawn(&format!("{} {}", editor_cmd, source_file));
     eprintln!("editor pane id: {}", editor_pane.id);
 
+    let mut split_opts = SplitOpts::new();
+    split_opts.percent(10).bottom();
+
     // SPLIT the pane and LAUNCH matopdf
     let mato_pane = editor_pane.split(
-        vec!["--percent", "10", "--bottom"],
+        &split_opts,
         format!("matopdf -w -v {}", source_file).as_str(),
     );
     eprintln!("mato pane id: {}", mato_pane.id);
@@ -51,9 +54,11 @@ fn main() -> std::io::Result<()> {
     let target_file_path = mato::replace_file_extension(source_file, "pdf");
     eprintln!("target file: {}", target_file_path.display());
 
+    let mut split_opts = SplitOpts::new();
+    split_opts.top_level().right();
     // SPLIT the pand toplevel and LAUNCH `termpdf.py``
     let termpdf_pane = editor_pane.split(
-        vec!["--top-level", "--right"],
+        &split_opts,
         &format!("termpdf.py {}", target_file_path.display()),
     );
     eprintln!("termpdf pane id: {}", termpdf_pane.id);

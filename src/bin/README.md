@@ -1,6 +1,6 @@
 # binaries
 
-here, you can find the source of various binaries, that are part of mato:
+Here, you can find the source of various binaries, that are part of mato:
 
 1. `matote` - a markdown to tex transformer
 2. `matopdf` - a markdown to pdf transformer
