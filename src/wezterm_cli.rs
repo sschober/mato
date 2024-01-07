@@ -75,31 +75,38 @@ pub struct Pane {
     pub id: String,
 }
 
+/// SplitOpts try to capture wezterm cli split options in a type-safe manner
 pub struct SplitOpts {
     opts: Vec<String>,
 }
 
 impl SplitOpts {
+    /// construct a new split options object
     pub fn new() -> SplitOpts {
         SplitOpts { opts: Vec::new() }
     }
+    /// add a percentage option
     pub fn percent(&mut self, percentage: usize) -> &mut SplitOpts {
         self.opts.push("--percent".to_string());
         self.opts.push(format!("{}", percentage));
         self
     }
+    /// add a bottom option
     pub fn bottom(&mut self) -> &mut SplitOpts {
         self.opts.push("--bottom".to_string());
         self
     }
+    /// add a right option
     pub fn right(&mut self) -> &mut SplitOpts {
         self.opts.push("--right".to_string());
         self
     }
+    /// add a top-level option
     pub fn top_level(&mut self) -> &mut SplitOpts {
         self.opts.push("--top-level".to_string());
         self
     }
+    /// transform to a vev<&str> needed by exec
     pub fn as_vec(&self) -> Vec<&str> {
         self.opts.iter().map(AsRef::as_ref).collect()
     }
