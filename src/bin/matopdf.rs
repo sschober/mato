@@ -35,11 +35,11 @@ fn main() -> std::io::Result<()> {
     if config.watch {
         let kqueue = watch::Kqueue::create();
         loop {
-            matogro(&config);
+            matopdf(&config);
             kqueue.wait_for_write_on_file_name(&config.source_file)?;
         }
     } else {
-        matogro(&config);
+        matopdf(&config);
     };
     Ok(())
 }
@@ -57,11 +57,12 @@ fn create_chain(config: &Config) -> Chain {
     chain
 }
 
-fn matogro(config: &Config) {
+fn matopdf(config: &Config) {
     let input = mato::read_input(config);
 
     let mut chain = create_chain(config);
 
+    // MD -> GROFF
     let start = Instant::now();
     let groff_output = mato::transform(&mut groff::new(), &mut chain, config, &input);
     log_inf!(config, "transformed in:\t\t{:?}", start.elapsed());
@@ -74,6 +75,7 @@ fn matogro(config: &Config) {
         fs::write(path_target_file, groff_output.clone()).expect("Unable to write gro");
     }
 
+    // GROFF -> PDF
     if !config.skip_rendering {
         let start = Instant::now();
         let pdf_output = mato::grotopdf(config, &groff_output);
