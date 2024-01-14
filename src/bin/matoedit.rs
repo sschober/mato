@@ -1,4 +1,4 @@
-use mato::wezterm_cli::{self, SplitOpts};
+use mato::wezterm_cli::{SplitOpts, WTCli};
 use std::{env, thread, time};
 
 const DEFAULT_EDITOR: &str = "nvim";
@@ -29,8 +29,9 @@ fn main() -> std::io::Result<()> {
         Err(_) => DEFAULT_EDITOR.to_string(),
     };
 
+    let wt_cli = WTCli::new();
     // SPAWN the EDITOR pane!
-    let editor_pane = wezterm_cli::spawn(&format!("{} {}", editor_cmd, source_file));
+    let editor_pane = wt_cli.spawn(&format!("{} {}", editor_cmd, source_file));
     eprintln!("editor pane id: {}", editor_pane.id);
 
     let mut split_opts = SplitOpts::new();
@@ -56,7 +57,8 @@ fn main() -> std::io::Result<()> {
 
     let mut split_opts = SplitOpts::new();
     split_opts.top_level().right();
-    // SPLIT the pand toplevel and LAUNCH `termpdf.py``
+
+    // SPLIT the pane on the top-level and LAUNCH `termpdf.py``
     let termpdf_pane = editor_pane.split(
         &split_opts,
         &format!("termpdf.py {}", target_file_path.display()),

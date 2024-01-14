@@ -12,9 +12,36 @@ fn current_dir() -> String {
         .to_string()
 }
 
+/// handle to wez term cli
+pub struct WTCli {}
+
+impl WTCli {
+    pub fn new() -> Self {
+        WTCli {}
+    }
+
+    /// Spans a new pane, setting CWD to the current directory
+    /// (otherwise it would be set to $HOME).
+    /// The passed in command is wrapped in a zsh invocation.
+    /// This is necessary, as otherwise, the environment and
+    /// more specifically the $PATH variable would lack the
+    /// user's settings as defined in her ~/.zshrc or equivalent.
+    pub fn spawn(&self, cmd: &str) -> WTPane {
+        let pane_id = wt_cli_exec(
+            [
+                vec!["spawn"],
+                current_dir_vec(&current_dir()),
+                wrapp_in_shell(&shell(), cmd),
+            ]
+            .concat(),
+        );
+        WTPane { id: pane_id }
+    }
+}
 /// executes the given `cmd` as a sub process and
 /// returns its output as a string
-fn exec(cmd: Vec<&str>) -> String {
+fn wt_cli_exec(cmd: Vec<&str>) -> String {
+    let cmd = [vec!["wezterm", "cli"], cmd].concat();
     eprintln!("exec: {:?}", cmd);
     let out = Command::new("/usr/bin/env")
         .args(cmd)
@@ -32,45 +59,28 @@ fn exec(cmd: Vec<&str>) -> String {
     }
 }
 
-/// returns a vector with `wezterm` and `cli` as members
-fn wezterm_cli_vec() -> Vec<&'static str> {
-    vec!["wezterm", "cli"]
-}
-
-/// returns a vector with `zsh`, `-c` and `cmd` as constituents
-/// effectively wrapping a command in a shell
-fn zsh_c_vec(cmd: &str) -> Vec<&str> {
-    vec!["zsh", "-c", cmd]
-}
-
 /// returns a vector with the `--cwd`` option as first element
 /// and the passed in `dir` string as second
 fn current_dir_vec(dir: &str) -> Vec<&str> {
     vec!["--cwd", dir]
 }
 
-/// Spans a new pane, setting CWD to the current directory
-/// (otherwise it would be set to $HOME).
-/// The passed in command is wrapped in a zsh invocation.
-/// This is necessary, as otherwise, the environment and
-/// more specifically the $PATH variable would lack the
-/// user's settings as defined in her ~/.zshrc or equivalent.
-pub fn spawn(cmd: &str) -> Pane {
-    let pane_id = exec(
-        [
-            wezterm_cli_vec(),
-            vec!["spawn"],
-            current_dir_vec(&current_dir()),
-            zsh_c_vec(cmd),
-        ]
-        .concat(),
-    );
-    Pane { id: pane_id }
+/// returns value of SHELL variable
+fn shell() -> String {
+    match env::var("SHELL") {
+        Ok(val) => val,
+        Err(_) => "zsh".to_string(),
+    }
+}
+
+/// creates vector of shell command and -c option
+fn wrapp_in_shell<'a>(shell_cmd: &'a str, cmd: &'a str) -> Vec<&'a str> {
+    vec![shell_cmd, "-c", cmd]
 }
 
 /// encapsulates a wezterm pane id.
 /// has method to split pane
-pub struct Pane {
+pub struct WTPane {
     /// the wezterm pane id
     pub id: String,
 }
@@ -78,6 +88,12 @@ pub struct Pane {
 /// SplitOpts try to capture wezterm cli split options in a type-safe manner
 pub struct SplitOpts {
     opts: Vec<String>,
+}
+
+impl Default for SplitOpts {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl SplitOpts {
@@ -111,7 +127,7 @@ impl SplitOpts {
         self.opts.iter().map(AsRef::as_ref).collect()
     }
 }
-impl Pane {
+impl WTPane {
     /// returns a vector with `--pane-id` and the
     /// pane id as members
     fn pane_id_vec(&self) -> Vec<&str> {
@@ -121,22 +137,21 @@ impl Pane {
     /// the passed in vector of `opts` allows for customization:
     /// how big the new split is supposed to be and where should
     /// it be located.
-    pub fn split(&self, opts: &SplitOpts, cmd: &str) -> Pane {
-        let pane_id = exec(
+    pub fn split(&self, opts: &SplitOpts, cmd: &str) -> WTPane {
+        let pane_id = wt_cli_exec(
             [
-                wezterm_cli_vec(),
                 vec!["split-pane"],
                 self.pane_id_vec(),
                 current_dir_vec(&current_dir()),
                 opts.as_vec(),
-                zsh_c_vec(cmd),
+                wrapp_in_shell(&shell(), cmd),
             ]
             .concat(),
         );
-        Pane { id: pane_id }
+        WTPane { id: pane_id }
     }
     /// activates the pane identified by `self`, which means, it gets the focus
     pub fn activate(&self) {
-        exec([wezterm_cli_vec(), vec!["activate-pane"], self.pane_id_vec()].concat());
+        wt_cli_exec([vec!["activate-pane"], self.pane_id_vec()].concat());
     }
 }
