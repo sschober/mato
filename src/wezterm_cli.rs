@@ -78,6 +78,12 @@ fn wrapp_in_shell<'a>(shell_cmd: &'a str, cmd: &'a str) -> Vec<&'a str> {
     vec![shell_cmd, "-c", cmd]
 }
 
+/// returns a vector with `--pane-id` and the
+/// pane id as members
+fn pane_id_vec(id: &str) -> Vec<&str> {
+    vec!["--pane-id", id]
+}
+
 /// encapsulates a wezterm pane id.
 /// has method to split pane
 pub struct WTPane {
@@ -86,39 +92,31 @@ pub struct WTPane {
 }
 
 /// SplitOpts try to capture wezterm cli split options in a type-safe manner
-pub struct SplitOpts {
+pub struct SplitOptsBuilder {
+    id: String,
+    cmd: String,
     opts: Vec<String>,
 }
 
-impl Default for SplitOpts {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl SplitOpts {
-    /// construct a new split options object
-    pub fn new() -> SplitOpts {
-        SplitOpts { opts: Vec::new() }
-    }
+impl SplitOptsBuilder {
     /// add a percentage option
-    pub fn percent(&mut self, percentage: usize) -> &mut SplitOpts {
+    pub fn percent(&mut self, percentage: usize) -> &mut SplitOptsBuilder {
         self.opts.push("--percent".to_string());
         self.opts.push(format!("{}", percentage));
         self
     }
     /// add a bottom option
-    pub fn bottom(&mut self) -> &mut SplitOpts {
+    pub fn bottom(&mut self) -> &mut SplitOptsBuilder {
         self.opts.push("--bottom".to_string());
         self
     }
     /// add a right option
-    pub fn right(&mut self) -> &mut SplitOpts {
+    pub fn right(&mut self) -> &mut SplitOptsBuilder {
         self.opts.push("--right".to_string());
         self
     }
     /// add a top-level option
-    pub fn top_level(&mut self) -> &mut SplitOpts {
+    pub fn top_level(&mut self) -> &mut SplitOptsBuilder {
         self.opts.push("--top-level".to_string());
         self
     }
@@ -126,32 +124,35 @@ impl SplitOpts {
     pub fn as_vec(&self) -> Vec<&str> {
         self.opts.iter().map(AsRef::as_ref).collect()
     }
-}
-impl WTPane {
-    /// returns a vector with `--pane-id` and the
-    /// pane id as members
-    fn pane_id_vec(&self) -> Vec<&str> {
-        vec!["--pane-id", self.id.as_str()]
-    }
-    /// splits the current pane and launches `cmd`.
-    /// the passed in vector of `opts` allows for customization:
-    /// how big the new split is supposed to be and where should
-    /// it be located.
-    pub fn split(&self, opts: &SplitOpts, cmd: &str) -> WTPane {
+
+    pub fn exec(&self) -> WTPane {
         let pane_id = wt_cli_exec(
             [
                 vec!["split-pane"],
-                self.pane_id_vec(),
+                pane_id_vec(&self.id),
                 current_dir_vec(&current_dir()),
-                opts.as_vec(),
-                wrapp_in_shell(&shell(), cmd),
+                self.as_vec(),
+                wrapp_in_shell(&shell(), &self.cmd),
             ]
             .concat(),
         );
         WTPane { id: pane_id }
     }
+}
+impl WTPane {
+    /// splits the current pane and launches `cmd`.
+    /// the passed in vector of `opts` allows for customization:
+    /// how big the new split is supposed to be and where should
+    /// it be located.
+    pub fn split(&self, cmd: &str) -> SplitOptsBuilder {
+        SplitOptsBuilder {
+            id: self.id.clone(),
+            cmd: cmd.to_owned(),
+            opts: Vec::new(),
+        }
+    }
     /// activates the pane identified by `self`, which means, it gets the focus
     pub fn activate(&self) {
-        wt_cli_exec([vec!["activate-pane"], self.pane_id_vec()].concat());
+        wt_cli_exec([vec!["activate-pane"], pane_id_vec(&self.id)].concat());
     }
 }
