@@ -14,6 +14,7 @@ pub mod parser;
 pub mod process;
 pub mod render;
 pub mod syntax;
+pub mod term_cli;
 pub mod watch;
 pub mod wezterm_cli;
 
@@ -38,7 +39,7 @@ pub fn read_input(config: &Config) -> String {
     input
 }
 
-pub fn replace_file_extension(file_name: &str, extension: &str ) -> PathBuf {
+pub fn replace_file_extension(file_name: &str, extension: &str) -> PathBuf {
     let path_source_file = Path::new(&file_name);
     let mut path_target_file = path_source_file.to_path_buf();
     path_target_file.set_extension(extension);

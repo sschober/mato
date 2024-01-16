@@ -37,6 +37,11 @@ impl WTCli {
         );
         WTPane { id: pane_id }
     }
+
+    pub fn active_pane(&self) -> WTPane {
+        let pane_id = env::var("WEZTERM_PANE").unwrap();
+        WTPane { id: pane_id }
+    }
 }
 /// executes the given `cmd` as a sub process and
 /// returns its output as a string
