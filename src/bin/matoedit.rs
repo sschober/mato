@@ -1,4 +1,4 @@
-use std::{env, thread, time};
+use std::env;
 
 use mato::term_cli::TermCli;
 
@@ -24,23 +24,19 @@ fn main() -> std::io::Result<()> {
     // immediately transform it.
     mato::create_if_not_exists(source_file);
 
+    // OPEN editor
     let editor_handle = term_cli.open_editor(source_file);
     eprintln!("editor handle: {}", editor_handle);
-
-    // LAUNCH matopdf
-    let mato_handle = term_cli.exec_matopdf(source_file, editor_handle);
-    eprintln!("mato handle: {}", mato_handle);
-
-    // WAIT a sec
-    // this is ugly, but we need to sleep 1 sec to give
-    // matopdf time to transform the source file,
-    // otherwise termpdf would bail out
-    let one_sec = time::Duration::from_secs(1);
-    thread::sleep(one_sec);
 
     // we need to figure out the target file name for termpdf to call on
     let target_file_path = mato::replace_file_extension(source_file, "pdf");
     eprintln!("target file: {}", target_file_path.display());
+
+    // CREATE empty pdf if none is there already
+    mato::create_empty_if_not_exists(&format!("{}", target_file_path.display()));
+    // LAUNCH matopdf
+    let mato_handle = term_cli.exec_matopdf(source_file, editor_handle);
+    eprintln!("mato handle: {}", mato_handle);
 
     // LAUNCH `termpdf.py``
     let termpdf_handle =

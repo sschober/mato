@@ -54,6 +54,17 @@ pub fn create_if_not_exists(file_name: &str) {
     }
 }
 
+const EMPTY_PDF: &[u8] = include_bytes!("empty.pdf");
+
+pub fn create_empty_if_not_exists(file_name: &str) {
+    let path_source_file = Path::new(file_name);
+    if !path_source_file.is_file() {
+        eprintln!("creating empty pdf {}", file_name);
+        let mut pdf = File::create(file_name).unwrap();
+        pdf.write_all(EMPTY_PDF).unwrap();
+    }
+}
+
 /// top-level helper method to transform a given input string into a target language specified by the passed in renderer
 pub fn transform<R: render::Render, P: process::Process>(
     r: &mut R,
