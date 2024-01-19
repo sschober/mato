@@ -1,6 +1,6 @@
 //! a small library of utility functions for interacting with the
 //! wezterm command line interface
-use std::{env, process::Command, usize};
+use std::{env, usize};
 
 /// acquires and returns the current directory as a `String``
 fn current_dir() -> String {
@@ -31,7 +31,7 @@ impl WTCli {
             [
                 vec!["spawn"],
                 current_dir_vec(&current_dir()),
-                wrapp_in_shell(&shell(), cmd),
+                wrap_in_shell(&shell(), cmd),
             ]
             .concat(),
         );
@@ -43,25 +43,12 @@ impl WTCli {
         WTPane { id: pane_id }
     }
 }
+
 /// executes the given `cmd` as a sub process and
 /// returns its output as a string
 fn wt_cli_exec(cmd: Vec<&str>) -> String {
     let cmd = [vec!["wezterm", "cli"], cmd].concat();
-    eprintln!("exec: {:?}", cmd);
-    let out = Command::new("/usr/bin/env")
-        .args(cmd)
-        .output()
-        .expect("error executing spawn command")
-        .stdout;
-    if !out.is_empty() {
-        String::from_utf8(out)
-            .unwrap()
-            .strip_suffix('\n')
-            .unwrap()
-            .to_string()
-    } else {
-        String::new()
-    }
+    crate::exec(cmd)
 }
 
 /// returns a vector with the `--cwd`` option as first element
@@ -79,7 +66,7 @@ fn shell() -> String {
 }
 
 /// creates vector of shell command and -c option
-fn wrapp_in_shell<'a>(shell_cmd: &'a str, cmd: &'a str) -> Vec<&'a str> {
+fn wrap_in_shell<'a>(shell_cmd: &'a str, cmd: &'a str) -> Vec<&'a str> {
     vec![shell_cmd, "-c", cmd]
 }
 
@@ -137,7 +124,7 @@ impl SplitOptsBuilder {
                 pane_id_vec(&self.id),
                 current_dir_vec(&current_dir()),
                 self.as_vec(),
-                wrapp_in_shell(&shell(), &self.cmd),
+                wrap_in_shell(&shell(), &self.cmd),
             ]
             .concat(),
         );
@@ -159,5 +146,10 @@ impl WTPane {
     /// activates the pane identified by `self`, which means, it gets the focus
     pub fn activate(&self) {
         wt_cli_exec([vec!["activate-pane"], pane_id_vec(&self.id)].concat());
+    }
+
+    /// kill a pane
+    pub fn kill(&self) {
+        wt_cli_exec([vec!["kill-pane"], pane_id_vec(&self.id)].concat());
     }
 }

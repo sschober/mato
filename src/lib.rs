@@ -65,6 +65,36 @@ pub fn create_empty_if_not_exists(file_name: &str) {
     }
 }
 
+/// executes the given `cmd` as a sub process, blocks and
+/// returns its output as a string
+fn spawn(cmd: Vec<&str>) {
+    eprintln!("exec: {:?}", cmd);
+    Command::new("/usr/bin/env")
+        .args(cmd)
+        .status()
+        .expect("error executing spawn command");
+}
+
+/// executes the given `cmd` as a sub process, blocks and
+/// returns its output as a string
+fn exec(cmd: Vec<&str>) -> String {
+    eprintln!("exec: {:?}", cmd);
+    let out = Command::new("/usr/bin/env")
+        .args(cmd)
+        .output()
+        .expect("error executing spawn command")
+        .stdout;
+    if !out.is_empty() {
+        String::from_utf8(out)
+            .unwrap()
+            .strip_suffix('\n')
+            .unwrap()
+            .to_string()
+    } else {
+        String::new()
+    }
+}
+
 /// top-level helper method to transform a given input string into a target language specified by the passed in renderer
 pub fn transform<R: render::Render, P: process::Process>(
     r: &mut R,

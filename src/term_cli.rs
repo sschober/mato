@@ -4,12 +4,22 @@ use crate::wezterm_cli::{WTCli, WTPane};
 
 const DEFAULT_EDITOR: &str = "nvim";
 
-/// adapter to terminal remote control, or command-line interface
+/// adapter to terminal remote control, or command-line interface.
+/// delegates calls to concrete cli interface implementations.
 pub enum TermCli {
     WezTerm,
     Kitty,
     Other,
 }
+fn get_editor() -> String {
+    // we look-up the users preferred editor via the environment
+    // variable.
+    match env::var("EDITOR") {
+        Ok(val) => val,
+        Err(_) => DEFAULT_EDITOR.to_string(),
+    }
+}
+
 impl TermCli {
     pub fn get() -> Self {
         if env::var("WEZTERM_PANE").is_ok() {
@@ -21,24 +31,31 @@ impl TermCli {
         }
     }
 
-    /// opens an editor an returns a numeric handle to it
-    pub fn open_editor(&self, source_file: &str) -> usize {
-        // we look up the users preferred editor via the environment
-        // variable.
-        let editor_cmd = match env::var("EDITOR") {
-            Ok(val) => val,
-            Err(_) => DEFAULT_EDITOR.to_string(),
-        };
+    pub fn get_active_windows_handle(&self) -> usize {
+        match self {
+            Self::WezTerm => WTCli::new().active_pane().id.parse::<usize>().unwrap(),
+            _ => 0,
+        }
+    }
+    /// opens an editor and blocks on the call
+    pub fn open_editor(&self, source_file: &str) {
+        match self {
+            Self::WezTerm => {
+                crate::spawn(vec![&get_editor(), source_file]);
+            }
+            _ => (),
+        }
+    }
 
+    /// opens an editor in a new window asynchronously an returns a numeric handle to it
+    pub fn spawn_editor(&self, source_file: &str) -> usize {
         match self {
             Self::WezTerm => {
                 let wt_cli = WTCli::new();
-                // SPAWN the EDITOR pane!
-                let editor_pane = wt_cli.spawn(&format!("{} {}", editor_cmd, source_file));
+                let editor_pane = wt_cli.spawn(&format!("{} {}", get_editor(), source_file));
                 editor_pane.id.parse::<usize>().unwrap()
             }
-            Self::Kitty => 0,
-            Self::Other => 0,
+            _ => 0,
         }
     }
 
@@ -55,8 +72,7 @@ impl TermCli {
                     .exec();
                 mato_pane.id.parse::<usize>().unwrap()
             }
-            Self::Kitty => 0,
-            Self::Other => 0,
+            _ => 0,
         }
     }
 
@@ -73,21 +89,32 @@ impl TermCli {
                     .exec();
                 termpdf_pane.id.parse::<usize>().unwrap()
             }
-            Self::Kitty => 0,
-            Self::Other => 0,
+            _ => 0,
         }
     }
 
-    pub fn focus_editor(&self, t_handle: usize) {
+    pub fn focus(&self, t_handle: usize) {
         match self {
             Self::WezTerm => {
-                let editor_pane = WTPane {
+                let pane = WTPane {
                     id: t_handle.to_string(),
                 };
-                editor_pane.activate();
+                pane.activate();
             }
-            Self::Kitty => return,
-            Self::Other => return,
+            _ => (),
+        }
+    }
+
+    pub fn close(&self, t_handle: usize) {
+        match self {
+            TermCli::WezTerm => {
+                let pane = WTPane {
+                    id: t_handle.to_string(),
+                };
+                pane.kill();
+            }
+            TermCli::Kitty => todo!(),
+            TermCli::Other => todo!(),
         }
     }
 }

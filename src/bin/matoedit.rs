@@ -25,7 +25,7 @@ fn main() -> std::io::Result<()> {
     mato::create_if_not_exists(source_file);
 
     // OPEN editor
-    let editor_handle = term_cli.open_editor(source_file);
+    let editor_handle = term_cli.get_active_windows_handle();
     eprintln!("editor handle: {}", editor_handle);
 
     // we need to figure out the target file name for termpdf to call on
@@ -34,11 +34,12 @@ fn main() -> std::io::Result<()> {
 
     // CREATE empty pdf if none is there already
     mato::create_empty_if_not_exists(&format!("{}", target_file_path.display()));
+
     // LAUNCH matopdf
     let mato_handle = term_cli.exec_matopdf(source_file, editor_handle);
     eprintln!("mato handle: {}", mato_handle);
 
-    // LAUNCH `termpdf.py``
+    // LAUNCH `termpdf.py`
     let termpdf_handle =
         term_cli.exec_termpdf(&format!("{}", target_file_path.display()), editor_handle);
     eprintln!("termpdf handle: {}", termpdf_handle);
@@ -46,7 +47,14 @@ fn main() -> std::io::Result<()> {
     // FOCUS the EDITOR
     // split and spawn move focus to the newly created panes,
     // so we need to refocus on the editor
-    term_cli.focus_editor(editor_handle);
+    term_cli.focus(editor_handle);
+
+    // OPEN editor and block on call
+    term_cli.open_editor(source_file);
+
+    // CLOSE evrything
+    term_cli.close(mato_handle);
+    term_cli.close(termpdf_handle);
 
     Ok(())
 }

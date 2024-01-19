@@ -8,7 +8,7 @@ graph LR
 md -- matopdf --> PDF
 ```
 
-`matopdf` currently comprises a markdown parsing front-end part, 
+`matopdf` currently comprises a markdown parsing front-end part,
 and two back-end renderers: one using LaTeX and one using `groff`.
 
 ```mermaid
@@ -30,10 +30,10 @@ preamble.
 ### Styling
 
 The styling of the rendered PDF output (think of padding, fonts,
-etc.) is configurable, depending on the back-end chosen. 
+etc.) is configurable, depending on the back-end chosen.
 
 The `groff` back-end has a default preamble
-(see [here](mato/src/bin/default-preamble.mom)), which defines 
+(see [here](mato/src/bin/default-preamble.mom)), which defines
 standard styles. Settings therein can be overwritten by placing a
 `preamble.mom` file next to your markdown file.
 
@@ -57,7 +57,7 @@ cargo run --bin matote sample/src/index.md
 
 ## Installation
 
-Just use 
+Just use
 
 ```
 cargo install --path .
@@ -65,7 +65,7 @@ cargo install --path .
 
 to install `matopdf`, `matote` and `matofmt` and to your rust binary
 directory.
- 
+
 ## Watch mode
 
 There is also a super-duper-watch-mode, which can be activated via
@@ -82,16 +82,19 @@ In the image above, I used [kitty](https://sw.kovidgoyal.net/kitty/)
 and `termpdf.py` to display the PDF side by side with the markdown
 source file.
 
+There is a binary, `matoedit`, which creates a setup like the above
+in a support terminal (wezterm, ATM) automatically.
+
 ## Developing
 
-The implementation is done in rust, primarily for me to learn 
+The implementation is done in rust, primarily for me to learn
 the language. So, if you find any non-idiomatic stuff, feel
 free to create a pull request.
 
 Another facet of my motivation was the book ["Crafting
 Interpreter"](https://craftinginterpreters.com) by Robert Nystrom.
 
-To start reading the code, you might jump into one of the 
+To start reading the code, you might jump into one of the
 binary sources, I'd recommend [src/bin/matopdf.rs](src/bin/matopdf.rs).
 
 There, mato is used to create groff source code from markdown
