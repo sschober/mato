@@ -93,6 +93,8 @@ impl TermCli {
         }
     }
 
+    /// sets the focus to the given pane or window
+    /// identified by the given handle
     pub fn focus(&self, t_handle: usize) {
         match self {
             Self::WezTerm => {
@@ -105,6 +107,8 @@ impl TermCli {
         }
     }
 
+    /// closes, or kills the pane or window identified
+    /// by the given handle
     pub fn close(&self, t_handle: usize) {
         match self {
             TermCli::WezTerm => {
