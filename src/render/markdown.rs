@@ -104,6 +104,7 @@ impl Render for Renderer {
                 self.render(*b1, ctx.clone()),
                 self.render(*b2, ctx)
             ),
+            Exp::Color(b_exp) => format!("\\{{{}}}", self.render(*b_exp, ctx)),
         }
     }
 }

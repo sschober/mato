@@ -13,7 +13,9 @@ pub enum Exp {
     /// An escaped literal probabely has to be treated in a special
     /// way, depending on the rendering backend
     EscapeLit(String),
-    /// Most often a single digit signifying the chapter number
+    // A color specification
+    Color(Box<Exp>),
+    /// Most often a single digit signifying the chapter number, and a color
     ChapterMark(Box<Exp>),
     /// Section headers with a separate parameter specifying the level
     Heading(Box<Exp>, u8),
@@ -74,6 +76,10 @@ pub fn escape_lit(s: &str) -> Exp {
 #[must_use]
 pub fn heading(exp: Exp, lvl: u8) -> Exp {
     Exp::Heading(Box::new(exp), lvl)
+}
+#[must_use]
+pub fn color(exp: Exp) -> Exp {
+    Exp::Color(Box::new(exp))
 }
 #[must_use]
 pub fn footnote(exp: Exp) -> Exp {

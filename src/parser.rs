@@ -1,5 +1,5 @@
 use crate::syntax::{
-    bold, empty, escape_lit, footnote, heading, hyperref, image, list, list_item, lit,
+    bold, color, empty, escape_lit, footnote, heading, hyperref, image, list, list_item, lit,
     meta_data_item, prelit, Exp,
 };
 use std::str;
@@ -102,6 +102,15 @@ impl Parser<'_> {
         exp
     }
 
+    /// parse an asymmetrically quoted substring, like
+    /// something enclosed in a pair of parentheses, ( and ).
+    fn parse_quoted_literal(&mut self, break_char: u8) -> Exp {
+        self.consume(self.char); // opening quote
+        let exp = self.parse_literal(&[break_char]); // body
+        self.consume(break_char); // ending quote
+        exp
+    }
+
     fn parse_heading_level(&mut self, level: u8) -> u8 {
         match self.char {
             b'#' => {
@@ -137,6 +146,14 @@ impl Parser<'_> {
         match self.char {
             b'(' => footnote(self.parse_quoted(b')')),
             _ => lit("^"),
+        }
+    }
+
+    fn parse_color_spec(&mut self) -> Exp {
+        self.consume(b'\\');
+        match self.char {
+            b'{' => color(self.parse_quoted_literal(b'}')),
+            _ => lit("\\"),
         }
     }
 
@@ -409,6 +426,7 @@ impl Parser<'_> {
                     escape_lit(".")
                 }
                 b'/' => self.parse_pass_through(),
+                b'\\' => self.parse_color_spec(),
                 b'[' => self.parse_hyperlink(),
                 b'\n' => {
                     // if the blank line is followed by a heading do not insert a paragraph

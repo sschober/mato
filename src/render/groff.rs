@@ -166,11 +166,11 @@ impl Renderer {
                     }
                 }
             }
+            Exp::Color(b_exp) => {
+                format!(".COLOR {}\n", rnd!(*b_exp))
+            }
             Exp::ChapterMark(b_exp) => {
-                format!(
-                    ".MN RIGHT\n.PT_SIZE +48\n.COLOR grey\n{}\n.MN OFF\n",
-                    rnd!(*b_exp)
-                )
+                format!(".MN RIGHT\n.PT_SIZE +48\n{}\n.MN OFF\n", rnd!(*b_exp))
             }
             Exp::RightSidenote(b_exp) => {
                 format!("\n.MN RIGHT\n.PT_SIZE -2\n{}\n.MN OFF\n", rnd!(*b_exp))

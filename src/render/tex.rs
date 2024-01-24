@@ -46,6 +46,7 @@ fn render_internal(exp: Exp) -> String {
         Exp::MetaDataBlock(_) => String::new(),
         Exp::MetaDataItem(_, _) => String::new(),
         Exp::Image(_, _) => String::new(),
+        Exp::Color(_) => String::new(),
     }
 }
 impl Render for Renderer {
