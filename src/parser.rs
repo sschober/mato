@@ -16,6 +16,8 @@ pub struct Parser<'a> {
     /// the character at the current parsing position
     char: u8,
 }
+
+/// indentation unit of lists in spaces
 const LIST_INDENT: u8 = 2;
 
 impl Parser<'_> {
@@ -93,22 +95,29 @@ impl Parser<'_> {
         exp
     }
 
-    /// parse an asymmetrically quoted substring, like
-    /// something enclosed in a pair of parentheses, ( and ).
-    fn parse_quoted(&mut self, break_char: u8) -> Exp {
+    /// parses something that is asymmetrically quoted, like with '(' and ')'
+    /// takes a function pointer of sorts, to parse the inner stuff
+    fn parse_quoted_base(
+        &mut self,
+        break_char: u8,
+        func: for<'a, 'b> fn(&'a mut Parser, &'b [u8]) -> Exp,
+    ) -> Exp {
         self.consume(self.char); // opening quote
-        let exp = self.parse_until(&[break_char]); // body
+        let exp = func(self, &[break_char]); // body
         self.consume(break_char); // ending quote
         exp
     }
 
     /// parse an asymmetrically quoted substring, like
     /// something enclosed in a pair of parentheses, ( and ).
+    fn parse_quoted(&mut self, break_char: u8) -> Exp {
+        self.parse_quoted_base(break_char, |a, b| Parser::parse_until(a, b))
+    }
+
+    /// parse an asymmetrically quoted substring, like
+    /// something enclosed in a pair of parentheses, ( and ).
     fn parse_quoted_literal(&mut self, break_char: u8) -> Exp {
-        self.consume(self.char); // opening quote
-        let exp = self.parse_literal(&[break_char]); // body
-        self.consume(break_char); // ending quote
-        exp
+        self.parse_quoted_base(break_char, |a, b| Parser::parse_literal(a, b))
     }
 
     fn parse_heading_level(&mut self, level: u8) -> u8 {
@@ -248,6 +257,12 @@ impl Parser<'_> {
         }
     }
 
+    fn consume_all_space(&mut self) {
+        while !self.at_end() && self.char == b' ' {
+            self.consume(b' ')
+        }
+    }
+
     fn parse_meta_data_item(&mut self) -> Exp {
         let key = self.parse_string_until(b":");
         self.consume(b':');
@@ -377,6 +392,7 @@ impl Parser<'_> {
         if is_code_block {
             self.consume(b'`'); // closing quote
             self.consume(b'`'); // closing quote
+            self.consume_all_space(); // slurp away aditional white space
             if !self.at_end() {
                 // comsuming the newline is optional, as the code block
                 // might be the last element in the file and might not
