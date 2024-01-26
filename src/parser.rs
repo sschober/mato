@@ -368,6 +368,7 @@ impl Parser<'_> {
             is_code_block = true;
             self.consume(b'`');
             self.consume(b'`');
+            self.consume_all_space(); // slurp away aditional white space
             if self.char != b'\n' {
                 block_type = self.parse_literal(b"\n");
             }
