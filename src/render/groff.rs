@@ -177,7 +177,7 @@ impl Renderer {
             }
             Exp::Quote(b_exp) => format!("\"{}\"", rnd!(*b_exp)),
             Exp::Footnote(b_exp) => {
-                format!("\n.FOOTNOTE\n{}\n.FOOTNOTE END\n", rnd!(*b_exp))
+                format!("\\c\n.FOOTNOTE\n{}\n.FOOTNOTE END\n", rnd!(*b_exp))
             }
             Exp::HyperRef(b_exp1, b_exp2) => {
                 format!(".PDF_WWW_LINK {} \"{}\"", rnd!(*b_exp2), rnd!(*b_exp1))
