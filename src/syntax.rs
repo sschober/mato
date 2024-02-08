@@ -1,9 +1,28 @@
 //! capture the essence of a markdown abstract syntax tree
 //!
+
+use std::fmt::Display;
+#[derive(Debug,Clone)]
+pub enum DocType {
+    DEFAULT,
+    CHAPTER,
+    SLIDES,
+}
+
+impl Display for DocType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_fmt(format_args!(".DOCTYPE {:?}{}", self, match self {
+            DocType::SLIDES => " HEADER \"\\*[$TITLE]\" \"\" \"\" FOOTER \"\\*[$AUTHOR]\" \"\" \"\\*S[+2]\\*[SLIDE#]\\*S[-2]\""
+,
+            _ =>""
+        }))
+    }
+}
+
 /// Expressions are the building blocks of an abstract syntax tree
 #[derive(Debug)]
 pub enum Exp {
-    Document(),
+    Document(DocType, Box<Exp>),
     /// Separate consequential pargraps
     Paragraph(),
     /// code and stuff
@@ -23,6 +42,7 @@ pub enum Exp {
     Bold(Box<Exp>),
     /// Encapsulates cursiveness; can contain varios other formattings
     Italic(Box<Exp>),
+    SmallCaps(Box<Exp>),
     /// Encapsulates code placed as a separate block, set apart from
     /// normal, flowing text
     CodeBlock(Box<Exp>, Box<Exp>),

@@ -60,6 +60,7 @@ impl Render for Renderer {
                 }
             }
             Exp::Italic(b_exp) => format!("_{}_", self.render(*b_exp, ctx)),
+            Exp::SmallCaps(be) => format!("{{{}}}", self.render(*be, ctx)),
             Exp::CodeBlock(b1, b2) => format!(
                 "```{}\n{}```",
                 self.render(*b1, ctx.clone()),
@@ -91,7 +92,7 @@ impl Render for Renderer {
                 self.char_index = 0;
                 "\n".to_string()
             }
-            Exp::Document() => String::new(),
+            Exp::Document(_,be) => self.render(*be, ctx),
             Exp::List(b_exp, _) => self.render(*b_exp, ctx),
             Exp::ListItem(b_exp, level) => {
                 let indent = (0..level).map(|_| "  ").collect::<String>();

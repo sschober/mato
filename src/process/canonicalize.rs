@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use super::Process;
 
 use crate::config::Config;
-use crate::syntax::{meta_data_block, prelit};
+use crate::syntax::{lit, meta_data_block, prelit};
 use crate::{log_trc, Exp};
 
 /// The Canonicalizer processor removes unneeded AST
@@ -13,6 +13,7 @@ pub struct Canonicalizer {}
 /// descents the complete AST and erazes Empty() nodes
 fn erase_empty(exp: Exp) -> Exp {
     match exp {
+        Exp::Document(dt, be) => Exp::Document(dt, Box::new(erase_empty(*be))),
         Exp::Cat(b_exp1, b_exp2) => match *b_exp1 {
             Exp::Empty() => erase_empty(*b_exp2),
             _ => erase_empty(*b_exp1).cat(erase_empty(*b_exp2)),
@@ -20,13 +21,56 @@ fn erase_empty(exp: Exp) -> Exp {
         Exp::CodeBlock(b1, b2) => Exp::CodeBlock(b1, Box::new(erase_empty(*b2))),
         Exp::MetaDataBlock(b_exp) => meta_data_block(erase_empty(*b_exp)),
         Exp::ChapterMark(b_exp) => Exp::ChapterMark(Box::new(erase_empty(*b_exp))),
-        Exp::PreformattedLiteral(s) => prelit(&escape_groff_symbols(s)),
+        Exp::PreformattedLiteral(s) => prelit(&prelit_escape_groff_symbols(s)),
+        Exp::Footnote(be) => Exp::Footnote(Box::new(erase_empty(*be))),
+        // the next rule replaces old style numerals in text body literals, 
+        // but not in literals in headings
+        Exp::Literal(s) => lit(replace_old_style_figures(s).as_ref()),
+        
+        Exp::SmallCaps(be) => {
+            Exp::SmallCaps(Box::new(match *be {
+                Exp::Literal(s) => lit(&replace_small_caps(s)),
+                _ => *be
+            }))
+        },
         _ => exp,
     }
 }
 
-fn escape_groff_symbols(s: String) -> String {
-    s.replace("^", "\\[ha]")
+fn replace_small_caps(s: String) -> String {
+    let mut result = String::new();
+    for c in s.chars() {
+        if c.is_ascii_alphabetic() {
+            result.push_str(&format!("\\[{}.sc]", c));
+        } else {
+            result.push(c);
+        }
+    }
+    result
+}
+
+fn replace_old_style_figures(s: String) -> String {
+    let mut result = String::new();
+    for c in s.chars() {
+        match c {
+            '0' => result.push_str("\\[zero.oldstyle]"),
+            '1' => result.push_str("\\[one.oldstyle]"),
+            '2' => result.push_str("\\[two.oldstyle]"),
+            '3' => result.push_str("\\[three.oldstyle]"),
+            '4' => result.push_str("\\[four.oldstyle]"),
+            '5' => result.push_str("\\[five.oldstyle]"),
+            '6' => result.push_str("\\[six.oldstyle]"),
+            '7' => result.push_str("\\[seven.oldstyle]"),
+            '8' => result.push_str("\\[eight.oldstyle]"),
+            '9' => result.push_str("\\[nine.oldstyle]"),
+            _ => result.push(c),
+        }
+    }
+    result
+}
+
+fn prelit_escape_groff_symbols(s: String) -> String {
+    s.replace('\\', "\\\\").replace("^", "\\[ha]").replace("\n.", "\n\\&.")
 }
 
 impl Process for Canonicalizer {

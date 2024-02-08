@@ -1,6 +1,6 @@
 use crate::syntax::{
     bold, color, empty, escape_lit, footnote, heading, hyperref, image, list, list_item, lit,
-    meta_data_item, prelit, Exp,
+    meta_data_item, prelit, DocType, Exp,
 };
 use std::str;
 
@@ -12,55 +12,62 @@ pub struct Parser<'a> {
     /// the length of the input byte slice
     input_len: usize,
     /// the current position of parsing
-    i: usize,
+    current_position: usize,
     /// the character at the current parsing position
-    char: u8,
+    current_char: u8,
+    doc_type: String,
 }
 
 /// indentation unit of lists in spaces
 const LIST_INDENT: u8 = 2;
 
 impl Parser<'_> {
-    const fn new(input: &str) -> Parser<'_> {
+    fn new(input: &str) -> Parser<'_> {
         let input_byte_slice = input.as_bytes();
         Parser {
             input: input_byte_slice,
             input_len: input_byte_slice.len(),
-            i: 0,
-            char: input_byte_slice[0],
+            current_position: 0,
+            current_char: input_byte_slice[0],
+            doc_type: "".to_owned(),
         }
     }
 
     #[must_use]
     pub fn parse(input: &str) -> Exp {
         if input.is_empty() {
-            Exp::Document()
+            Exp::Document(DocType::DEFAULT, Box::new(empty()))
         } else {
             let mut parser = Parser::new(input);
             // passing "" as bytes parses until the end of file
-            Exp::Document().cat(parser.parse_until(b""))
+            let ast = Box::new(parser.parse_until(b""));
+            match parser.doc_type.to_uppercase().as_ref() {
+                "SLIDES" => Exp::Document(DocType::SLIDES, ast),
+                "CHAPTER" => Exp::Document(DocType::CHAPTER, ast),
+                _ => Exp::Document(DocType::DEFAULT, ast),
+            }
         }
     }
 
     /// increases index and updates current char
     fn advance(&mut self) {
-        self.i += 1;
+        self.current_position += 1;
         if !self.at_end() {
-            self.char = self.input[self.i];
+            self.current_char = self.input[self.current_position];
         }
     }
 
     /// true, if current index is equal to or greater than the
     /// input string length
     const fn at_end(&self) -> bool {
-        self.i >= self.input_len
+        self.current_position >= self.input_len
     }
 
     const fn peek(&self, n: usize, char: u8) -> bool {
-        if self.i + n >= self.input_len {
+        if self.current_position + n >= self.input_len {
             false
         } else {
-            char == self.input[self.i + n]
+            char == self.input[self.current_position + n]
         }
     }
 
@@ -72,15 +79,15 @@ impl Parser<'_> {
             !self.at_end(),
             "consume({}): index {} out of bounds {} ",
             char as char,
-            self.i,
+            self.current_position,
             self.input_len
         );
         assert!(
-            self.char == char,
+            self.current_char == char,
             "expected char '{}' at index {}, but found '{}'",
             char as char,
-            self.i,
-            self.char as char
+            self.current_position,
+            self.current_char as char
         );
         self.advance();
     }
@@ -88,7 +95,7 @@ impl Parser<'_> {
     /// parse a symmetrically quoted sub string, like
     /// something enclosed in a " pair
     fn parse_symmetric_quoted(&mut self) -> Exp {
-        let break_char = self.char;
+        let break_char = self.current_char;
         self.consume(break_char); // opening quote
         let exp = self.parse_until(&[break_char]); // body
         self.consume(break_char); // ending quote
@@ -102,7 +109,7 @@ impl Parser<'_> {
         break_char: u8,
         func: for<'a, 'b> fn(&'a mut Parser, &'b [u8]) -> Exp,
     ) -> Exp {
-        self.consume(self.char); // opening quote
+        self.consume(self.current_char); // opening quote
         let exp = func(self, &[break_char]); // body
         self.consume(break_char); // ending quote
         exp
@@ -121,7 +128,7 @@ impl Parser<'_> {
     }
 
     fn parse_heading_level(&mut self, level: u8) -> u8 {
-        match self.char {
+        match self.current_char {
             b'#' => {
                 self.advance();
                 self.parse_heading_level(level + 1)
@@ -152,7 +159,7 @@ impl Parser<'_> {
 
     fn parse_footnote(&mut self) -> Exp {
         self.consume(b'^');
-        match self.char {
+        match self.current_char {
             b'(' => footnote(self.parse_quoted(b')')),
             _ => lit("^"),
         }
@@ -160,7 +167,7 @@ impl Parser<'_> {
 
     fn parse_color_spec(&mut self) -> Exp {
         self.consume(b'\\');
-        match self.char {
+        match self.current_char {
             b'{' => color(self.parse_quoted_literal(b'}')),
             _ => lit("\\"),
         }
@@ -168,11 +175,11 @@ impl Parser<'_> {
 
     fn parse_right_sidenote(&mut self) -> Exp {
         self.consume(b'>');
-        let is_chapter_mark = self.char == b'>';
+        let is_chapter_mark = self.current_char == b'>';
         if is_chapter_mark {
             self.consume(b'>');
         }
-        match self.char {
+        match self.current_char {
             b'(' => {
                 let box_exp = Box::new(self.parse_quoted(b')'));
                 let exp = if is_chapter_mark {
@@ -181,7 +188,7 @@ impl Parser<'_> {
                 } else {
                     Exp::RightSidenote(box_exp)
                 };
-                if self.char == b' ' {
+                if self.current_char == b' ' {
                     self.consume(b' ');
                 }
                 exp
@@ -200,7 +207,7 @@ impl Parser<'_> {
         self.consume(b'[');
         let exp_link_text = self.parse_until(b"]");
         self.consume(b']');
-        if self.char == b'(' {
+        if self.current_char == b'(' {
             self.consume(b'(');
             let exp_url = self.parse_literal(b")");
             self.consume(b')');
@@ -211,11 +218,11 @@ impl Parser<'_> {
     }
 
     fn parse_raw_until(&mut self, break_chars: &[u8]) -> &[u8] {
-        let start = self.i;
-        while !self.at_end() && !break_chars.contains(&self.char) {
+        let start = self.current_position;
+        while !self.at_end() && !break_chars.contains(&self.current_char) {
             self.advance();
         }
-        &self.input[start..self.i]
+        &self.input[start..self.current_position]
     }
 
     fn parse_string_until(&mut self, break_chars: &[u8]) -> String {
@@ -258,7 +265,7 @@ impl Parser<'_> {
     }
 
     fn consume_all_space(&mut self) {
-        while !self.at_end() && self.char == b' ' {
+        while !self.at_end() && self.current_char == b' ' {
             self.consume(b' ')
         }
     }
@@ -266,16 +273,21 @@ impl Parser<'_> {
     fn parse_meta_data_item(&mut self) -> Exp {
         let key = self.parse_string_until(b":");
         self.consume(b':');
-        while self.char == b' ' {
+        while self.current_char == b' ' {
             self.advance();
         }
         let value = self.parse_string_until(b"\n");
-        meta_data_item(key.to_string(), value.to_string())
+        if "doctype" == key {
+            self.doc_type = value;
+            empty()
+        } else {
+            meta_data_item(key.to_string(), value.to_string())
+        }
     }
 
     fn parse_meta_data_items(&mut self) -> Exp {
         let mut items = empty();
-        while self.char != b'-' && self.char != b'\n' {
+        while self.current_char != b'-' && self.current_char != b'\n' {
             items = items.cat(self.parse_meta_data_item());
             self.consume(b'\n')
         }
@@ -287,18 +299,18 @@ impl Parser<'_> {
             self.consume(b'-');
             self.consume(b'-');
             self.consume(b'-');
-            while self.char == b' ' || self.char == b'\t' {
+            while self.current_char == b' ' || self.current_char == b'\t' {
                 self.advance()
             }
             self.consume(b'\n');
             let items = self.parse_meta_data_items();
-            if self.char == b'-' {
+            if self.current_char == b'-' {
                 self.consume(b'-');
                 self.consume(b'-');
                 self.consume(b'-');
             }
             self.consume(b'\n');
-            if self.char == b'\n' {
+            if self.current_char == b'\n' {
                 self.consume(b'\n');
             }
             Exp::MetaDataBlock(Box::new(items))
@@ -369,7 +381,7 @@ impl Parser<'_> {
             self.consume(b'`');
             self.consume(b'`');
             self.consume_all_space(); // slurp away aditional white space
-            if self.char != b'\n' {
+            if self.current_char != b'\n' {
                 block_type = self.parse_literal(b"\n");
             }
             self.consume(b'\n');
@@ -377,7 +389,7 @@ impl Parser<'_> {
 
         // this is an ugly groff necessity: if our code snippet
         // begins with a dot, we need to escape it
-        let exp = if self.char == b'.' {
+        let exp = if self.current_char == b'.' {
             self.consume(b'.');
             escape_lit(".")
         } else {
@@ -425,21 +437,22 @@ impl Parser<'_> {
         let mut expression = Exp::Empty(); // we start with
                                            // "nothing", as rust has
                                            // no null values
-        while !self.at_end() && !break_chars.contains(&self.char) {
-            let expr = match self.char {
+        while !self.at_end() && !break_chars.contains(&self.current_char) {
+            let expr = match self.current_char {
                 b'-' => self.parse_meta_data_block(),
                 b'#' => self.parse_heading(),
                 b'*' => self.parse_list(0),
                 b'_' => Exp::Italic(Box::new(self.parse_symmetric_quoted())),
+                b'{' => Exp::SmallCaps(Box::new(self.parse_quoted(b'}'))),
                 b'`' => self.parse_code(),
                 b'"' => Exp::Quote(Box::new(self.parse_symmetric_quoted())),
                 b'^' => self.parse_footnote(),
                 b'&' => {
-                    self.consume(self.char);
+                    self.consume(self.current_char);
                     escape_lit("&")
                 }
                 b'.' => {
-                    self.consume(self.char);
+                    self.consume(self.current_char);
                     escape_lit(".")
                 }
                 b'/' => self.parse_pass_through(),
@@ -458,10 +471,13 @@ impl Parser<'_> {
                 b'>' => self.parse_right_sidenote(),
                 b'!' => self.parse_image(),
                 _ => self.parse_literal(
-                    format!("_*#\"^`&[{}>\n", str::from_utf8(break_chars).unwrap()).as_bytes(),
+                    format!("_*#\"^`&[{{{}>\n", str::from_utf8(break_chars).unwrap()).as_bytes(),
                 ),
             };
-            expression = expression.cat(expr);
+            expression = match expression {
+                Exp::Empty() => expr,
+                _ => expression.cat(expr)
+            };
         }
         expression
     }

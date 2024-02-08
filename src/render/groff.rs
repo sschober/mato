@@ -2,26 +2,24 @@
 use std::collections::HashMap;
 
 use super::Render;
-use crate::Exp;
+use crate::{syntax::DocType, Exp};
 
 /// empty struct to attach Renderer implementation on
 pub struct Renderer {
     ctx: HashMap<String, String>,
     document_started: bool,
+    doc_type: DocType,
 }
 
 pub fn new() -> Renderer {
     Renderer {
         ctx: HashMap::new(),
         document_started: false,
+        doc_type: DocType::DEFAULT,
     }
 }
 
 impl Renderer {
-    fn is_doctype(&self, doc_type: &str) -> bool {
-        self.ctx.contains_key("doctype") && self.ctx.get("doctype").unwrap() == doc_type
-    }
-
     /// groff does not support nested formattings, because it has no
     /// stackable way of switching back to the previous style. we
     /// need to emulate this by passing in the parent style as a
@@ -42,25 +40,9 @@ impl Renderer {
         }
 
         match exp {
-            Exp::Document() => {
-                // eprintln!("{:?}", self.ctx);
-                let mut result = String::new();
-                let mut doctype_emitted = false;
-                // doctype needs to be first emitted
-                if self.ctx.contains_key("doctype") {
-                    let value = self.ctx.get("doctype").unwrap();
-                    result = format!(
-                        "{}.{} {} {} {}\n",
-                        result,
-                        "doctype".to_uppercase(),
-                        value,
-                        "HEADER \"\\*[$TITLE]\" \"\" \"\" ",
-                        "FOOTER \"\\*[$AUTHOR]\" \"\" \"\\*S[+2]\\*[SLIDE#]\\*S[-2]\"
-                        "
-                    );
-                    //self.ctx.remove("doctype");
-                    doctype_emitted = true;
-                }
+            Exp::Document(dt, be) => {
+                self.doc_type = dt.clone();
+                let mut result = format!("{}", dt);
 
                 if self.ctx.contains_key("preamble") {
                     let value = self.ctx.get("preamble").unwrap();
@@ -70,22 +52,18 @@ impl Renderer {
 
                 for (key, value) in self.ctx.clone().into_iter() {
                     let key = key.replace(' ', "_");
-                    if key == "doctype" && doctype_emitted {
-                        continue;
-                    }
                     result = format!("{}.{} {}\n", result, key.to_uppercase(), value);
                 }
                 if !self.ctx.is_empty() && !self.ctx.contains_key("pdf title") {
                     result = format!("{}.PDF_TITLE \"\\*[$TITLE]\"\n", result)
                 }
-                if !self.ctx.is_empty() && !self.is_doctype("CHAPTER") & !self.is_doctype("SLIDES")
-                {
-                    // if the user gave no meta data block, we
-                    // do not emit a .START
-                    result = format!("{}\n.START\n", result);
-                    self.document_started = true;
+                match dt {
+                    DocType::CHAPTER | DocType::SLIDES => (),
+                    _ => {
+                        result = format!("{}\n.START\n", result);
+                    }
                 }
-                result
+                format!("{}{}",result,rnd_pf!(*be, parent_format))
             }
             Exp::Paragraph() => "\n.PP".to_string(),
             Exp::LineBreak() => "\n".to_string(),
@@ -96,7 +74,8 @@ impl Renderer {
             },
             Exp::Bold(b_exp) => {
                 format!("\\*[BD]{}\\*[{}]", rnd_pf!(*b_exp, "BD"), parent_format)
-            }
+            },
+            Exp::SmallCaps(be) => rnd_pf!(*be, parent_format),
             Exp::Italic(b_exp) => {
                 format!("\\*[IT]{}\\*[{}]", rnd_pf!(*b_exp, "IT"), parent_format)
             }
@@ -108,61 +87,74 @@ impl Renderer {
             ),
             Exp::InlineCode(b_exp) => format!("\\*[CODE]{}\\*[CODE OFF]", rnd!(*b_exp)),
             Exp::Heading(b_exp, level) => {
-                if self.is_doctype("CHAPTER") {
-                    if level == 0 {
-                        if self.document_started {
-                            format!(".COLLATE\n.CHAPTER_TITLE \"{}\"\n.START\n", rnd!(*b_exp))
+                match self.doc_type {
+                    DocType::CHAPTER => {
+                        if level == 0 {
+                            format!(
+                                "{}.CHAPTER_TITLE \"{}\"\n.START\n",
+                                if self.document_started {
+                                    ".COLLATE\n"
+                                } else {
+                                    self.document_started = true;
+                                    ""
+                                },
+                                rnd!(*b_exp)
+                            )
                         } else {
-                            self.document_started = true;
-                            format!(".CHAPTER_TITLE \"{}\"\n.START\n", rnd!(*b_exp))
+                            format!(
+                                ".SPACE -.7v\n.EW 2\n.HEADING {} \"{}\"\n.EW 0\n",
+                                level + 2,
+                                rnd!(*b_exp)
+                            )
                         }
-                    } else {
-                        format!(
-                            ".SPACE -.7v\n.EW 2\n.HEADING {} \"{}\"\n.EW 0\n",
-                            level + 2,
-                            rnd!(*b_exp)
-                        )
                     }
-                } else if self.is_doctype("SLIDES") {
-                    if level == 0 {
-                        if self.document_started {
-                            format!(".NEWSLIDE\n.HEADING {} \"{}\"\n", level + 1, rnd!(*b_exp))
+                    DocType::SLIDES => {
+                        if level == 0 {
+                            format!(
+                                ".{}\n.HEADING {} \"{}\"\n",
+                                if self.document_started {
+                                    "NEWSLIDE"
+                                } else {
+                                    self.document_started = true;
+                                    "START"
+                                },
+                                level + 1,
+                                rnd!(*b_exp)
+                            )
                         } else {
-                            self.document_started = true;
-                            format!(".START\n.HEADING {} \"{}\"\n", level + 1, rnd!(*b_exp))
+                            format!(
+                                ".SPACE -.7v\n.EW 2\n.HEADING {} \"{}\"\n.EW 0\n",
+                                level + 1,
+                                rnd!(*b_exp)
+                            )
                         }
-                    } else {
-                        format!(
-                            ".SPACE -.7v\n.EW 2\n.HEADING {} \"{}\"\n.EW 0\n",
-                            level + 1,
-                            rnd!(*b_exp)
-                        )
                     }
-                } else {
-                    // all other doc types
-                    if 3 == level {
-                        format!(
-                            ".SPACE -1v\n.MN LEFT\n\\!.ALD 1v\n{}\n.MN OFF",
-                            rnd!(*b_exp)
-                        )
-                    } else if 0 == level {
-                        format!(
+                    _ => {
+                        // all other doc types
+                        if 3 == level {
+                            format!(
+                                ".SPACE -1v\n.MN LEFT\n\\!.ALD 1v\n{}\n.MN OFF",
+                                rnd!(*b_exp)
+                            )
+                        } else if 0 == level {
+                            format!(
                             ".SPACE -.7v\n.FT B\n.EW 2\n.HEADING {} \"{}\"\n.EW 0\n.FT R\n.DRH\n",
                             level + 1,
                             &rnd!(*b_exp)
                         )
-                    } else if 1 == level {
-                        format!(
-                            ".SPACE -.7v\n.FT B\n.EW 2\n.HEADING {} \"{}\"\n.EW 0\n.FT R\n",
-                            level + 1,
-                            &rnd!(*b_exp)
-                        )
-                    } else {
-                        format!(
-                            ".SPACE -.7v\n.EW 2\n.HEADING {} \"{}\"\n.EW 0\n",
-                            level + 1,
-                            rnd!(*b_exp)
-                        )
+                        } else if 1 == level {
+                            format!(
+                                ".SPACE -.7v\n.FT B\n.EW 2\n.HEADING {} \"{}\"\n.EW 0\n.FT R\n",
+                                level + 1,
+                                &rnd!(*b_exp)
+                            )
+                        } else {
+                            format!(
+                                ".SPACE -.7v\n.EW 2\n.HEADING {} \"{}\"\n.EW 0\n",
+                                level + 1,
+                                rnd!(*b_exp)
+                            )
+                        }
                     }
                 }
             }

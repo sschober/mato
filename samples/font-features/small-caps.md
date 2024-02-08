@@ -1,0 +1,1 @@
+Real small {caps} are a rare beast. Let's see how {BIG} caps look.

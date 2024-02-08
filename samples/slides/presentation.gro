@@ -1,6 +1,4 @@
-.DOCTYPE SLIDES HEADER "\*[$TITLE]" "" ""  FOOTER "\*[$AUTHOR]" "" "\*S[+2]\*[SLIDE#]\*S[-2]"
-                        
-
+.DOCTYPE SLIDES HEADER "\*[$TITLE]" "" "" FOOTER "\*[$AUTHOR]" "" "\*S[+2]\*[SLIDE#]\*S[-2]"
 .FAMILY Minion
 .PT_SIZE 18
 .HEADING_STYLE 1 CAPS FONT R QUAD LEFT
@@ -19,8 +17,8 @@
 .COVER TITLE SUBTITLE AUTHOR
 .TOC_HEADER_STYLE FAMILY Minion FONT R CAPS SIZE +8
 
-.AUTHOR "Sven Schober"
 .SUBTITLE "How to create presentations"
+.AUTHOR "Sven Schober"
 .TITLE "Slides with MaTo"
 .PDF_TITLE "\*[$TITLE]"
 .START
@@ -37,6 +35,7 @@ doctype: SLIDES
 ...
 ---
 .QUOTE OFF
+
 This will trigger a new slide each time you create a level 1
 heading in the markdown document:
 .QUOTE_STYLE INDENT 1
@@ -44,6 +43,7 @@ heading in the markdown document:
 .CODE
 # My new heading // creates .NEWSLIDE
 .QUOTE OFF
+
 .NEWSLIDE
 .HEADING 1 "Further Metadata"
 
@@ -60,6 +60,7 @@ subtitle: "How to create presentations"
 author: "Sven Schober"
 ---
 .QUOTE OFF
+
 This will be reflected on the cover and in headers and footers.
 
 .NEWSLIDE
@@ -77,6 +78,7 @@ Define font and heading sizes:
 \&.HEADING_STYLE 3 FONT I SIZE -1 QUAD LEFT
 \&.QUAD LEFT
 .QUOTE OFF
+
 This sets the font to Minion and makes headers level 1 and 2 all caps.
 .PP
 Also left aligns them (central alignment is default in mom slides).
@@ -97,6 +99,7 @@ Define code style
 \&.START
 
 .QUOTE OFF
+
 Quad left aligns the listings on the left.
 .PP
 Finally, starts the document.
@@ -113,6 +116,7 @@ Here we can see a simple script:
 $ echo "hello world"
 hello world
 .QUOTE OFF
+
 .NEWSLIDE
 .HEADING 1 "Multicolumn"
 
