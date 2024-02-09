@@ -4,7 +4,7 @@
 ## Motivation
 
 Currently, `mato` parses markdown formatted files with a parser into
-an abstract syntax tree (AST). For example, the following little
+an abstract syntax tree ({AST}). For example, the following little
 file:
 
 ```
@@ -12,7 +12,7 @@ This is a sentence^(And this is a footnote.)
 that is quite long.
 ```
 
-is parsed into an AST, like the following:
+is parsed into an {AST}, like the following:
 
 ```
 Document(DEFAULT, 
@@ -27,7 +27,7 @@ Document(DEFAULT,
 ```
 
 But, not all information that is necessary to render a `groff` file
-is present in this AST. What is missing is outlined in the following
+is present in this {AST}. What is missing is outlined in the following
 paragraphs.
 
 ### Preamble is missing from AST
@@ -51,13 +51,13 @@ is being read in during startup of `matopdf`^(Or even during compile
 time.) and spat out as is during rendering at the beginning of the
 document.
 
-As it is not part of AST, as shown above, it has to be communicated
+As it is not part of {AST}, as shown above, it has to be communicated
 to the renderer in some other way. That other way is a *context*
 object. And that context object is then being consulted in the
 renderer.
 
 We can see the code location, where the storing of the preamble
-happens in the constructor of an AST processor called `MetaDataExtractor`:
+happens in the constructor of an {AST} processor called `MetaDataExtractor`:
 
 ```
 pub fn new(preamble: &str) -> Box<dyn Process> {
@@ -76,7 +76,7 @@ Here, we see, that a new `HashMap` is being created and the preamble
 is stored in there under a key called `preamble`.
 
 An interesting aside, that already is hinting at the problem, is the
-last line of the constructor, where a new object, or struct of type
+{AST} line of the constructor, where a new object, or struct of type
 `MetaDataExtractor` is created and the context object is being put
 in.
 
@@ -100,3 +100,10 @@ I claim that _context objects are a bad thing_.
 But, why, you probably ask. Aren't they used almost everywhere in
 software development? Aren't they a vital part of many software
 architectures?
+
+I see currently the following problems:
+
+* _Loss of type safety_ - You put strings into the context object and you look-up strings again. Nobody guards you against dumb error, misspelling the key name.
+* _Loss of locality_ - You put something into the context object at one place in your code and it can be very hard to find the places where the key is looked up again. The same argument applies vice versa.
+* _Loss of conciseness_ - Your code get's ugly, as you begin to look-up stuff in context objects. The context object tends to creep into every function parameter list.
+* _Loss of expressiveness_ - A function parameter list with a context object does not communicate which information is really needed by the function.
