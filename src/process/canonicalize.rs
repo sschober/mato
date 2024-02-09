@@ -8,6 +8,7 @@ use crate::{log_trc, Exp};
 
 /// The Canonicalizer processor removes unneeded AST
 /// elements, like empty()s
+#[derive(Debug)]
 pub struct Canonicalizer {}
 
 /// descents the complete AST and erazes Empty() nodes
@@ -75,16 +76,12 @@ fn prelit_escape_groff_symbols(s: String) -> String {
 
 impl Process for Canonicalizer {
     fn process(&mut self, exp: Exp, config: &Config) -> Exp {
-        log_trc!(config, "{}", self.get_name());
+        log_trc!(config, "{:?}", self);
         erase_empty(exp)
     }
 
     fn get_context(&mut self) -> std::collections::HashMap<String, String> {
         HashMap::new()
-    }
-
-    fn get_name(&self) -> String {
-        "Canonicalizer".to_string()
     }
 }
 

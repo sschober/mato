@@ -12,6 +12,7 @@ use super::Process;
 /// block and fills a context object, which can
 /// later during rendering be used to govern stylistic
 /// decisions.
+#[derive(Debug)]
 pub struct MetaDataExtractor {
     ctx: HashMap<String, String>,
     doc_type : String,
@@ -51,16 +52,12 @@ impl Default for MetaDataExtractor {
 
 impl Process for MetaDataExtractor {
     fn process(&mut self, exp: Exp, config: &Config) -> crate::syntax::Exp {
-        log_trc!(config, "{}", self.get_name());
+        log_trc!(config, "{:?}", self);
         self.extract_meta_data(exp)
     }
 
     fn get_context(&mut self) -> HashMap<String, String> {
         self.ctx.clone()
-    }
-
-    fn get_name(&self) -> String {
-        "MetaDataExtractor".to_string()
     }
 }
 

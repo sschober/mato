@@ -17,11 +17,11 @@ impl Process for Chain {
         let start = Instant::now();
         let result = self.a.process(exp, config);
         if config.log_level >= 2 {
-            log_trc!(config, "{}: {:?}", self.a.get_name(), start.elapsed());
+            log_trc!(config, "{:?}: {:?}", self.a, start.elapsed());
         }
         let result = self.b.process(result, config);
         if config.log_level >= 2 {
-            log_trc!(config, "{}: {:?}", self.b.get_name(), start.elapsed());
+            log_trc!(config, "{:?}: {:?}", self.b, start.elapsed());
         }
         result
     }
@@ -29,10 +29,6 @@ impl Process for Chain {
     fn get_context(&mut self) -> HashMap<String, String> {
         let result = self.a.get_context();
         result.into_iter().chain(self.b.get_context()).collect()
-    }
-
-    fn get_name(&self) -> String {
-        format!("{:?} -> {:?}", self.a, self.b)
     }
 }
 

@@ -53,7 +53,7 @@ fn create_chain(config: &Config) -> Chain {
     .append(image_converter::new())
     .append(code_block::new());
     log_trc!(config, "done");
-    log_dbg!(config, "{:?}", chain);
+    log_dbg!(config, "chain: {:?}", chain);
     chain
 }
 

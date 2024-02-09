@@ -14,7 +14,7 @@ use crate::{log_dbg, log_trc};
 
 /// CodeBlock processor looks inside code blocks that it finds in the AST and
 /// if the type is pic will render the pic picture embedded inside of the block.
-#[derive(Default)]
+#[derive(Default,Debug)]
 pub struct CodeBlockProcessor {}
 
 fn process_code_blocks(exp: Exp, config: &Config) -> Exp {
@@ -72,16 +72,12 @@ impl Process for CodeBlockProcessor {
         exp: crate::syntax::Exp,
         config: &crate::config::Config,
     ) -> crate::syntax::Exp {
-        log_trc!(config, "{}", self.get_name());
+        log_trc!(config, "{:?}", self);
         process_code_blocks(exp, config)
     }
 
     fn get_context(&mut self) -> std::collections::HashMap<String, String> {
         HashMap::new()
-    }
-
-    fn get_name(&self) -> String {
-        "CodeBlockProcessor".to_string()
     }
 }
 

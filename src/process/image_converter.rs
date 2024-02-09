@@ -11,7 +11,7 @@ use super::Process;
 /// ImageConverter processor currently only transforms
 /// path information in the image expression.
 /// Ultimately, we want it to do conversion and caching.
-#[derive(Default)]
+#[derive(Default,Debug)]
 pub struct ImageConverter {}
 
 fn process_images(exp: Exp, config: &Config) -> Exp {
@@ -46,16 +46,12 @@ impl Process for ImageConverter {
         exp: crate::syntax::Exp,
         config: &crate::config::Config,
     ) -> crate::syntax::Exp {
-        log_trc!(config, "{}", self.get_name());
+        log_trc!(config, "{:?}", self);
         process_images(exp, config)
     }
 
     fn get_context(&mut self) -> std::collections::HashMap<String, String> {
         HashMap::new()
-    }
-
-    fn get_name(&self) -> String {
-        "ImageConverter".to_string()
     }
 }
 
