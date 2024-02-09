@@ -489,14 +489,14 @@ mod tests {
     #[test]
     fn construction() {
         let parser = Parser::new("\"quoted\"");
-        assert_eq!(format!("{:?}", parser), "Parser { input: [34, 113, 117, 111, 116, 101, 100, 34], input_len: 8, i: 0, char: 34 }");
+        assert_eq!(format!("{:?}", parser), "Parser { input: [34, 113, 117, 111, 116, 101, 100, 34], input_len: 8, current_position: 0, current_char: 34, doc_type: \"\" }");
     }
     #[test]
     fn expression() {
         let parser = Parser::parse("\"quoted\"");
         assert_eq!(
             format!("{:?}", parser),
-            "Cat(Document, Cat(Empty, Quote(Cat(Empty, Literal(\"quoted\")))))"
+            "Document(DEFAULT, Quote(Literal(\"quoted\")))"
         );
     }
     #[test]
@@ -504,7 +504,7 @@ mod tests {
         let parser = Parser::parse("&");
         assert_eq!(
             format!("{:?}", parser),
-            "Cat(Document, Cat(Empty, EscapeLit(\"&\")))"
+            "Document(DEFAULT, EscapeLit(\"&\"))"
         );
     }
     #[test]
@@ -512,7 +512,7 @@ mod tests {
         let parser = Parser::parse(".");
         assert_eq!(
             format!("{:?}", parser),
-            "Cat(Document, Cat(Empty, EscapeLit(\".\")))"
+            "Document(DEFAULT, EscapeLit(\".\"))"
         );
     }
 }
