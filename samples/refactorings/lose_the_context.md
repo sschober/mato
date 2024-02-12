@@ -51,7 +51,7 @@ is being read in during startup of `matopdf`^(Or even during compile
 time.) and spat out as is during rendering at the beginning of the
 document.
 
-As it is not part of {AST}, as shown above, it has to be communicated
+As it is not part of the {AST}, as shown above, it has to be communicated
 to the renderer in some other way. That other way is a *context*
 object. And that context object is then being consulted in the
 renderer.
@@ -103,7 +103,45 @@ architectures?
 
 I see currently the following problems:
 
-* _Loss of type safety_ - You put strings into the context object and you look-up strings again. Nobody guards you against dumb error, misspelling the key name.
+* _Loss of type safety_ - You put strings into the context object and you look-up strings again. Nobody guards you against dumb errors, misspelling the key name. You have to look out for yourself and that convolutes your code, as you must guard against a key not being present, or no value being stored under a present key.
 * _Loss of locality_ - You put something into the context object at one place in your code and it can be very hard to find the places where the key is looked up again. The same argument applies vice versa.
 * _Loss of conciseness_ - Your code get's ugly, as you begin to look-up stuff in context objects. The context object tends to creep into every function parameter list.
 * _Loss of expressiveness_ - A function parameter list with a context object does not communicate which information is really needed by the function.
+
+As all of these problems aggregate, I think it is favorable to 
+strive towards other solutions. Solutions that are _type safe_, 
+preserve _locality_ and _conciseness_ and keeps your function
+signatures expressive.
+
+## Approach
+
+In my current understanding, it might be a good idea to store
+as much information in the {AST} as possible. That way it is 
+at every moment obvious, what information is being communicated
+between different phases of processing. Furthermore, the rendering
+is much more obvious, as `rust`s `match` expressions help here.
+
+### Document Type as a first example
+
+In the {AST} above, we see that `Document` has a member with a 
+value of `DEFAULT`. 
+
+```
+Document(DEFAULT, 
+...
+```
+
+Not obvious in that snapshot of an {AST} is
+that this is a member called `doc_type`:
+
+```
+pub enum Exp {
+    Document(DocType, Box<Exp>),
+...
+```
+
+Formerly, the document type was also stored in the context object.
+At some point in the past, I decided to investigate the possibilites
+of reducing the amount of information stored in the context object.
+
+This member is the result of this endeavours.
