@@ -1,6 +1,6 @@
 use crate::syntax::{
     bold, color, empty, escape_lit, footnote, heading, hyperref, image, list, list_item, lit,
-    meta_data_item, prelit, DocType, Exp,
+    meta_data_item, prelit, DocType, Tree,
 };
 use std::str;
 
@@ -34,17 +34,17 @@ impl Parser<'_> {
     }
 
     #[must_use]
-    pub fn parse(input: &str) -> Exp {
+    pub fn parse(input: &str) -> Tree {
         if input.is_empty() {
-            Exp::Document(DocType::DEFAULT, Box::new(empty()))
+            Tree::Document(DocType::DEFAULT, Box::new(empty()))
         } else {
             let mut parser = Parser::new(input);
             // passing "" as bytes parses until the end of file
             let ast = Box::new(parser.parse_until(b""));
             match parser.doc_type.to_uppercase().as_ref() {
-                "SLIDES" => Exp::Document(DocType::SLIDES, ast),
-                "CHAPTER" => Exp::Document(DocType::CHAPTER, ast),
-                _ => Exp::Document(DocType::DEFAULT, ast),
+                "SLIDES" => Tree::Document(DocType::SLIDES, ast),
+                "CHAPTER" => Tree::Document(DocType::CHAPTER, ast),
+                _ => Tree::Document(DocType::DEFAULT, ast),
             }
         }
     }
@@ -94,7 +94,7 @@ impl Parser<'_> {
 
     /// parse a symmetrically quoted sub string, like
     /// something enclosed in a " pair
-    fn parse_symmetric_quoted(&mut self) -> Exp {
+    fn parse_symmetric_quoted(&mut self) -> Tree {
         let break_char = self.current_char;
         self.consume(break_char); // opening quote
         let exp = self.parse_until(&[break_char]); // body
@@ -107,8 +107,8 @@ impl Parser<'_> {
     fn parse_quoted_base(
         &mut self,
         break_char: u8,
-        func: for<'a, 'b> fn(&'a mut Parser, &'b [u8]) -> Exp,
-    ) -> Exp {
+        func: for<'a, 'b> fn(&'a mut Parser, &'b [u8]) -> Tree,
+    ) -> Tree {
         self.consume(self.current_char); // opening quote
         let exp = func(self, &[break_char]); // body
         self.consume(break_char); // ending quote
@@ -117,13 +117,13 @@ impl Parser<'_> {
 
     /// parse an asymmetrically quoted substring, like
     /// something enclosed in a pair of parentheses, ( and ).
-    fn parse_quoted(&mut self, break_char: u8) -> Exp {
+    fn parse_quoted(&mut self, break_char: u8) -> Tree {
         self.parse_quoted_base(break_char, |a, b| Parser::parse_until(a, b))
     }
 
     /// parse an asymmetrically quoted substring, like
     /// something enclosed in a pair of parentheses, ( and ).
-    fn parse_quoted_literal(&mut self, break_char: u8) -> Exp {
+    fn parse_quoted_literal(&mut self, break_char: u8) -> Tree {
         self.parse_quoted_base(break_char, |a, b| Parser::parse_literal(a, b))
     }
 
@@ -141,7 +141,7 @@ impl Parser<'_> {
         }
     }
 
-    fn parse_heading(&mut self) -> Exp {
+    fn parse_heading(&mut self) -> Tree {
         self.consume(b'#');
         let level = self.parse_heading_level(0);
         let literal = self.parse_literal(b"\n");
@@ -157,7 +157,7 @@ impl Parser<'_> {
         result
     }
 
-    fn parse_footnote(&mut self) -> Exp {
+    fn parse_footnote(&mut self) -> Tree {
         self.consume(b'^');
         match self.current_char {
             b'(' => footnote(self.parse_quoted(b')')),
@@ -165,7 +165,7 @@ impl Parser<'_> {
         }
     }
 
-    fn parse_color_spec(&mut self) -> Exp {
+    fn parse_color_spec(&mut self) -> Tree {
         self.consume(b'\\');
         match self.current_char {
             b'{' => color(self.parse_quoted_literal(b'}')),
@@ -173,7 +173,7 @@ impl Parser<'_> {
         }
     }
 
-    fn parse_right_sidenote(&mut self) -> Exp {
+    fn parse_right_sidenote(&mut self) -> Tree {
         self.consume(b'>');
         let is_chapter_mark = self.current_char == b'>';
         if is_chapter_mark {
@@ -184,9 +184,9 @@ impl Parser<'_> {
                 let box_exp = Box::new(self.parse_quoted(b')'));
                 let exp = if is_chapter_mark {
                     self.consume(b'\n');
-                    Exp::ChapterMark(box_exp)
+                    Tree::ChapterMark(box_exp)
                 } else {
-                    Exp::RightSidenote(box_exp)
+                    Tree::RightSidenote(box_exp)
                 };
                 if self.current_char == b' ' {
                     self.consume(b' ');
@@ -203,7 +203,7 @@ impl Parser<'_> {
         }
     }
 
-    fn parse_hyperlink(&mut self) -> Exp {
+    fn parse_hyperlink(&mut self) -> Tree {
         self.consume(b'[');
         let exp_link_text = self.parse_until(b"]");
         self.consume(b']');
@@ -231,15 +231,15 @@ impl Parser<'_> {
             .to_string()
     }
 
-    fn parse_literal(&mut self, break_chars: &[u8]) -> Exp {
+    fn parse_literal(&mut self, break_chars: &[u8]) -> Tree {
         lit(&self.parse_string_until(break_chars))
     }
 
-    fn parse_preformatted_literal(&mut self, break_chars: &[u8]) -> Exp {
+    fn parse_preformatted_literal(&mut self, break_chars: &[u8]) -> Tree {
         prelit(&self.parse_string_until(break_chars))
     }
 
-    fn parse_pass_through(&mut self) -> Exp {
+    fn parse_pass_through(&mut self) -> Tree {
         self.consume(b'/');
         if self.peek(0, b'/') {
             self.consume(b'/');
@@ -270,7 +270,7 @@ impl Parser<'_> {
         }
     }
 
-    fn parse_meta_data_item(&mut self) -> Exp {
+    fn parse_meta_data_item(&mut self) -> Tree {
         let key = self.parse_string_until(b":");
         self.consume(b':');
         while self.current_char == b' ' {
@@ -285,7 +285,7 @@ impl Parser<'_> {
         }
     }
 
-    fn parse_meta_data_items(&mut self) -> Exp {
+    fn parse_meta_data_items(&mut self) -> Tree {
         let mut items = empty();
         while self.current_char != b'-' && self.current_char != b'\n' {
             items = items.cat(self.parse_meta_data_item());
@@ -294,7 +294,7 @@ impl Parser<'_> {
         items
     }
 
-    fn parse_meta_data_block(&mut self) -> Exp {
+    fn parse_meta_data_block(&mut self) -> Tree {
         if self.peek(1, b'-') && self.peek(2, b'-') {
             self.consume(b'-');
             self.consume(b'-');
@@ -313,14 +313,14 @@ impl Parser<'_> {
             if self.current_char == b'\n' {
                 self.consume(b'\n');
             }
-            Exp::MetaDataBlock(Box::new(items))
+            Tree::MetaDataBlock(Box::new(items))
         } else {
             self.advance();
             lit("-")
         }
     }
 
-    fn parse_list_item(&mut self, level: u8) -> Exp {
+    fn parse_list_item(&mut self, level: u8) -> Tree {
         let mut item = empty();
         self.consume_all_space_until(level * LIST_INDENT);
         self.consume(b'*');
@@ -343,7 +343,7 @@ impl Parser<'_> {
         list_item(item, level)
     }
 
-    fn parse_list(&mut self, level: u8) -> Exp {
+    fn parse_list(&mut self, level: u8) -> Tree {
         if self.peek((level * LIST_INDENT) as usize + 1, b' ') {
             // if * is followed by white space
             let mut iterator = empty();
@@ -368,7 +368,7 @@ impl Parser<'_> {
         }
     }
 
-    fn parse_code(&mut self) -> Exp {
+    fn parse_code(&mut self) -> Tree {
         self.consume(b'`'); // opening quote
         let mut is_code_block: bool = false;
         let mut block_type = empty();
@@ -393,7 +393,7 @@ impl Parser<'_> {
             self.consume(b'.');
             escape_lit(".")
         } else {
-            Exp::Empty()
+            Tree::Empty()
         };
         let code_exp = if is_code_block {
             self.parse_preformatted_literal(b"`")
@@ -412,13 +412,13 @@ impl Parser<'_> {
                 // end with a newline (been there, done that)
                 self.consume(b'\n'); // extra newline
             }
-            Exp::CodeBlock(Box::new(block_type), Box::new(exp))
+            Tree::CodeBlock(Box::new(block_type), Box::new(exp))
         } else {
-            Exp::InlineCode(Box::new(exp))
+            Tree::InlineCode(Box::new(exp))
         }
     }
 
-    fn parse_image(&mut self) -> Exp {
+    fn parse_image(&mut self) -> Tree {
         if self.peek(1, b'[') {
             self.consume(b'!');
             self.consume(b'[');
@@ -433,8 +433,8 @@ impl Parser<'_> {
         }
     }
 
-    fn parse_until(&mut self, break_chars: &[u8]) -> Exp {
-        let mut expression = Exp::Empty(); // we start with
+    fn parse_until(&mut self, break_chars: &[u8]) -> Tree {
+        let mut expression = Tree::Empty(); // we start with
                                            // "nothing", as rust has
                                            // no null values
         while !self.at_end() && !break_chars.contains(&self.current_char) {
@@ -442,10 +442,10 @@ impl Parser<'_> {
                 b'-' => self.parse_meta_data_block(),
                 b'#' => self.parse_heading(),
                 b'*' => self.parse_list(0),
-                b'_' => Exp::Italic(Box::new(self.parse_symmetric_quoted())),
-                b'{' => Exp::SmallCaps(Box::new(self.parse_quoted(b'}'))),
+                b'_' => Tree::Italic(Box::new(self.parse_symmetric_quoted())),
+                b'{' => Tree::SmallCaps(Box::new(self.parse_quoted(b'}'))),
                 b'`' => self.parse_code(),
-                b'"' => Exp::Quote(Box::new(self.parse_symmetric_quoted())),
+                b'"' => Tree::Quote(Box::new(self.parse_symmetric_quoted())),
                 b'^' => self.parse_footnote(),
                 b'&' => {
                     self.consume(self.current_char);
@@ -462,10 +462,10 @@ impl Parser<'_> {
                     // if the blank line is followed by a heading do not insert a paragraph
                     if self.peek(1, b'\n') && !self.peek(2, b'#') {
                         self.consume(b'\n');
-                        Exp::Paragraph()
+                        Tree::Paragraph()
                     } else {
                         self.consume(b'\n');
-                        Exp::LineBreak()
+                        Tree::LineBreak()
                     }
                 }
                 b'>' => self.parse_right_sidenote(),
@@ -475,7 +475,7 @@ impl Parser<'_> {
                 ),
             };
             expression = match expression {
-                Exp::Empty() => expr,
+                Tree::Empty() => expr,
                 _ => expression.cat(expr)
             };
         }

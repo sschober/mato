@@ -2,7 +2,7 @@ use std::{collections::HashMap, time::Instant};
 
 use super::Process;
 
-use crate::{config::Config, log_trc, Exp};
+use crate::{config::Config, log_trc, Tree};
 use core::fmt::Debug;
 
 /// A Chain can be used to chain multiple processors
@@ -13,7 +13,7 @@ pub struct Chain {
 }
 
 impl Process for Chain {
-    fn process(&mut self, exp: Exp, config: &Config) -> Exp {
+    fn process(&mut self, exp: Tree, config: &Config) -> Tree {
         let start = Instant::now();
         let result = self.a.process(exp, config);
         if config.log_level >= 2 {

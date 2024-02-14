@@ -3,7 +3,7 @@ use std::{collections::HashMap, path::Path};
 use crate::{
     config::Config,
     log_dbg, log_trc,
-    syntax::{image, lit, Exp},
+    syntax::{image, lit, Tree},
 };
 
 use super::Process;
@@ -14,12 +14,12 @@ use super::Process;
 #[derive(Default,Debug)]
 pub struct ImageConverter {}
 
-fn process_images(exp: Exp, config: &Config) -> Exp {
+fn process_images(exp: Tree, config: &Config) -> Tree {
     match exp {
-        Exp::Cat(b1, b2) => process_images(*b1, config).cat(process_images(*b2, config)),
-        Exp::Image(caption, path) => {
+        Tree::Cat(b1, b2) => process_images(*b1, config).cat(process_images(*b2, config)),
+        Tree::Image(caption, path) => {
             let path = match *path {
-                Exp::Literal(p) => {
+                Tree::Literal(p) => {
                     let mut resolved_path = p.clone();
                     if !p.starts_with('/') {
                         let parent_dir_path = Path::new(&config.parent_dir);
@@ -43,9 +43,9 @@ fn process_images(exp: Exp, config: &Config) -> Exp {
 impl Process for ImageConverter {
     fn process(
         &mut self,
-        exp: crate::syntax::Exp,
+        exp: crate::syntax::Tree,
         config: &crate::config::Config,
-    ) -> crate::syntax::Exp {
+    ) -> crate::syntax::Tree {
         log_trc!(config, "{:?}", self);
         process_images(exp, config)
     }

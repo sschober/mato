@@ -2,7 +2,7 @@
 use std::collections::HashMap;
 
 use super::Render;
-use crate::{syntax::DocType, Exp};
+use crate::{syntax::DocType, Tree};
 
 /// empty struct to attach Renderer implementation on
 pub struct Renderer {
@@ -24,7 +24,7 @@ impl Renderer {
     /// stackable way of switching back to the previous style. we
     /// need to emulate this by passing in the parent style as a
     /// parameter, `parent_format`.
-    fn render_with_parent_format(&mut self, exp: Exp, parent_format: &str) -> String {
+    fn render_with_parent_format(&mut self, exp: Tree, parent_format: &str) -> String {
         // abbreviates call to self.render_with_default_format(...)
         macro_rules! rnd {
             ($( $args:expr ), *) => {
@@ -40,7 +40,7 @@ impl Renderer {
         }
 
         match exp {
-            Exp::Document(dt, be) => {
+            Tree::Document(dt, be) => {
                 self.doc_type = dt.clone();
                 let mut result = format!("{}", dt);
 
@@ -65,28 +65,28 @@ impl Renderer {
                 }
                 format!("{}{}",result,rnd_pf!(*be, parent_format))
             }
-            Exp::Paragraph() => "\n.PP".to_string(),
-            Exp::LineBreak() => "\n".to_string(),
-            Exp::Literal(s) | Exp::PreformattedLiteral(s) => s,
-            Exp::EscapeLit(s) => match s.as_str() {
+            Tree::Paragraph() => "\n.PP".to_string(),
+            Tree::LineBreak() => "\n".to_string(),
+            Tree::Literal(s) | Tree::PreformattedLiteral(s) => s,
+            Tree::EscapeLit(s) => match s.as_str() {
                 "." => "\\&.".to_string(),
                 _ => s,
             },
-            Exp::Bold(b_exp) => {
+            Tree::Bold(b_exp) => {
                 format!("\\*[BD]{}\\*[{}]", rnd_pf!(*b_exp, "BD"), parent_format)
             },
-            Exp::SmallCaps(be) => rnd_pf!(*be, parent_format),
-            Exp::Italic(b_exp) => {
+            Tree::SmallCaps(be) => rnd_pf!(*be, parent_format),
+            Tree::Italic(b_exp) => {
                 format!("\\*[IT]{}\\*[{}]", rnd_pf!(*b_exp, "IT"), parent_format)
             }
             // Currently there seems to be a bug: https://savannah.gnu.org/bugs/index.php?64561
             // Exp::CodeBlock(b_exp) => format!(".QUOTE_STYLE INDENT 1\n.QUOTE\n.CODE\n.BOX OUTLINED black INSET 18p\n{}.BOX OFF\n.QUOTE OFF", self.render(*b_exp)),
-            Exp::CodeBlock(_b1, b2) => format!(
+            Tree::CodeBlock(_b1, b2) => format!(
                 ".QUOTE_STYLE INDENT 1\n.QUOTE\n.CODE\n{}.QUOTE OFF\n",
                 rnd!(*b2)
             ),
-            Exp::InlineCode(b_exp) => format!("\\*[CODE]{}\\*[CODE OFF]", rnd!(*b_exp)),
-            Exp::Heading(b_exp, level) => {
+            Tree::InlineCode(b_exp) => format!("\\*[CODE]{}\\*[CODE OFF]", rnd!(*b_exp)),
+            Tree::Heading(b_exp, level) => {
                 match self.doc_type {
                     DocType::CHAPTER => {
                         if level == 0 {
@@ -158,40 +158,40 @@ impl Renderer {
                     }
                 }
             }
-            Exp::Color(b_exp) => {
+            Tree::Color(b_exp) => {
                 format!(".COLOR {}\n", rnd!(*b_exp))
             }
-            Exp::ChapterMark(b_exp) => {
+            Tree::ChapterMark(b_exp) => {
                 format!(".MN RIGHT\n.PT_SIZE +48\n{}\n.MN OFF\n", rnd!(*b_exp))
             }
-            Exp::RightSidenote(b_exp) => {
+            Tree::RightSidenote(b_exp) => {
                 format!("\n.MN RIGHT\n.PT_SIZE -2\n{}\n.MN OFF\n", rnd!(*b_exp))
             }
-            Exp::Quote(b_exp) => format!("\"{}\"", rnd!(*b_exp)),
-            Exp::Footnote(b_exp) => {
+            Tree::Quote(b_exp) => format!("\"{}\"", rnd!(*b_exp)),
+            Tree::Footnote(b_exp) => {
                 format!("\\c\n.FOOTNOTE\n{}\n.FOOTNOTE END\n", rnd!(*b_exp))
             }
-            Exp::HyperRef(b_exp1, b_exp2) => {
+            Tree::HyperRef(b_exp1, b_exp2) => {
                 format!(".PDF_WWW_LINK {} \"{}\"", rnd!(*b_exp2), rnd!(*b_exp1))
             }
-            Exp::Cat(b_exp1, b_exp2) => {
+            Tree::Cat(b_exp1, b_exp2) => {
                 format!(
                     "{}{}",
                     rnd_pf!(*b_exp1, parent_format),
                     rnd_pf!(*b_exp2, parent_format)
                 )
             }
-            Exp::Empty() => String::new(),
-            Exp::List(b_exp, _) => {
+            Tree::Empty() => String::new(),
+            Tree::List(b_exp, _) => {
                 format!(".LIST\n.SHIFT_LIST 18p\n{}.LIST OFF\n", rnd!(*b_exp))
             }
-            Exp::ListItem(b_exp, _) => match *b_exp {
-                Exp::Empty() => String::new(),
+            Tree::ListItem(b_exp, _) => match *b_exp {
+                Tree::Empty() => String::new(),
                 _ => format!(".ITEM\n{}\n", rnd!(*b_exp)),
             },
-            Exp::MetaDataBlock(b_exp) => rnd!(*b_exp),
-            Exp::MetaDataItem(_, _) => String::new(),
-            Exp::Image(b_exp, path) => {
+            Tree::MetaDataBlock(b_exp) => rnd!(*b_exp),
+            Tree::MetaDataItem(_, _) => String::new(),
+            Tree::Image(b_exp, path) => {
                 format!(
                     ".PDF_IMAGE {} 200p 150p CAPTION \"{}\"",
                     rnd!(*path),
@@ -200,13 +200,13 @@ impl Renderer {
             }
         }
     }
-    fn render_with_default_format(&mut self, exp: Exp) -> String {
+    fn render_with_default_format(&mut self, exp: Tree) -> String {
         self.render_with_parent_format(exp, "ROM")
     }
 }
 
 impl Render for Renderer {
-    fn render(&mut self, exp: Exp, ctx: HashMap<String, String>) -> String {
+    fn render(&mut self, exp: Tree, ctx: HashMap<String, String>) -> String {
         self.ctx = ctx.clone();
         self.render_with_default_format(exp)
     }

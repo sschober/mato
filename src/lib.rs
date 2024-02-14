@@ -8,7 +8,7 @@ use std::time::Instant;
 
 use config::Config;
 use parser::Parser;
-use syntax::Exp;
+use syntax::Tree;
 pub mod config;
 pub mod parser;
 pub mod process;
@@ -113,14 +113,14 @@ pub fn transform<R: render::Render, P: process::Process>(
 /// helper function for static dispatch
 ///
 /// calls the passed in processor on the given exp
-fn process<P: process::Process>(p: &mut P, exp: Exp, config: &Config) -> Exp {
+fn process<P: process::Process>(p: &mut P, exp: Tree, config: &Config) -> Tree {
     p.process(exp, config)
 }
 
 /// helper function for static dispatch
 ///
 /// calls the passed in renderer on the result created by the parser
-fn render<R: render::Render, P: process::Process>(r: &mut R, exp: Exp, p: &mut P) -> String {
+fn render<R: render::Render, P: process::Process>(r: &mut R, exp: Tree, p: &mut P) -> String {
     r.render(exp, p.get_context())
 }
 

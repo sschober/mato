@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::{
     config::Config,
     log_trc,
-    syntax::{empty, meta_data_block, meta_data_item, Exp},
+    syntax::{empty, meta_data_block, meta_data_item, Tree},
 };
 
 use super::Process;
@@ -26,11 +26,11 @@ impl MetaDataExtractor {
         }
     }
 
-    fn extract_meta_data(&mut self, exp: Exp) -> Exp {
+    fn extract_meta_data(&mut self, exp: Tree) -> Tree {
         match exp {
-            Exp::Cat(b1, b2) => self.extract_meta_data(*b1).cat(self.extract_meta_data(*b2)),
-            Exp::MetaDataBlock(e) => meta_data_block(self.extract_meta_data(*e)),
-            Exp::MetaDataItem(k, v) => {
+            Tree::Cat(b1, b2) => self.extract_meta_data(*b1).cat(self.extract_meta_data(*b2)),
+            Tree::MetaDataBlock(e) => meta_data_block(self.extract_meta_data(*e)),
+            Tree::MetaDataItem(k, v) => {
                 if "DOCTYPE" == k.to_uppercase() {
                     self.doc_type = v.to_uppercase();
                     empty()
@@ -51,7 +51,7 @@ impl Default for MetaDataExtractor {
 }
 
 impl Process for MetaDataExtractor {
-    fn process(&mut self, exp: Exp, config: &Config) -> crate::syntax::Exp {
+    fn process(&mut self, exp: Tree, config: &Config) -> crate::syntax::Tree {
         log_trc!(config, "{:?}", self);
         self.extract_meta_data(exp)
     }

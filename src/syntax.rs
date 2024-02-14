@@ -21,8 +21,8 @@ impl Display for DocType {
 
 /// Expressions are the building blocks of an abstract syntax tree
 #[derive(Debug)]
-pub enum Exp {
-    Document(DocType, Box<Exp>),
+pub enum Tree {
+    Document(DocType, Box<Tree>),
     /// Separate consequential pargraps
     Paragraph(),
     /// code and stuff
@@ -33,46 +33,46 @@ pub enum Exp {
     /// way, depending on the rendering backend
     EscapeLit(String),
     // A color specification
-    Color(Box<Exp>),
+    Color(Box<Tree>),
     /// Most often a single digit signifying the chapter number, and a color
-    ChapterMark(Box<Exp>),
+    ChapterMark(Box<Tree>),
     /// Section headers with a separate parameter specifying the level
-    Heading(Box<Exp>, u8),
+    Heading(Box<Tree>, u8),
     /// Encapsulates boldness; can contain various other formattings
-    Bold(Box<Exp>),
+    Bold(Box<Tree>),
     /// Encapsulates cursiveness; can contain varios other formattings
-    Italic(Box<Exp>),
-    SmallCaps(Box<Exp>),
+    Italic(Box<Tree>),
+    SmallCaps(Box<Tree>),
     /// Encapsulates code placed as a separate block, set apart from
     /// normal, flowing text
-    CodeBlock(Box<Exp>, Box<Exp>),
+    CodeBlock(Box<Tree>, Box<Tree>),
     /// Encapsulates text rendered in non-proportional font, usually
     /// used for computer code, placed in line with normal text
-    InlineCode(Box<Exp>),
-    Quote(Box<Exp>),
-    Footnote(Box<Exp>),
-    RightSidenote(Box<Exp>),
-    HyperRef(Box<Exp>, Box<Exp>),
+    InlineCode(Box<Tree>),
+    Quote(Box<Tree>),
+    Footnote(Box<Tree>),
+    RightSidenote(Box<Tree>),
+    HyperRef(Box<Tree>, Box<Tree>),
     // this enables composition, forming the tree
-    Cat(Box<Exp>, Box<Exp>),
+    Cat(Box<Tree>, Box<Tree>),
     // Lists, should contain ListItems
-    List(Box<Exp>, u8),
+    List(Box<Tree>, u8),
     // singular items of lists
-    ListItem(Box<Exp>, u8),
+    ListItem(Box<Tree>, u8),
     // captures a meta data block, basically a list of key values
     // like title, author etc.
-    MetaDataBlock(Box<Exp>),
+    MetaDataBlock(Box<Tree>),
     // a singular meta data item
     MetaDataItem(String, String),
     /// image with caption an path
-    Image(Box<Exp>, Box<Exp>),
+    Image(Box<Tree>, Box<Tree>),
     /// new line
     LineBreak(),
     // this is a neutral element, yielding no ouput
     Empty(),
 }
 
-impl Exp {
+impl Tree {
     /// constructs new Exp of self and expr
     #[must_use]
     pub fn cat(self, expr: Self) -> Self {
@@ -82,58 +82,58 @@ impl Exp {
 
 // TODO all these to_string invocation incur a copy!
 #[must_use]
-pub fn lit(s: &str) -> Exp {
-    Exp::Literal(s.to_string())
+pub fn lit(s: &str) -> Tree {
+    Tree::Literal(s.to_string())
 }
 #[must_use]
-pub fn prelit(s: &str) -> Exp {
-    Exp::PreformattedLiteral(s.to_string())
+pub fn prelit(s: &str) -> Tree {
+    Tree::PreformattedLiteral(s.to_string())
 }
 #[must_use]
-pub fn escape_lit(s: &str) -> Exp {
-    Exp::EscapeLit(s.to_string())
+pub fn escape_lit(s: &str) -> Tree {
+    Tree::EscapeLit(s.to_string())
 }
 #[must_use]
-pub fn heading(exp: Exp, lvl: u8) -> Exp {
-    Exp::Heading(Box::new(exp), lvl)
+pub fn heading(exp: Tree, lvl: u8) -> Tree {
+    Tree::Heading(Box::new(exp), lvl)
 }
 #[must_use]
-pub fn color(exp: Exp) -> Exp {
-    Exp::Color(Box::new(exp))
+pub fn color(exp: Tree) -> Tree {
+    Tree::Color(Box::new(exp))
 }
 #[must_use]
-pub fn footnote(exp: Exp) -> Exp {
-    Exp::Footnote(Box::new(exp))
+pub fn footnote(exp: Tree) -> Tree {
+    Tree::Footnote(Box::new(exp))
 }
 #[must_use]
-pub fn hyperref(exp1: Exp, exp2: Exp) -> Exp {
-    Exp::HyperRef(Box::new(exp1), Box::new(exp2))
+pub fn hyperref(exp1: Tree, exp2: Tree) -> Tree {
+    Tree::HyperRef(Box::new(exp1), Box::new(exp2))
 }
 #[must_use]
-pub fn bold(exp: Exp) -> Exp {
-    Exp::Bold(Box::new(exp))
+pub fn bold(exp: Tree) -> Tree {
+    Tree::Bold(Box::new(exp))
 }
 #[must_use]
-pub fn list(exp: Exp, level: u8) -> Exp {
-    Exp::List(Box::new(exp), level)
+pub fn list(exp: Tree, level: u8) -> Tree {
+    Tree::List(Box::new(exp), level)
 }
 #[must_use]
-pub fn list_item(exp: Exp, level: u8) -> Exp {
-    Exp::ListItem(Box::new(exp), level)
+pub fn list_item(exp: Tree, level: u8) -> Tree {
+    Tree::ListItem(Box::new(exp), level)
 }
 #[must_use]
-pub fn meta_data_item(key: String, value: String) -> Exp {
-    Exp::MetaDataItem(key, value)
+pub fn meta_data_item(key: String, value: String) -> Tree {
+    Tree::MetaDataItem(key, value)
 }
 #[must_use]
-pub fn meta_data_block(exp: Exp) -> Exp {
-    Exp::MetaDataBlock(Box::new(exp))
+pub fn meta_data_block(exp: Tree) -> Tree {
+    Tree::MetaDataBlock(Box::new(exp))
 }
 #[must_use]
-pub fn image(caption: Exp, path: Exp) -> Exp {
-    Exp::Image(Box::new(caption), Box::new(path))
+pub fn image(caption: Tree, path: Tree) -> Tree {
+    Tree::Image(Box::new(caption), Box::new(path))
 }
 #[must_use]
-pub fn empty() -> Exp {
-    Exp::Empty()
+pub fn empty() -> Tree {
+    Tree::Empty()
 }
