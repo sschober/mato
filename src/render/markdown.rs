@@ -1,6 +1,6 @@
 use crate::syntax::Tree;
 
-use super::Render;
+use crate::Render;
 
 #[derive(Default)]
 pub struct Renderer {

@@ -1,7 +1,7 @@
 //! groff rendering backend
 use std::collections::HashMap;
 
-use super::Render;
+use crate::Render;
 use crate::{syntax::DocType, Tree};
 
 /// empty struct to attach Renderer implementation on

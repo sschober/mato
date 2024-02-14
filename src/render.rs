@@ -1,13 +1,3 @@
 //! components related to rendering a syntax tree to a concrete target language, like groff or latex
 pub mod groff;
 pub mod markdown;
-
-use std::collections::HashMap;
-
-use crate::Tree;
-
-/// A renderer renders an Exp into a String
-pub trait Render {
-    /// render the passed-in expression into a string
-    fn render(&mut self, exp: Tree, ctx: HashMap<String, String>) -> String;
-}

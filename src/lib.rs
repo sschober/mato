@@ -99,7 +99,7 @@ fn exec(cmd: Vec<&str>) -> String {
 }
 
 /// top-level helper method to transform a given input string into a target language specified by the passed in renderer
-pub fn transform<R: render::Render, P: Process>(
+pub fn transform<R: Render, P: Process>(
     r: &mut R,
     p: &mut P,
     config: &Config,
@@ -126,10 +126,16 @@ fn process<P: Process>(p: &mut P, exp: Tree, config: &Config) -> Tree {
     p.process(exp, config)
 }
 
+/// A renderer renders an Exp into a String
+pub trait Render {
+    /// render the passed-in expression into a string
+    fn render(&mut self, exp: Tree, ctx: HashMap<String, String>) -> String;
+}
+
 /// helper function for static dispatch
 ///
 /// calls the passed in renderer on the result created by the parser
-fn render<R: render::Render, P: Process>(r: &mut R, exp: Tree, p: &mut P) -> String {
+fn render<R: Render, P: Process>(r: &mut R, exp: Tree, p: &mut P) -> String {
     r.render(exp, p.get_context())
 }
 
