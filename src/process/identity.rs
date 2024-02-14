@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::log_trc;
 
-use super::Process;
+use crate::Process;
 
 /// Identity processor does nothing and just returns an
 /// identical AST

@@ -1,10 +1,12 @@
 //! markdown transformer toolkit
 
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::time::Instant;
+use core::fmt::Debug;
 
 use config::Config;
 use parser::Parser;
@@ -12,6 +14,7 @@ use syntax::Tree;
 pub mod config;
 pub mod parser;
 pub mod process;
+
 pub mod render;
 pub mod syntax;
 pub mod term_cli;
@@ -96,7 +99,7 @@ fn exec(cmd: Vec<&str>) -> String {
 }
 
 /// top-level helper method to transform a given input string into a target language specified by the passed in renderer
-pub fn transform<R: render::Render, P: process::Process>(
+pub fn transform<R: render::Render, P: Process>(
     r: &mut R,
     p: &mut P,
     config: &Config,
@@ -110,17 +113,23 @@ pub fn transform<R: render::Render, P: process::Process>(
     render(r, exp, p)
 }
 
+/// A processor processes the AST in some way
+pub trait Process : Debug {
+    fn process(&mut self, exp: Tree, config: &Config) -> Tree;
+    fn get_context(&mut self) -> HashMap<String, String>;
+}
+
 /// helper function for static dispatch
 ///
 /// calls the passed in processor on the given exp
-fn process<P: process::Process>(p: &mut P, exp: Tree, config: &Config) -> Tree {
+fn process<P: Process>(p: &mut P, exp: Tree, config: &Config) -> Tree {
     p.process(exp, config)
 }
 
 /// helper function for static dispatch
 ///
 /// calls the passed in renderer on the result created by the parser
-fn render<R: render::Render, P: process::Process>(r: &mut R, exp: Tree, p: &mut P) -> String {
+fn render<R: render::Render, P: Process>(r: &mut R, exp: Tree, p: &mut P) -> String {
     r.render(exp, p.get_context())
 }
 

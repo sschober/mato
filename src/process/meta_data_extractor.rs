@@ -6,7 +6,7 @@ use crate::{
     syntax::{empty, meta_data_block, meta_data_item, Tree},
 };
 
-use super::Process;
+use crate::Process;
 
 /// The MetaDataExtractor takes the meta data header
 /// block and fills a context object, which can

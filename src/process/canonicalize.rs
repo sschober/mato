@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use super::Process;
+use crate::Process;
 
 use crate::config::Config;
 use crate::syntax::{lit, meta_data_block, prelit};

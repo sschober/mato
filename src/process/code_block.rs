@@ -5,7 +5,7 @@ use std::{
     process::{Command, Stdio},
 };
 
-use super::Process;
+use crate::Process;
 use crate::{
     config::Config,
     syntax::{lit, Tree},

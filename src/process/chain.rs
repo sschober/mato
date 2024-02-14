@@ -1,6 +1,6 @@
 use std::{collections::HashMap, time::Instant};
 
-use super::Process;
+use crate::Process;
 
 use crate::{config::Config, log_trc, Tree};
 use core::fmt::Debug;

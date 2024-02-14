@@ -6,7 +6,7 @@ use crate::{
     syntax::{image, lit, Tree},
 };
 
-use super::Process;
+use crate::Process;
 
 /// ImageConverter processor currently only transforms
 /// path information in the image expression.
