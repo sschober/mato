@@ -58,7 +58,7 @@ fn matopdf(config: &Config) {
 
     // MD -> GROFF
     let start = Instant::now();
-    let groff_output = mato::transform(&mut groff::new(config), &mut chain, config, &input);
+    let groff_output = mato::transform(&mut groff::mom::new(config), &mut chain, config, &input);
     log_inf!(config, "transformed in:\t\t{:?}", start.elapsed());
 
     if config.dump_groff {
@@ -88,7 +88,7 @@ mod tests {
     fn matogro(input: &str) -> String {
         let config = Config::default();
         let mut chain = super::create_chain(&config);
-        mato::transform(&mut super::groff::new(&config), &mut chain, &config, input)
+        mato::transform(&mut super::groff::mom::new(&config), &mut chain, &config, input)
     }
 
     #[test]
