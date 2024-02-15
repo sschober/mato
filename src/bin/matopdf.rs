@@ -13,11 +13,9 @@ use mato::process::chain;
 use mato::process::chain::Chain;
 use mato::process::code_block;
 use mato::process::image_converter;
-use mato::process::meta_data_extractor;
 use mato::render::groff;
 use mato::watch;
 
-const PREAMBLE_FILE_NAME: &str = "preamble.mom";
 const TARGET_FILE_EXTENSION_PDF: &str = "pdf";
 const TARGET_FILE_EXTENSION_GRO: &str = "gro";
 
@@ -25,9 +23,6 @@ fn main() -> std::io::Result<()> {
     let mut config = Config::from(env::args().collect())?;
     log_dbg!(config, "config: {:#?}", config);
     log_dbg!(config, "source file:\t\t{}", &config.source_file);
-
-    let default_mom_preamble = include_str!("default-preamble.mom").to_string();
-    config.locate_and_load_preamble(PREAMBLE_FILE_NAME, &default_mom_preamble);
 
     config.set_target_file(TARGET_FILE_EXTENSION_PDF);
     log_dbg!(config, "target file name:\t{}", config.target_file);
@@ -48,9 +43,8 @@ fn create_chain(config: &Config) -> Chain {
     log_trc!(config, "constructing chain...");
     let chain = chain::new(
         canonicalize::new(),
-        meta_data_extractor::new(&config.preamble),
+        image_converter::new(),
     )
-    .append(image_converter::new())
     .append(code_block::new());
     log_trc!(config, "done");
     log_dbg!(config, "chain: {:?}", chain);
@@ -64,7 +58,7 @@ fn matopdf(config: &Config) {
 
     // MD -> GROFF
     let start = Instant::now();
-    let groff_output = mato::transform(&mut groff::new(), &mut chain, config, &input);
+    let groff_output = mato::transform(&mut groff::new(config), &mut chain, config, &input);
     log_inf!(config, "transformed in:\t\t{:?}", start.elapsed());
 
     if config.dump_groff {
@@ -94,7 +88,7 @@ mod tests {
     fn matogro(input: &str) -> String {
         let config = Config::default();
         let mut chain = super::create_chain(&config);
-        mato::transform(&mut super::groff::new(), &mut chain, &config, input)
+        mato::transform(&mut super::groff::new(&config), &mut chain, &config, input)
     }
 
     #[test]

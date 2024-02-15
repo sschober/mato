@@ -92,7 +92,7 @@ impl Render for Renderer {
                 self.char_index = 0;
                 "\n".to_string()
             }
-            Tree::Document(_,be) => self.render(*be, ctx),
+            Tree::Document(_, be) => self.render(*be, ctx),
             Tree::List(b_exp, _) => self.render(*b_exp, ctx),
             Tree::ListItem(b_exp, level) => {
                 let indent = (0..level).map(|_| "  ").collect::<String>();

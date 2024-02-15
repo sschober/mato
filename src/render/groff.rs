@@ -1,25 +1,62 @@
 //! groff rendering backend
 use std::collections::HashMap;
+use std::fmt::Display;
+use std::fs;
+use std::path::Path;
 
-use crate::Render;
+use crate::config::Config;
+use crate::{log_dbg, Render};
 use crate::{syntax::DocType, Tree};
 
 /// empty struct to attach Renderer implementation on
-pub struct Renderer {
+pub struct Renderer<'a> {
     ctx: HashMap<String, String>,
     document_started: bool,
     doc_type: DocType,
+    default_preamble: String,
+    config: &'a Config
 }
 
-pub fn new() -> Renderer {
+pub fn new(config: &Config) -> Renderer {
+    let default_mom_preamble = include_str!("default-preamble.mom").to_string();
+
     Renderer {
         ctx: HashMap::new(),
         document_started: false,
         doc_type: DocType::DEFAULT,
+        default_preamble: default_mom_preamble,
+        config,
     }
 }
 
-impl Renderer {
+const PREAMBLE_FILE_NAME: &str = "preamble.mom";
+
+impl Display for DocType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_fmt(format_args!(".DOCTYPE {:?}{}", self, match self {
+            DocType::SLIDES => " HEADER \"\\*[$TITLE]\" \"\" \"\" FOOTER \"\\*[$AUTHOR]\" \"\" \"\\*S[+2]\\*[SLIDE#]\\*S[-2]\"",
+            _ =>""
+        }))
+    }
+}
+
+impl Renderer<'_> {
+    pub fn locate_and_load_preamble(&mut self, name: &str) -> String {
+        let sibbling_preamble = Path::new(&self.config.parent_dir).join(name);
+        let config = &self.config;
+        if sibbling_preamble.as_path().is_file() {
+            log_dbg!(
+                config,
+                "found sibbling preamble: {}",
+                sibbling_preamble.display()
+            );
+            fs::read_to_string(sibbling_preamble).unwrap()
+        } else {
+            log_dbg!(config, "preamble:\t\tbuilt-in");
+            self.default_preamble.to_string()
+        }
+    }
+
     /// groff does not support nested formattings, because it has no
     /// stackable way of switching back to the previous style. we
     /// need to emulate this by passing in the parent style as a
@@ -44,11 +81,7 @@ impl Renderer {
                 self.doc_type = dt.clone();
                 let mut result = format!("{}", dt);
 
-                if self.ctx.contains_key("preamble") {
-                    let value = self.ctx.get("preamble").unwrap();
-                    result = format!("{}\n{}\n", result, value);
-                    self.ctx.remove("preamble");
-                }
+                result = format!("{}\n{}", result, self.locate_and_load_preamble(PREAMBLE_FILE_NAME));
 
                 for (key, value) in self.ctx.clone().into_iter() {
                     let key = key.replace(' ', "_");
@@ -63,8 +96,8 @@ impl Renderer {
                         result = format!("{}\n.START\n", result);
                     }
                 }
-                format!("{}{}",result,rnd_pf!(*be, parent_format))
-            }
+                format!("{}{}", result, rnd_pf!(*be, parent_format))
+            },
             Tree::Paragraph() => "\n.PP".to_string(),
             Tree::LineBreak() => "\n".to_string(),
             Tree::Literal(s) | Tree::PreformattedLiteral(s) => s,
@@ -74,7 +107,7 @@ impl Renderer {
             },
             Tree::Bold(b_exp) => {
                 format!("\\*[BD]{}\\*[{}]", rnd_pf!(*b_exp, "BD"), parent_format)
-            },
+            }
             Tree::SmallCaps(be) => rnd_pf!(*be, parent_format),
             Tree::Italic(b_exp) => {
                 format!("\\*[IT]{}\\*[{}]", rnd_pf!(*b_exp, "IT"), parent_format)
@@ -172,7 +205,7 @@ impl Renderer {
                 format!("\\c\n.FOOTNOTE\n{}\n.FOOTNOTE END\n", rnd!(*b_exp))
             }
             Tree::HyperRef(b_exp1, b_exp2) => {
-                format!(".PDF_WWW_LINK {} \"{}\"", rnd!(*b_exp2), rnd!(*b_exp1))
+                format!("\\c\n.PDF_WWW_LINK {} \"{}\"\\c\n", rnd!(*b_exp2), rnd!(*b_exp1))
             }
             Tree::Cat(b_exp1, b_exp2) => {
                 format!(
@@ -205,7 +238,7 @@ impl Renderer {
     }
 }
 
-impl Render for Renderer {
+impl Render for Renderer<'_> {
     fn render(&mut self, exp: Tree, ctx: HashMap<String, String>) -> String {
         self.ctx = ctx.clone();
         self.render_with_default_format(exp)

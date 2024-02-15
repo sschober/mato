@@ -71,7 +71,7 @@ fn replace_old_style_figures(s: String) -> String {
 }
 
 fn prelit_escape_groff_symbols(s: String) -> String {
-    s.replace('\\', "\\\\").replace("^", "\\[ha]").replace("\n.", "\n\\&.")
+    s.replace('\\', "\\\\").replace('^', "\\[ha]").replace("\n.", "\n\\&.")
 }
 
 impl Process for Canonicalizer {

@@ -211,6 +211,11 @@ impl Parser<'_> {
             self.consume(b'(');
             let exp_url = self.parse_literal(b")");
             self.consume(b')');
+            // if there is a space after the hyperlink, we swollow it
+            // to avoid a line break in the PDf after the link
+            if self.current_char == b' ' {
+                self.consume(b' ')
+            }
             hyperref(exp_link_text, exp_url)
         } else {
             lit("[").cat(exp_link_text).cat(lit("]"))
