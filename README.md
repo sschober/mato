@@ -107,7 +107,7 @@ T1 --> T2 & T3
 T3 --> T4 & T5
 ```
 
-More concretely, this means inq the most simple form:
+More concretely, this means in the most simple form:
 
 ```mermaid
 graph TD
