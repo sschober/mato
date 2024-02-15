@@ -25,10 +25,10 @@ Let's describe, what we see.
 
 You can see:
 
-The toplevel heading (Showcase).
+* The toplevel heading (Showcase).
 
-A sub level heading (Features).
+* A sub level heading (Features).
 
-A right chapter mark (S)
+* A right chapter mark (S)
 
 

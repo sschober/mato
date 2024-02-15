@@ -35,6 +35,7 @@ impl Display for DocType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_fmt(format_args!(".DOCTYPE {:?}{}", self, match self {
             DocType::SLIDES => " HEADER \"\\*[$TITLE]\" \"\" \"\" FOOTER \"\\*[$AUTHOR]\" \"\" \"\\*S[+2]\\*[SLIDE#]\\*S[-2]\"",
+            DocType::CHAPTER => " HEADER \"\\*[$TITLE]\" \"\" \"\" FOOTER \"\\*[$AUTHOR]\" \"\" \"\"",
             _ =>""
         }))
     }
@@ -81,7 +82,7 @@ impl Renderer<'_> {
                 self.doc_type = dt.clone();
                 let mut result = format!("{}", dt);
 
-                result = format!("{}\n{}", result, self.locate_and_load_preamble(PREAMBLE_FILE_NAME));
+                result = format!("{}\n{}\n", result, self.locate_and_load_preamble(PREAMBLE_FILE_NAME));
 
                 for (key, value) in self.ctx.clone().into_iter() {
                     let key = key.replace(' ', "_");
@@ -223,7 +224,9 @@ impl Renderer<'_> {
                 _ => format!(".ITEM\n{}\n", rnd!(*b_exp)),
             },
             Tree::MetaDataBlock(b_exp) => rnd!(*b_exp),
-            Tree::MetaDataItem(_, _) => String::new(),
+            Tree::MetaDataItem(key, value) => {
+                format!(".{} {}\n", key.to_uppercase().replace(' ', "_"), value)
+            },
             Tree::Image(b_exp, path) => {
                 format!(
                     ".PDF_IMAGE {} 200p 150p CAPTION \"{}\"",
