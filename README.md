@@ -107,11 +107,18 @@ T1 --> T2 & T3
 T3 --> T4 & T5
 ```
 
-More concretely, this means in the most simple form:
+More concretely, this means for the following markdown document:
+
+```markdown
+# A heading
+Some text in a pragraph.
+```
+
+the parser constructs the following syntax tree:
 
 ```mermaid
 graph TD
-Document --> Header & Cat
+Document --> DocumentType::DEFAULT & Cat
 Cat --> Heading & Cat1["Cat"]
 Heading --> Literal1["Literal"] --> S1["'A heading'"] 
 Cat1 --> LineBreak & Literal
