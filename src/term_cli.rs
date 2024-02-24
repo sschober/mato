@@ -59,14 +59,14 @@ impl TermCli {
         }
     }
 
-    pub fn exec_matopdf(&self, source_file: &str, t_handle: usize) -> usize {
+    pub fn exec_matopdf(&self, source_file: &str, lang: &str, t_handle: usize) -> usize {
         match self {
             Self::WezTerm => {
                 let editor_pane = WTPane {
                     id: t_handle.to_string(),
                 };
                 let mato_pane = editor_pane
-                    .split(format!("matopdf -w -v {}", source_file).as_str())
+                    .split(format!("matopdf -w -v {} {}", lang, source_file).as_str())
                     .percent(10)
                     .bottom()
                     .exec();

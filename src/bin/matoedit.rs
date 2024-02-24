@@ -2,6 +2,27 @@ use std::env;
 
 use mato::term_cli::TermCli;
 
+#[derive(Default)]
+struct Config {
+    source_file: String,
+    lang: String
+}
+
+fn parse_config() -> Option<Config> {
+    let args: Vec<String> = env::args().collect();
+    if args.len() < 2 {
+        None
+    } else {
+        let mut result = Config::default();
+        for arg in args {
+            match arg.as_str() {
+                "-len" | "-l en" => result.lang = "en".to_owned(),
+                _ => result.source_file = arg
+            }
+        }
+        Some(result)
+    }
+}
 /// spawns a new wezterm pane in a new tab and opens the
 /// passed in file in and editor in said pane.
 /// then splits the pane and launches `matopdf` on the file.
@@ -17,26 +38,26 @@ fn main() -> std::io::Result<()> {
         panic!("need a file as argument!");
     }
 
-    let source_file = args.get(1).unwrap();
-    eprintln!("file to open: {}", source_file);
+    let config = parse_config().expect("need source file");
+    eprintln!("file to open: {}", config.source_file);
 
     // we create the source file in any case, so that we can
     // immediately transform it.
-    mato::create_if_not_exists(source_file);
+    mato::create_if_not_exists(&config.source_file);
 
     // OPEN editor
     let editor_handle = term_cli.get_active_windows_handle();
     eprintln!("editor handle: {}", editor_handle);
 
     // we need to figure out the target file name for termpdf to call on
-    let target_file_path = mato::replace_file_extension(source_file, "pdf");
+    let target_file_path = mato::replace_file_extension(&config.source_file, "pdf");
     eprintln!("target file: {}", target_file_path.display());
 
     // CREATE empty pdf if none is there already
     mato::create_empty_if_not_exists(&format!("{}", target_file_path.display()));
 
     // LAUNCH matopdf
-    let mato_handle = term_cli.exec_matopdf(source_file, editor_handle);
+    let mato_handle = term_cli.exec_matopdf(&config.source_file, &config.lang, editor_handle);
     eprintln!("mato handle: {}", mato_handle);
 
     // LAUNCH `termpdf.py`
@@ -50,7 +71,7 @@ fn main() -> std::io::Result<()> {
     term_cli.focus(editor_handle);
 
     // OPEN editor and block on call
-    term_cli.open_editor(source_file);
+    term_cli.open_editor(&config.source_file);
 
     // CLOSE evrything
     term_cli.close(mato_handle);
