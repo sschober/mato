@@ -44,6 +44,12 @@ impl WTCli {
     }
 }
 
+impl Default for WTCli {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 /// executes the given `cmd` as a sub process and
 /// returns its output as a string
 fn wt_cli_exec(cmd: Vec<&str>) -> String {
