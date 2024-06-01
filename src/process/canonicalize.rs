@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use crate::Process;
 
 use crate::config::Config;
@@ -24,16 +22,14 @@ fn erase_empty(exp: Tree) -> Tree {
         Tree::ChapterMark(b_exp) => Tree::ChapterMark(Box::new(erase_empty(*b_exp))),
         Tree::PreformattedLiteral(s) => prelit(&prelit_escape_groff_symbols(s)),
         Tree::Footnote(be) => Tree::Footnote(Box::new(erase_empty(*be))),
-        // the next rule replaces old style numerals in text body literals, 
+        // the next rule replaces old style numerals in text body literals,
         // but not in literals in headings
         Tree::Literal(s) => lit(replace_old_style_figures(s).as_ref()),
-        
-        Tree::SmallCaps(be) => {
-            Tree::SmallCaps(Box::new(match *be {
-                Tree::Literal(s) => lit(&replace_small_caps(s)),
-                _ => *be
-            }))
-        },
+
+        Tree::SmallCaps(be) => Tree::SmallCaps(Box::new(match *be {
+            Tree::Literal(s) => lit(&replace_small_caps(s)),
+            _ => *be,
+        })),
         _ => exp,
     }
 }
@@ -71,17 +67,15 @@ fn replace_old_style_figures(s: String) -> String {
 }
 
 fn prelit_escape_groff_symbols(s: String) -> String {
-    s.replace('\\', "\\\\").replace('^', "\\[ha]").replace("\n.", "\n\\&.")
+    s.replace('\\', "\\\\")
+        .replace('^', "\\[ha]")
+        .replace("\n.", "\n\\&.")
 }
 
 impl Process for Canonicalizer {
     fn process(&mut self, exp: Tree, config: &Config) -> Tree {
         log_trc!(config, "{:?}", self);
         erase_empty(exp)
-    }
-
-    fn get_context(&mut self) -> std::collections::HashMap<String, String> {
-        HashMap::new()
     }
 }
 

@@ -1,12 +1,11 @@
 //! markdown transformer toolkit
 
-use std::collections::HashMap;
+use core::fmt::Debug;
 use std::fs::File;
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::time::Instant;
-use core::fmt::Debug;
 
 use config::Config;
 use parser::Parser;
@@ -114,9 +113,8 @@ pub fn transform<R: Render, P: Process>(
 }
 
 /// A processor processes the AST in some way
-pub trait Process : Debug {
+pub trait Process: Debug {
     fn process(&mut self, exp: Tree, config: &Config) -> Tree;
-    fn get_context(&mut self) -> HashMap<String, String>;
 }
 
 /// helper function for static dispatch
@@ -129,14 +127,14 @@ fn process<P: Process>(p: &mut P, exp: Tree, config: &Config) -> Tree {
 /// A renderer renders an Exp into a String
 pub trait Render {
     /// render the passed-in expression into a string
-    fn render(&mut self, exp: Tree, ctx: HashMap<String, String>) -> String;
+    fn render(&mut self, exp: Tree) -> String;
 }
 
 /// helper function for static dispatch
 ///
 /// calls the passed in renderer on the result created by the parser
-fn render<R: Render, P: Process>(r: &mut R, exp: Tree, p: &mut P) -> String {
-    r.render(exp, p.get_context())
+fn render<R: Render, P: Process>(r: &mut R, exp: Tree, _p: &mut P) -> String {
+    r.render(exp)
 }
 
 pub fn grotopdf(config: &Config, input: &str) -> Vec<u8> {

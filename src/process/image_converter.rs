@@ -1,4 +1,4 @@
-use std::{collections::HashMap, path::Path};
+use std::path::Path;
 
 use crate::{
     config::Config,
@@ -11,7 +11,7 @@ use crate::Process;
 /// ImageConverter processor currently only transforms
 /// path information in the image expression.
 /// Ultimately, we want it to do conversion and caching.
-#[derive(Default,Debug)]
+#[derive(Default, Debug)]
 pub struct ImageConverter {}
 
 fn process_images(exp: Tree, config: &Config) -> Tree {
@@ -48,10 +48,6 @@ impl Process for ImageConverter {
     ) -> crate::syntax::Tree {
         log_trc!(config, "{:?}", self);
         process_images(exp, config)
-    }
-
-    fn get_context(&mut self) -> std::collections::HashMap<String, String> {
-        HashMap::new()
     }
 }
 

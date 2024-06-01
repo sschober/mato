@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use crate::log_trc;
 
 use crate::Process;
@@ -17,10 +15,6 @@ impl Process for Identity {
     ) -> crate::syntax::Tree {
         log_trc!(config, "{:?}", self);
         exp
-    }
-
-    fn get_context(&mut self) -> std::collections::HashMap<String, String> {
-        HashMap::new()
     }
 }
 pub fn new() -> Box<dyn Process> {

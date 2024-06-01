@@ -37,17 +37,13 @@ impl Renderer {
 }
 
 impl Render for Renderer {
-    fn render(
-        &mut self,
-        exp: crate::syntax::Tree,
-        ctx: std::collections::HashMap<String, String>,
-    ) -> String {
+    fn render(&mut self, exp: crate::syntax::Tree) -> String {
         match exp {
             Tree::Literal(s) => self.wrap_at(s, 68),
             Tree::EscapeLit(s) => s,
             Tree::PreformattedLiteral(s) => s,
             Tree::Bold(b_exp) => {
-                let mut bold_text = self.render(*b_exp, ctx);
+                let mut bold_text = self.render(*b_exp);
                 // if the text between the * chars would immediately
                 // start with a newline, we break the opening * onto
                 // the newline instead.
@@ -59,29 +55,21 @@ impl Render for Renderer {
                     format!("*{}*", bold_text)
                 }
             }
-            Tree::Italic(b_exp) => format!("_{}_", self.render(*b_exp, ctx)),
-            Tree::SmallCaps(be) => format!("{{{}}}", self.render(*be, ctx)),
-            Tree::CodeBlock(b1, b2) => format!(
-                "```{}\n{}```",
-                self.render(*b1, ctx.clone()),
-                self.render(*b2, ctx)
-            ),
-            Tree::InlineCode(b_exp) => format!("`{}`", self.render(*b_exp, ctx)),
+            Tree::Italic(b_exp) => format!("_{}_", self.render(*b_exp)),
+            Tree::SmallCaps(be) => format!("{{{}}}", self.render(*be)),
+            Tree::CodeBlock(b1, b2) => format!("```{}\n{}```", self.render(*b1), self.render(*b2)),
+            Tree::InlineCode(b_exp) => format!("`{}`", self.render(*b_exp)),
             Tree::Heading(b_exp, level) => {
                 let prefix = (0..level + 1).map(|_| "#").collect::<String>();
-                format!("{} {}", prefix, self.render(*b_exp, ctx))
+                format!("{} {}", prefix, self.render(*b_exp))
             }
-            Tree::Quote(b_exp) => format!("\"{}\"", self.render(*b_exp, ctx)),
-            Tree::ChapterMark(b_exp) => format!(">>({})", self.render(*b_exp, ctx)),
-            Tree::RightSidenote(b_exp) => format!(">({})", self.render(*b_exp, ctx)),
-            Tree::Footnote(b_exp) => format!("^({})", self.render(*b_exp, ctx)),
-            Tree::HyperRef(b1, b2) => format!(
-                "[{}]({})",
-                self.render(*b1, ctx.clone()),
-                self.render(*b2, ctx)
-            ),
+            Tree::Quote(b_exp) => format!("\"{}\"", self.render(*b_exp)),
+            Tree::ChapterMark(b_exp) => format!(">>({})", self.render(*b_exp)),
+            Tree::RightSidenote(b_exp) => format!(">({})", self.render(*b_exp)),
+            Tree::Footnote(b_exp) => format!("^({})", self.render(*b_exp)),
+            Tree::HyperRef(b1, b2) => format!("[{}]({})", self.render(*b1), self.render(*b2)),
             Tree::Cat(b1, b2) => {
-                format!("{}{}", self.render(*b1, ctx.clone()), self.render(*b2, ctx))
+                format!("{}{}", self.render(*b1), self.render(*b2))
             }
             Tree::Empty() => String::new(),
             Tree::Paragraph() => {
@@ -92,20 +80,16 @@ impl Render for Renderer {
                 self.char_index = 0;
                 "\n".to_string()
             }
-            Tree::Document(_, be) => self.render(*be, ctx),
-            Tree::List(b_exp, _) => self.render(*b_exp, ctx),
+            Tree::Document(_, be) => self.render(*be),
+            Tree::List(b_exp, _) => self.render(*b_exp),
             Tree::ListItem(b_exp, level) => {
                 let indent = (0..level).map(|_| "  ").collect::<String>();
-                format!("{}{}", indent, self.render(*b_exp, ctx))
+                format!("{}{}", indent, self.render(*b_exp))
             }
-            Tree::MetaDataBlock(b_exp) => format!("---\n{}---\n\n", self.render(*b_exp, ctx)),
+            Tree::MetaDataBlock(b_exp) => format!("---\n{}---\n\n", self.render(*b_exp)),
             Tree::MetaDataItem(key, value) => format!("{}: {}\n", key, value),
-            Tree::Image(b1, b2) => format!(
-                "![{}]({})",
-                self.render(*b1, ctx.clone()),
-                self.render(*b2, ctx)
-            ),
-            Tree::Color(b_exp) => format!("\\{{{}}}", self.render(*b_exp, ctx)),
+            Tree::Image(b1, b2) => format!("![{}]({})", self.render(*b1), self.render(*b2)),
+            Tree::Color(b_exp) => format!("\\{{{}}}", self.render(*b_exp)),
         }
     }
 }

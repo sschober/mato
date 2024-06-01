@@ -14,7 +14,7 @@ pub struct Renderer<'a> {
     document_started: bool,
     doc_type: DocType,
     default_preamble: String,
-    config: &'a Config
+    config: &'a Config,
 }
 
 pub fn new(config: &Config) -> Renderer {
@@ -82,7 +82,11 @@ impl Renderer<'_> {
                 self.doc_type = dt.clone();
                 let mut result = format!("{}", dt);
 
-                result = format!("{}\n{}\n", result, self.locate_and_load_preamble(PREAMBLE_FILE_NAME));
+                result = format!(
+                    "{}\n{}\n",
+                    result,
+                    self.locate_and_load_preamble(PREAMBLE_FILE_NAME)
+                );
 
                 for (key, value) in self.ctx.clone().into_iter() {
                     let key = key.replace(' ', "_");
@@ -98,7 +102,7 @@ impl Renderer<'_> {
                     }
                 }
                 format!("{}{}", result, rnd_pf!(*be, parent_format))
-            },
+            }
             Tree::Paragraph() => "\n.PP".to_string(),
             Tree::LineBreak() => "\n".to_string(),
             Tree::Literal(s) | Tree::PreformattedLiteral(s) => s,
@@ -206,7 +210,11 @@ impl Renderer<'_> {
                 format!("\\c\n.FOOTNOTE\n{}\n.FOOTNOTE END\n", rnd!(*b_exp))
             }
             Tree::HyperRef(b_exp1, b_exp2) => {
-                format!("\\c\n.PDF_WWW_LINK {} \"{}\"\\c\n", rnd!(*b_exp2), rnd!(*b_exp1))
+                format!(
+                    "\\c\n.PDF_WWW_LINK {} \"{}\"\\c\n",
+                    rnd!(*b_exp2),
+                    rnd!(*b_exp1)
+                )
             }
             Tree::Cat(b_exp1, b_exp2) => {
                 format!(
@@ -226,7 +234,7 @@ impl Renderer<'_> {
             Tree::MetaDataBlock(b_exp) => rnd!(*b_exp),
             Tree::MetaDataItem(key, value) => {
                 format!(".{} {}\n", key.to_uppercase().replace(' ', "_"), value)
-            },
+            }
             Tree::Image(b_exp, path) => {
                 format!(
                     ".PDF_IMAGE {} 200p 150p CAPTION \"{}\"",
@@ -242,8 +250,7 @@ impl Renderer<'_> {
 }
 
 impl Render for Renderer<'_> {
-    fn render(&mut self, exp: Tree, ctx: HashMap<String, String>) -> String {
-        self.ctx = ctx.clone();
+    fn render(&mut self, exp: Tree) -> String {
         self.render_with_default_format(exp)
     }
 }

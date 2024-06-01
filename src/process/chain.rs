@@ -1,4 +1,4 @@
-use std::{collections::HashMap, time::Instant};
+use std::time::Instant;
 
 use crate::Process;
 
@@ -24,11 +24,6 @@ impl Process for Chain {
             log_trc!(config, "{:?}: {:?}", self.b, start.elapsed());
         }
         result
-    }
-
-    fn get_context(&mut self) -> HashMap<String, String> {
-        let result = self.a.get_context();
-        result.into_iter().chain(self.b.get_context()).collect()
     }
 }
 

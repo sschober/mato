@@ -1,6 +1,5 @@
 use std::io::Write;
 use std::{
-    collections::HashMap,
     io,
     process::{Command, Stdio},
 };
@@ -14,7 +13,7 @@ use crate::{log_dbg, log_trc};
 
 /// CodeBlock processor looks inside code blocks that it finds in the AST and
 /// if the type is pic will render the pic picture embedded inside of the block.
-#[derive(Default,Debug)]
+#[derive(Default, Debug)]
 pub struct CodeBlockProcessor {}
 
 fn process_code_blocks(exp: Tree, config: &Config) -> Tree {
@@ -74,10 +73,6 @@ impl Process for CodeBlockProcessor {
     ) -> crate::syntax::Tree {
         log_trc!(config, "{:?}", self);
         process_code_blocks(exp, config)
-    }
-
-    fn get_context(&mut self) -> std::collections::HashMap<String, String> {
-        HashMap::new()
     }
 }
 
