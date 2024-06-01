@@ -39,11 +39,8 @@ impl TermCli {
     }
     /// opens an editor and blocks on the call
     pub fn open_editor(&self, source_file: &str) {
-        match self {
-            Self::WezTerm => {
-                crate::spawn(vec![&get_editor(), source_file]);
-            }
-            _ => (),
+        if let Self::WezTerm = self {
+            crate::spawn(vec![&get_editor(), source_file]);
         }
     }
 
@@ -96,14 +93,11 @@ impl TermCli {
     /// sets the focus to the given pane or window
     /// identified by the given handle
     pub fn focus(&self, t_handle: usize) {
-        match self {
-            Self::WezTerm => {
-                let pane = WTPane {
-                    id: t_handle.to_string(),
-                };
-                pane.activate();
-            }
-            _ => (),
+        if let Self::WezTerm = self {
+            let pane = WTPane {
+                id: t_handle.to_string(),
+            };
+            pane.activate();
         }
     }
 
