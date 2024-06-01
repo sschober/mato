@@ -24,7 +24,7 @@ fn parse_config() -> Option<Config> {
     }
 }
 /// spawns a new wezterm pane in a new tab and opens the
-/// passed in file in and editor in said pane.
+/// passed in file in an editor in said pane.
 /// then splits the pane and launches `matopdf` on the file.
 /// then waits for a sec to let `matopdf` finish, then
 /// proceeds to create a toplevel split pane to the right,
