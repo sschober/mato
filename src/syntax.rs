@@ -6,13 +6,13 @@ pub enum DocType {
     DEFAULT,
     CHAPTER,
     SLIDES,
+    LETTER,
 }
 
 /// Expressions are the building blocks of an abstract syntax tree
 #[derive(Debug)]
 pub enum Tree {
-    Document(DocType, Box<Tree>),
-    /// Separate consequential pargraps
+    Document(DocType, Box<Tree>),    /// Separate consequential pargraps
     Paragraph(),
     /// code and stuff
     PreformattedLiteral(String),
