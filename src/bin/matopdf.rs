@@ -41,11 +41,7 @@ fn main() -> std::io::Result<()> {
 
 fn create_chain(config: &Config) -> Chain {
     log_trc!(config, "constructing chain...");
-    let chain = chain::new(
-        canonicalize::new(),
-        image_converter::new(),
-    )
-    .append(code_block::new());
+    let chain = chain::new(canonicalize::new(), image_converter::new()).append(code_block::new());
     log_trc!(config, "done");
     log_dbg!(config, "chain: {:?}", chain);
     chain
@@ -86,9 +82,15 @@ mod tests {
     use mato::config::Config;
 
     fn matogro(input: &str) -> String {
-        let config = Config::default();
+        let mut config = Config::default();
+        config.skip_preamble = true;
         let mut chain = super::create_chain(&config);
-        mato::transform(&mut super::groff::mom::new(&config), &mut chain, &config, input)
+        mato::transform(
+            &mut super::groff::mom::new(&config),
+            &mut chain,
+            &config,
+            input,
+        )
     }
 
     #[test]
@@ -122,7 +124,7 @@ mod tests {
     fn link() {
         assert_eq!(
             matogro("some text [link text](http://example.com)"),
-            ".DOCTYPE DEFAULT\n.START\nsome text .PDF_WWW_LINK http://example.com \"link text\""
+            ".DOCTYPE DEFAULT\n.START\nsome text \\c\n.PDF_WWW_LINK http://example.com \"link text\"\\c\n"
         );
     }
     #[test]

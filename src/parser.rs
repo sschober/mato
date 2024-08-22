@@ -44,6 +44,7 @@ impl Parser<'_> {
             match parser.doc_type.to_uppercase().as_ref() {
                 "SLIDES" => Tree::Document(DocType::SLIDES, ast),
                 "CHAPTER" => Tree::Document(DocType::CHAPTER, ast),
+                "LETTER" => Tree::Document(DocType::LETTER, ast),
                 _ => Tree::Document(DocType::DEFAULT, ast),
             }
         }
@@ -276,6 +277,7 @@ impl Parser<'_> {
     }
 
     fn parse_meta_data_item(&mut self) -> Tree {
+        println!("parsing metadata header");
         let key = self.parse_string_until(b":");
         self.consume(b':');
         while self.current_char == b' ' {
@@ -283,6 +285,7 @@ impl Parser<'_> {
         }
         let value = self.parse_string_until(b"\n");
         if "doctype" == key {
+            println!("setting docype {}", value);
             self.doc_type = value;
             empty()
         } else {
@@ -300,6 +303,7 @@ impl Parser<'_> {
     }
 
     fn parse_meta_data_block(&mut self) -> Tree {
+        println!("parsing meta data block");
         if self.peek(1, b'-') && self.peek(2, b'-') {
             self.consume(b'-');
             self.consume(b'-');

@@ -1,11 +1,12 @@
 use std::env;
 
+use mato::opts;
 use mato::term_cli::TermCli;
 
 #[derive(Default)]
 struct Config {
     source_file: String,
-    lang: String
+    lang: String,
 }
 
 fn parse_config() -> Option<Config> {
@@ -17,12 +18,13 @@ fn parse_config() -> Option<Config> {
         for arg in args {
             match arg.as_str() {
                 "-len" | "-l en" => result.lang = "en".to_owned(),
-                _ => result.source_file = arg
+                _ => result.source_file = arg,
             }
         }
         Some(result)
     }
 }
+
 /// spawns a new wezterm pane in a new tab and opens the
 /// passed in file in an editor in said pane.
 /// then splits the pane and launches `matopdf` on the file.
@@ -30,6 +32,16 @@ fn parse_config() -> Option<Config> {
 /// proceeds to create a toplevel split pane to the right,
 /// wehere `termpdf.py` is launched on the resulting pdf.
 fn main() -> std::io::Result<()> {
+    let _version_opt = opts::Opt {
+        short_name: "-v".to_string(),
+        long_name: "--version".to_string(),
+        description: "Print command version".to_string(),
+    };
+    let _p = opts::Parser {
+        opts: vec![],
+        val_opts: vec![],
+    };
+
     // ACQUIRE cli handle, panics if not supported
     let term_cli = TermCli::get();
 

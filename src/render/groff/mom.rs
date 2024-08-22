@@ -43,6 +43,9 @@ impl Display for DocType {
 
 impl Renderer<'_> {
     pub fn locate_and_load_preamble(&mut self, name: &str) -> String {
+        if self.config.skip_preamble {
+            return "".to_string();
+        }
         let sibbling_preamble = Path::new(&self.config.parent_dir).join(name);
         let config = &self.config;
         if sibbling_preamble.as_path().is_file() {
@@ -82,11 +85,13 @@ impl Renderer<'_> {
                 self.doc_type = dt.clone();
                 let mut result = format!("{}", dt);
 
-                result = format!(
-                    "{}\n{}\n",
-                    result,
-                    self.locate_and_load_preamble(PREAMBLE_FILE_NAME)
-                );
+                if !self.config.skip_preamble {
+                    result = format!(
+                        "{}\n{}\n",
+                        result,
+                        self.locate_and_load_preamble(PREAMBLE_FILE_NAME)
+                    );
+                }
 
                 for (key, value) in self.ctx.clone().into_iter() {
                     let key = key.replace(' ', "_");

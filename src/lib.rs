@@ -11,6 +11,7 @@ use config::Config;
 use parser::Parser;
 use syntax::Tree;
 pub mod config;
+pub mod opts;
 pub mod parser;
 pub mod process;
 
