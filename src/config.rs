@@ -48,6 +48,7 @@ pub struct Config {
     /// language
     pub lang: String,
     pub preamble: String,
+    pub skip_preamble: bool,
 }
 
 impl Config {
@@ -63,6 +64,7 @@ impl Config {
             log_level: 0,
             lang: String::new(),
             preamble: String::new(),
+            skip_preamble: false,
         }
     }
 
