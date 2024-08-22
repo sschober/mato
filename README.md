@@ -1,4 +1,10 @@
-# MaToPDF - MArkdown TransfOrmer framework
+# MaToPDF - MArkdown TransfOrmer framework[^1]
+
+[^1]: Actually, the acronym is somewhat of a historical mess. Originally, this tools
+started out as `matote`, which read "markdown to TeX ". Then, I further evolutionized
+it into a framework, which could emit groff source code as well, so framework fit
+well in that case. Then, I dropped the TeX emitting part, thus framework no longer
+fits, but I am tired of renaming the thing in the mean time.
 
 With `matopdf`, you can transform markdown formatted text into PDFs,
 and even more.
@@ -120,7 +126,7 @@ the parser constructs the following syntax tree:
 graph TD
 Document --> DocumentType::DEFAULT & Cat
 Cat --> Heading & Cat1["Cat"]
-Heading --> Literal1["Literal"] --> S1["'A heading'"] 
+Heading --> Literal1["Literal"] --> S1["'A heading'"]
 Cat1 --> LineBreak & Literal
 Literal --> S2["'Some text in a paragraph.'"]
 ```
