@@ -40,7 +40,7 @@ pub struct Config {
     pub parent_dir: String,
     /// should watch mode be activated?
     pub watch: bool,
-    /// dump intermediate representation (groff or latex)
+    /// dump intermediate representation
     pub dump_groff: bool,
     pub dump_groff_file: bool,
     pub skip_rendering: bool,

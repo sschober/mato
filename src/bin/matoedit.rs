@@ -1,7 +1,8 @@
 use std::env;
 
-use mato::opts;
+use mato::opts::{Opt, ValOpt};
 use mato::term_cli::TermCli;
+use mato::{opts, print_version};
 
 #[derive(Default)]
 struct Config {
@@ -24,12 +25,10 @@ fn parse_config() -> Option<Config> {
         Some(result)
     }
 }
+
 const VERSION: &str = "0.1.0";
 const PROG_NAME: &str = "matoedit";
 
-fn print_version() {
-    println!("{} - {}", PROG_NAME, VERSION);
-}
 /// spawns a new wezterm pane in a new tab and opens the
 /// passed in file in an editor in said pane.
 /// then splits the pane and launches `matopdf` on the file.
@@ -37,13 +36,13 @@ fn print_version() {
 /// proceeds to create a toplevel split pane to the right,
 /// wehere `termpdf.py` is launched on the resulting pdf.
 fn main() -> std::io::Result<()> {
-    let version_opt = opts::Opt::new("v", "version", "Print command version");
     let mut p = opts::Parser::new();
-    p.add_opt(version_opt);
+    p.add_opt(Opt::new("v", "version", "Print command version"));
+    p.add_val_opt(ValOpt::new("s", "source-file", "Source file", ""));
     let parsed_opts = p.parse(env::args().collect());
 
     if parsed_opts.contains_key("version") {
-        print_version();
+        print_version(PROG_NAME, VERSION);
         return Ok(());
     }
 

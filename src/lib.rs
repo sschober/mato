@@ -21,6 +21,10 @@ pub mod term_cli;
 pub mod watch;
 pub mod wezterm_cli;
 
+pub fn print_version(prog: &str, version: &str) {
+    println!("{} - {}", prog, version);
+}
+
 fn read_all_from_stdin() -> String {
     let lines = io::stdin().lines();
     let mut result = String::new();
