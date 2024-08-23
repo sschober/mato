@@ -24,7 +24,12 @@ fn parse_config() -> Option<Config> {
         Some(result)
     }
 }
+const VERSION: &str = "0.1.0";
+const PROG_NAME: &str = "matoedit";
 
+fn print_version() {
+    println!("{} - {}", PROG_NAME, VERSION);
+}
 /// spawns a new wezterm pane in a new tab and opens the
 /// passed in file in an editor in said pane.
 /// then splits the pane and launches `matopdf` on the file.
@@ -32,15 +37,15 @@ fn parse_config() -> Option<Config> {
 /// proceeds to create a toplevel split pane to the right,
 /// wehere `termpdf.py` is launched on the resulting pdf.
 fn main() -> std::io::Result<()> {
-    let _version_opt = opts::Opt {
-        short_name: "-v".to_string(),
-        long_name: "--version".to_string(),
-        description: "Print command version".to_string(),
-    };
-    let _p = opts::Parser {
-        opts: vec![],
-        val_opts: vec![],
-    };
+    let version_opt = opts::Opt::new("v", "version", "Print command version");
+    let mut p = opts::Parser::new();
+    p.add_opt(version_opt);
+    let parsed_opts = p.parse(env::args().collect());
+
+    if parsed_opts.contains_key("version") {
+        print_version();
+        return Ok(());
+    }
 
     // ACQUIRE cli handle, panics if not supported
     let term_cli = TermCli::get();

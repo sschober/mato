@@ -44,10 +44,14 @@ impl Parser {
         self.opts.push(opt);
         self
     }
+
+    /// iterates over args and extracts known options,
+    /// returns a HashMap containing all parsed options
     pub fn parse(&self, args: Vec<String>) -> HashMap<String, String> {
         let mut h = HashMap::new();
         eprintln!("{:?}", self.opts);
         for arg in args {
+            let arg = arg.trim_start_matches('-');
             self.opts
                 .iter()
                 .find(|o| o.short_name == arg || o.long_name == arg)
@@ -69,7 +73,7 @@ mod tests {
     #[test]
     fn add_opts() {
         let mut p = Parser::new();
-        let opt = Opt::new("-v", "--version", "Print version");
+        let opt = Opt::new("v", "version", "Print version");
         assert_eq!(p.opts.len(), 0);
         p.add_opt(opt);
         assert_eq!(p.opts.len(), 1);
@@ -80,10 +84,10 @@ mod tests {
             opts: vec![],
             val_opts: vec![],
         };
-        let opt = Opt::new("-v", "--version", "Print version");
+        let opt = Opt::new("v", "version", "Print version");
         p.add_opt(opt);
         let r = p.parse(vec!["-v".to_string()]);
         eprintln!("{:?}", r);
-        assert_eq!(r.get(&"--version".to_string()), Some(&"".to_string()))
+        assert_eq!(r.get(&"version".to_string()), Some(&"".to_string()))
     }
 }
