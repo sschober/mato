@@ -1,137 +1,98 @@
-use std::collections::{BTreeSet, HashMap};
+use std::collections::HashMap;
 /// We do our option parsing ourselves, NIH (not inventied here) syndrome.
+
+#[derive(Clone)]
+pub enum Opt {
+    Flag {
+        short_name: String,
+        long_name: String,
+        description: String,
+    },
+    Value {
+        short_name: String,
+        long_name: String,
+        description: String,
+    },
+}
 
 /// Parser captures vectors of Opts and ValOpts
 pub struct Parser {
     pub long_opts: HashMap<String, Opt>,
-    pub long_val_opts: HashMap<String, ValOpt>,
     pub short_opts: HashMap<String, Opt>,
-    pub short_val_opts: HashMap<String, ValOpt>,
-    pub ordered_long_opt_keys: BTreeSet<String>,
-    pub ordered_short_opt_keys: BTreeSet<String>,
-}
-
-/// An Opt has a short name, a lon name and a description, but no value.
-#[derive(Debug, Clone)]
-pub struct Opt {
-    pub short_name: String,
-    pub long_name: String,
-    pub description: String,
-}
-
-impl Opt {
-    pub fn new(s: &str, l: &str, d: &str) -> Self {
-        Opt {
-            short_name: s.to_string(),
-            long_name: l.to_string(),
-            description: d.to_string(),
-        }
-    }
-}
-
-/// A ValOpt has a short name, a long name, a description and, opposed to Val, a value.
-#[derive(Debug, Clone)]
-pub struct ValOpt {
-    pub short_name: String,
-    pub long_name: String,
-    pub description: String,
-    pub value: String,
-}
-
-impl ValOpt {
-    pub fn new(short_name: &str, long_name: &str, description: &str, value: &str) -> Self {
-        Self {
-            short_name: short_name.to_string(),
-            long_name: long_name.to_string(),
-            description: description.to_string(),
-            value: value.to_string(),
-        }
-    }
 }
 
 impl Parser {
     pub fn new() -> Self {
         Parser {
             long_opts: HashMap::new(),
-            long_val_opts: HashMap::new(),
             short_opts: HashMap::new(),
-            short_val_opts: HashMap::new(),
-            ordered_long_opt_keys: BTreeSet::new(),
-            ordered_short_opt_keys: BTreeSet::new(),
         }
     }
     pub fn add_opt(&mut self, opt: Opt) -> &Self {
-        self.ordered_long_opt_keys.insert(opt.long_name.clone());
-        self.ordered_short_opt_keys.insert(opt.short_name.clone());
-        self.long_opts.insert(opt.long_name.clone(), opt.clone());
-        self.short_opts.insert(opt.short_name.clone(), opt);
-        self
-    }
-    pub fn add_val_opt(&mut self, opt: ValOpt) -> &Self {
-        self.ordered_long_opt_keys.insert(opt.long_name.clone());
-        self.ordered_short_opt_keys.insert(opt.short_name.clone());
-        self.long_val_opts
-            .insert(opt.long_name.clone(), opt.clone());
-        self.short_val_opts.insert(opt.short_name.clone(), opt);
+        match &opt {
+            Opt::Flag {
+                short_name,
+                long_name,
+                description: _,
+            } => {
+                self.long_opts.insert(long_name.clone(), opt.clone());
+                self.short_opts.insert(short_name.clone(), opt.clone());
+            }
+            Opt::Value {
+                short_name,
+                long_name,
+                description: _,
+            } => {
+                self.long_opts.insert(long_name.clone(), opt.clone());
+                self.short_opts.insert(short_name.clone(), opt.clone());
+            }
+        }
         self
     }
 
+    fn handle_match(
+        &self,
+        opt: &Opt,
+        h: &mut HashMap<String, String>,
+        pos: usize,
+        args: &Vec<String>,
+    ) {
+        match opt {
+            Opt::Flag {
+                short_name: _,
+                long_name,
+                description: _,
+            } => h.insert(long_name.clone(), "".to_string()),
+            Opt::Value {
+                short_name: _,
+                long_name,
+                description: _,
+            } => {
+                if pos + 1 < args.len() {
+                    h.insert(long_name.clone(), args[pos + 1].clone())
+                } else {
+                    panic!("option without value: {}", long_name)
+                }
+            }
+        };
+    }
     /// iterates over args and extracts known options,
     /// returns a HashMap containing all parsed options
     pub fn parse(&self, args: Vec<String>) -> HashMap<String, String> {
         let mut h = HashMap::new();
-        eprintln!("long opt keys: {:?}", self.ordered_long_opt_keys);
-        eprintln!("long opts: {:?}", self.long_opts);
-        eprintln!("long val opts: {:?}", self.long_val_opts);
-        eprintln!("short opt keys {:?}", self.ordered_short_opt_keys);
         for (pos, arg) in args.iter().enumerate() {
             let opt_name = arg.trim_start_matches('-');
             eprintln!("opt name: {}", opt_name);
             if arg.starts_with("--") {
-                eprintln!("is long opt...");
-                self.ordered_long_opt_keys
-                    .iter()
-                    .find(|o| opt_name.eq(*o))
-                    .map(|o| {
-                        if self.long_opts.get(o).is_some() {
-                            eprintln!("found long opt: {}", o);
-                            let opt = self.long_opts.get(o).unwrap();
-                            h.insert(opt.long_name.clone(), "".to_string())
-                        } else if self.long_val_opts.get(o).is_some() {
-                            // we have a value option
-                            let val_opt = self.long_val_opts.get(o).unwrap();
-                            if pos + 1 < args.len() {
-                                h.insert(val_opt.long_name.clone(), args[pos + 1].to_string())
-                            } else {
-                                panic!("Value option without value: --{}", val_opt.long_name)
-                            }
-                        } else {
-                            None
-                        }
-                    });
-            } else if arg.starts_with('-') {
-                eprintln!("is short opt...");
-                self.ordered_short_opt_keys
-                    .iter()
-                    .find(|o| opt_name.eq(*o))
-                    .map(|o| {
-                        if self.short_opts.get(o).is_some() {
-                            eprintln!("found short opt: {}", o);
-                            let opt = self.short_opts.get(o).unwrap();
-                            h.insert(opt.long_name.clone(), "".to_string())
-                        } else if self.short_val_opts.get(o).is_some() {
-                            // we have a value option
-                            eprintln!("found short val_opt: {}", o);
-                            let val_opt = self.short_val_opts.get(o).unwrap();
-                            if pos + 1 < args.len() {
-                                h.insert(val_opt.long_name.clone(), args[pos + 1].to_string())
-                            } else {
-                                panic!("Value option without value: --{}", val_opt.long_name)
-                            }
-                        } else {
-                            None
-                        }
-                    });
+                match self.long_opts.get(opt_name) {
+                    Some(opt) => self.handle_match(opt, &mut h, pos, &args),
+                    None => {}
+                }
+            } else if arg.starts_with("-") {
+                match self.short_opts.get(opt_name) {
+                    Some(opt) => self.handle_match(opt, &mut h, pos, &args),
+                    None => {}
+                }
             }
         }
         h
@@ -150,7 +111,11 @@ mod tests {
     #[test]
     fn add_opts() {
         let mut p = Parser::new();
-        let opt = Opt::new("v", "version", "Print version");
+        let opt = Opt::Flag {
+            short_name: "v".to_string(),
+            long_name: "version".to_string(),
+            description: "Print version".to_string(),
+        };
         assert_eq!(p.short_opts.len(), 0);
         p.add_opt(opt);
         assert_eq!(p.short_opts.len(), 1);
@@ -158,7 +123,11 @@ mod tests {
     #[test]
     fn parse_version_opt() {
         let mut p = Parser::new();
-        let opt = Opt::new("v", "version", "Print version");
+        let opt = Opt::Flag {
+            short_name: "v".to_string(),
+            long_name: "version".to_string(),
+            description: "Print version".to_string(),
+        };
         p.add_opt(opt);
         let r = p.parse(vec!["-v".to_string()]);
         eprintln!("{:?}", r);
@@ -167,8 +136,12 @@ mod tests {
     #[test]
     fn parse_source_file_val_opt() {
         let mut p = Parser::new();
-        let opt = ValOpt::new("s", "source-file", "Print version", "");
-        p.add_val_opt(opt);
+        let opt = Opt::Value {
+            short_name: "s".to_string(),
+            long_name: "source-file".to_string(),
+            description: "Print version".to_string(),
+        };
+        p.add_opt(opt);
         let r = p.parse(vec!["-s".to_string(), "LICENSE".to_string()]);
         eprintln!("{:?}", r);
         assert_eq!(

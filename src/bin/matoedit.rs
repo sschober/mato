@@ -1,6 +1,6 @@
 use std::env;
 
-use mato::opts::{Opt, ValOpt};
+use mato::opts::Opt;
 use mato::term_cli::TermCli;
 use mato::{opts, print_version};
 
@@ -37,8 +37,17 @@ const PROG_NAME: &str = "matoedit";
 /// wehere `termpdf.py` is launched on the resulting pdf.
 fn main() -> std::io::Result<()> {
     let mut p = opts::Parser::new();
-    p.add_opt(Opt::new("v", "version", "Print command version"));
-    p.add_val_opt(ValOpt::new("s", "source-file", "Source file", ""));
+    p.add_opt(Opt::Flag {
+        short_name: "v".to_owned(),
+        long_name: "version".to_owned(),
+        description: "Print command version".to_owned(),
+    });
+    p.add_opt(Opt::Value {
+        short_name: "s".to_owned(),
+        long_name: "source-file".to_owned(),
+        description: "Source file".to_owned(),
+    });
+
     let parsed_opts = p.parse(env::args().collect());
 
     if parsed_opts.contains_key("version") {
