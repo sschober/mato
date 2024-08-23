@@ -1,10 +1,13 @@
 # MaToPDF - MArkdown TransfOrmer framework[^1]
 
-[^1]: Actually, the acronym is somewhat of a historical mess. Originally, this tools
-started out as `matote`, which read "markdown to TeX ". Then, I further evolutionized
-it into a framework, which could emit groff source code as well, so framework fit
-well in that case. Then, I dropped the TeX emitting part, thus framework no longer
-fits, but I am tired of renaming the thing in the mean time.
+[^1]:
+    Actually, the acronym is somewhat of a historical mess. Originally, this tool
+    started out as `matote`, which read "markdown to TeX ". Then, I further evolutionized[^2]
+    it into a framework, which could emit groff source code as well, so "framework" fit
+    well in that case. Then, I dropped the TeX emitting part, thus "framework" no longer
+    fits, but I am tired of renaming the thing in the meantime.
+
+[^2]: Ah, is that even a word? I think, you get what I mean.
 
 With `matopdf`, you can transform markdown formatted text into PDFs,
 and even more.
@@ -26,7 +29,6 @@ The `groff::mom` back-end is quiet fast: It
 usually takes only around 1 second to process the input and produce
 the resulting PDF.
 
-
 ### Styling
 
 The styling of the rendered PDF output (think of padding, fonts,
@@ -36,7 +38,6 @@ The `groff` back-end has a default preamble
 (see [here](src/render/groff/default-preamble.mom)), which defines
 standard styles. Settings therein can be overwritten by placing a
 `preamble.mom` file next to your markdown file.
-
 
 ## Build and run
 
@@ -117,6 +118,7 @@ More concretely, this means for the following markdown document:
 
 ```markdown
 # A heading
+
 Some text in a pragraph.
 ```
 
