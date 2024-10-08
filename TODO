@@ -1,0 +1,5 @@
+# matoedit
+
+* git integration - depending on the editor used, this might be a
+bit redundant: we could invoke `git add` and `git commit` on each
+rendering.
