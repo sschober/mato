@@ -16,8 +16,9 @@ pub struct ImageConverter {}
 
 fn process_images(exp: Tree, config: &Config) -> Tree {
     match exp {
+        Tree::Document(dt, be) => Tree::Document(dt, Box::new(process_images(*be, config))),
         Tree::Cat(b1, b2) => process_images(*b1, config).cat(process_images(*b2, config)),
-        Tree::Image(caption, path) => {
+        Tree::Image(caption, path, size_spec) => {
             let path = match *path {
                 Tree::Literal(p) => {
                     let mut resolved_path = p.clone();
@@ -35,7 +36,7 @@ fn process_images(exp: Tree, config: &Config) -> Tree {
                 }
                 _ => *path,
             };
-            image(*caption, path)
+            image(*caption, path, *size_spec)
         }
         _ => exp,
     }
