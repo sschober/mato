@@ -1,6 +1,6 @@
 use crate::syntax::{
-    bold, color, empty, escape_lit, footnote, heading, hyperref, image, list, list_item, lit,
-    meta_data_item, prelit, DocType, Tree,
+    bold, color, empty, escape_lit, footnote, heading, hyperref, image, image_size, list,
+    list_item, lit, meta_data_item, prelit, DocType, Tree,
 };
 use std::str;
 
@@ -427,16 +427,28 @@ impl Parser<'_> {
         }
     }
 
+    fn parse_image_size(&mut self) -> Tree {
+        let x = self.parse_until(b"x");
+        self.consume(b'x');
+        let y = self.parse_until(b"]");
+        image_size(x, y)
+    }
+
     fn parse_image(&mut self) -> Tree {
         if self.peek(1, b'[') {
             self.consume(b'!');
             self.consume(b'[');
-            let caption = self.parse_until(b"]");
+            let caption = self.parse_until(b"|]");
+            let mut size_spec = image_size(lit("100"), lit("100"));
+            if self.current_char == b'|' {
+                self.consume(b'|');
+                size_spec = self.parse_image_size();
+            }
             self.consume(b']');
             self.consume(b'(');
             let path = self.parse_literal(b")");
             self.consume(b')');
-            image(caption, path)
+            image(caption, path, size_spec)
         } else {
             lit("!")
         }
@@ -444,8 +456,8 @@ impl Parser<'_> {
 
     fn parse_until(&mut self, break_chars: &[u8]) -> Tree {
         let mut expression = Tree::Empty(); // we start with
-                                           // "nothing", as rust has
-                                           // no null values
+                                            // "nothing", as rust has
+                                            // no null values
         while !self.at_end() && !break_chars.contains(&self.current_char) {
             let expr = match self.current_char {
                 b'-' => self.parse_meta_data_block(),
@@ -485,7 +497,7 @@ impl Parser<'_> {
             };
             expression = match expression {
                 Tree::Empty() => expr,
-                _ => expression.cat(expr)
+                _ => expression.cat(expr),
             };
         }
         expression

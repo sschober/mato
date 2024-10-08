@@ -88,8 +88,14 @@ impl Render for Renderer {
             }
             Tree::MetaDataBlock(b_exp) => format!("---\n{}---\n\n", self.render(*b_exp)),
             Tree::MetaDataItem(key, value) => format!("{}: {}\n", key, value),
-            Tree::Image(b1, b2) => format!("![{}]({})", self.render(*b1), self.render(*b2)),
+            Tree::Image(b1, b2, b3) => format!(
+                "![{}|{}]({})",
+                self.render(*b1),
+                self.render(*b3),
+                self.render(*b2)
+            ),
             Tree::Color(b_exp) => format!("\\{{{}}}", self.render(*b_exp)),
+            Tree::ImageSizeSpec(b1, b2) => format!("{}x{}", self.render(*b1), self.render(*b2)),
         }
     }
 }

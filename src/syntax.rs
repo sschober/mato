@@ -1,7 +1,7 @@
 //! capture the essence of a markdown abstract syntax tree
 //!
 
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub enum DocType {
     DEFAULT,
     CHAPTER,
@@ -12,7 +12,8 @@ pub enum DocType {
 /// Expressions are the building blocks of an abstract syntax tree
 #[derive(Debug)]
 pub enum Tree {
-    Document(DocType, Box<Tree>),    /// Separate consequential pargraps
+    Document(DocType, Box<Tree>),
+    /// Separate consequential pargraps
     Paragraph(),
     /// code and stuff
     PreformattedLiteral(String),
@@ -53,8 +54,10 @@ pub enum Tree {
     MetaDataBlock(Box<Tree>),
     // a singular meta data item
     MetaDataItem(String, String),
-    /// image with caption an path
-    Image(Box<Tree>, Box<Tree>),
+    // captures size specification in the of XxY
+    ImageSizeSpec(Box<Tree>, Box<Tree>),
+    /// image with caption, path, and image size spec
+    Image(Box<Tree>, Box<Tree>, Box<Tree>),
     /// new line
     LineBreak(),
     // this is a neutral element, yielding no ouput
@@ -119,8 +122,12 @@ pub fn meta_data_block(exp: Tree) -> Tree {
     Tree::MetaDataBlock(Box::new(exp))
 }
 #[must_use]
-pub fn image(caption: Tree, path: Tree) -> Tree {
-    Tree::Image(Box::new(caption), Box::new(path))
+pub fn image_size(x: Tree, y: Tree) -> Tree {
+    Tree::ImageSizeSpec(Box::new(x), Box::new(y))
+}
+#[must_use]
+pub fn image(caption: Tree, path: Tree, size_spec: Tree) -> Tree {
+    Tree::Image(Box::new(caption), Box::new(path), Box::new(size_spec))
 }
 #[must_use]
 pub fn empty() -> Tree {

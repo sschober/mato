@@ -240,10 +240,14 @@ impl Renderer<'_> {
             Tree::MetaDataItem(key, value) => {
                 format!(".{} {}\n", key.to_uppercase().replace(' ', "_"), value)
             }
-            Tree::Image(b_exp, path) => {
+            Tree::ImageSizeSpec(b_exp1, b_exp2) => {
+                format!("{}p {}p", rnd!(*b_exp1), rnd!(*b_exp2))
+            }
+            Tree::Image(b_exp, path, size_spec) => {
                 format!(
-                    ".PDF_IMAGE {} 200p 150p CAPTION \"{}\"",
+                    ".PDF_IMAGE {} {} CAPTION \"{}\"",
                     rnd!(*path),
+                    rnd!(*size_spec),
                     rnd!(*b_exp)
                 )
             }
