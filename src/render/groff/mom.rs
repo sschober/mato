@@ -245,7 +245,7 @@ impl Renderer<'_> {
             }
             Tree::Image(b_exp, path, size_spec) => {
                 format!(
-                    ".PDF_IMAGE {} {} CAPTION \"{}\"",
+                    ".PDF_IMAGE {} {} LABEL \"{}\"",
                     rnd!(*path),
                     rnd!(*size_spec),
                     rnd!(*b_exp)
