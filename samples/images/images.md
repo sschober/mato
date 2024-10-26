@@ -12,6 +12,6 @@ the way.
 
 ## Overview of the Tour
 
-The following picture depicts an overview of the tour on the map:
+The following picture shows an overview of the tour on the map:
 
 ![The map overview of the tour|200x120](IMG_4053.pdf)
