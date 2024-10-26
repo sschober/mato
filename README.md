@@ -64,21 +64,34 @@ directory.
 ## Watch mode
 
 There is also a super-duper-watch-mode, which can be activated via
-the `-w` flag. Then, the source file will be watched and if written
-to will be reprocessed. This feature can be used to create a kind of
-WYSIWYG experience when writing.
+the `-w` flag. If activated, the source file will be watched and if written
+to will be reprocessed. The cool thing about the chosen solution is, that
+this does not require polling, but the code is being signalled by the OS
+of changes to files. If you are interessted, how this is being done
+take a look at [`watch.rs`](src/watch.rs). The feature is called
+kernel queues, and I think it is a BSD innovation. For further information
+consult the 
+[apple documentation](https://developer.apple.com/library/archive/documentation/Darwin/Conceptual/FSEvents_ProgGuide/KernelQueues/KernelQueues.html) or
+or [this](https://people.freebsd.org/~jmg/kq.html)
+page by a freebsd contributer.
+
+### WYSIWYG Experience
+
+The watch mode can be used to create a kind of WYSIWYG experience when writing.
 
 ![WYSIWYG editing](doc/WYSIWYG-editing.png)
 
 The processing and update time of the PDF is usually around and
-below 1 second, so this is not instantaaneous, but good enough.
+below 1 second, so this is not instantaneous, but good enough, 
+for me at least.
 
 In the image above, I used [kitty](https://sw.kovidgoyal.net/kitty/)
 and `termpdf.py` to display the PDF side by side with the markdown
 source file.
 
 There is a binary, `matoedit`, which creates a setup like the above
-in a support terminal (wezterm, ATM) automatically.
+in a supported terminal (`kitty` and `wezterm` at the moment)
+automatically.
 
 ## Developing
 
