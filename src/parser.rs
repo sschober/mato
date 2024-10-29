@@ -55,6 +55,8 @@ impl Parser<'_> {
         self.current_position += 1;
         if !self.at_end() {
             self.current_char = self.input[self.current_position];
+        } else {
+            self.current_char = 4; // EOF
         }
     }
 
@@ -373,7 +375,14 @@ impl Parser<'_> {
             list(iterator, level)
         } else {
             // assume emphasize (*word*)
-            bold(self.parse_symmetric_quoted())
+            if self.peek(1, b'*') {
+                self.consume(b'*')
+            }
+            let res = bold(self.parse_symmetric_quoted());
+            if self.current_char == b'*' {
+                self.consume(b'*')
+            }
+            res
         }
     }
 
