@@ -32,6 +32,9 @@ pub enum Tree {
     Bold(Box<Tree>),
     /// Encapsulates cursiveness; can contain varios other formattings
     Italic(Box<Tree>),
+    /// Bold and Italic at the same time - nesting does not work here
+    /// as we ne a special escape sequence to activate this: \*[BDI]
+    BoldItalic(Box<Tree>),
     SmallCaps(Box<Tree>),
     /// Encapsulates code placed as a separate block, set apart from
     /// normal, flowing text
@@ -69,6 +72,9 @@ impl Tree {
     #[must_use]
     pub fn cat(self, expr: Self) -> Self {
         Self::Cat(Box::new(self), Box::new(expr))
+    }
+    pub fn cat_box(self, expr: Box<Self>) -> Box<Self> {
+        Box::new(Self::Cat(Box::new(self), expr))
     }
 }
 

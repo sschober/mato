@@ -84,10 +84,11 @@ impl Renderer<'_> {
             Tree::Document(dt, be) => {
                 self.doc_type = dt.clone();
                 let mut result = format!("{}", dt);
+                let config = self.config;
 
                 if !self.config.skip_preamble {
                     result = format!(
-                        "{}\n{}\n",
+                        "{}\n{}",
                         result,
                         self.locate_and_load_preamble(PREAMBLE_FILE_NAME)
                     );
@@ -95,6 +96,7 @@ impl Renderer<'_> {
 
                 for (key, value) in self.ctx.clone().into_iter() {
                     let key = key.replace(' ', "_");
+                    log_dbg!(config, "key: {} = {}", key, value);
                     result = format!("{}.{} {}\n", result, key.to_uppercase(), value);
                 }
                 if !self.ctx.is_empty() && !self.ctx.contains_key("pdf title") {
@@ -121,6 +123,9 @@ impl Renderer<'_> {
             Tree::SmallCaps(be) => rnd_pf!(*be, parent_format),
             Tree::Italic(b_exp) => {
                 format!("\\*[IT]{}\\*[{}]", rnd_pf!(*b_exp, "IT"), parent_format)
+            }
+            Tree::BoldItalic(be) => {
+                format!("\\*[BDI]{}\\*[{}]", rnd_pf!(*be, "BDI"), parent_format)
             }
             // Currently there seems to be a bug: https://savannah.gnu.org/bugs/index.php?64561
             // Exp::CodeBlock(b_exp) => format!(".QUOTE_STYLE INDENT 1\n.QUOTE\n.CODE\n.BOX OUTLINED black INSET 18p\n{}.BOX OFF\n.QUOTE OFF", self.render(*b_exp)),

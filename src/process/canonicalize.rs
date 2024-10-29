@@ -9,31 +9,62 @@ use crate::{log_trc, Tree};
 #[derive(Debug)]
 pub struct Canonicalizer {}
 
-/// descents the complete AST and erazes Empty() nodes
-fn erase_empty(exp: Tree) -> Tree {
-    match exp {
-        Tree::Document(dt, be) => Tree::Document(dt, Box::new(erase_empty(*be))),
+/// Captures the current font style.
+/// We need to remember in which kind of format we are currently in
+/// to decided, if we need to inject a Tree::BoldItalic instead of
+/// Tree::Bold or Tree::Italic.
+#[derive(Clone, Copy)]
+enum InFormat {
+    Bold,
+    Italic,
+    BoldItalic,
+    None,
+}
+/// descents the complete AST and
+/// * erazes Empty() nodes
+/// * condenses nested bold and italics style node into single bold-italic style nodes.
+///   This also works, if the nesting is not direct, but 'far' like **bold and _italic_**
+/// * replaces numerals with old style figures
+/// * replaces Tree::SmallCaps nodes with literal groff .sc characters
+fn erase_empty(exp: Tree, fmt: InFormat) -> Box<Tree> {
+    Box::new(match exp {
+        Tree::Document(dt, be) => Tree::Document(dt, erase_empty(*be, fmt)),
         Tree::Cat(b_exp1, b_exp2) => match *b_exp1 {
-            Tree::Empty() => erase_empty(*b_exp2),
-            _ => erase_empty(*b_exp1).cat(erase_empty(*b_exp2)),
+            // this arm erases the empty node and is the actual meat of this processor
+            Tree::Empty() => *erase_empty(*b_exp2, fmt),
+            _ => *erase_empty(*b_exp1, fmt).cat_box(erase_empty(*b_exp2, fmt)),
         },
-        Tree::CodeBlock(b1, b2) => Tree::CodeBlock(b1, Box::new(erase_empty(*b2))),
-        Tree::MetaDataBlock(b_exp) => meta_data_block(erase_empty(*b_exp)),
-        Tree::ChapterMark(b_exp) => Tree::ChapterMark(Box::new(erase_empty(*b_exp))),
+        Tree::Bold(b_exp) => match *b_exp {
+            Tree::Italic(b_inn) => Tree::BoldItalic(erase_empty(*b_inn, InFormat::BoldItalic)),
+            _ => match fmt {
+                InFormat::Italic => Tree::BoldItalic(erase_empty(*b_exp, InFormat::BoldItalic)),
+                _ => Tree::Bold(erase_empty(*b_exp, InFormat::Bold)),
+            },
+        },
+        Tree::Italic(b_exp) => match *b_exp {
+            Tree::Bold(b_inn) => Tree::BoldItalic(erase_empty(*b_inn, InFormat::BoldItalic)),
+            _ => match fmt {
+                InFormat::Bold => Tree::BoldItalic(erase_empty(*b_exp, InFormat::BoldItalic)),
+                _ => Tree::Italic(erase_empty(*b_exp, InFormat::Italic)),
+            },
+        },
+        Tree::CodeBlock(b1, b2) => Tree::CodeBlock(b1, erase_empty(*b2, fmt)),
+        Tree::MetaDataBlock(b_exp) => meta_data_block(*erase_empty(*b_exp, fmt)),
+        Tree::ChapterMark(b_exp) => Tree::ChapterMark(erase_empty(*b_exp, fmt)),
         Tree::PreformattedLiteral(s) => prelit(&prelit_escape_groff_symbols(s)),
-        Tree::Footnote(be) => Tree::Footnote(Box::new(erase_empty(*be))),
+        Tree::Footnote(be) => Tree::Footnote(erase_empty(*be, fmt)),
         // the next rule replaces old style numerals in text body literals,
         // but not in literals in headings
         Tree::Literal(s) => lit(replace_old_style_figures(s).as_ref()),
-
         Tree::SmallCaps(be) => Tree::SmallCaps(Box::new(match *be {
             Tree::Literal(s) => lit(&replace_small_caps(s)),
             _ => *be,
         })),
         _ => exp,
-    }
+    })
 }
 
+/// appends a `.sc` to characters
 fn replace_small_caps(s: String) -> String {
     let mut result = String::new();
     for c in s.chars() {
@@ -46,6 +77,7 @@ fn replace_small_caps(s: String) -> String {
     result
 }
 
+/// replaces 0-9 with old style figure references
 fn replace_old_style_figures(s: String) -> String {
     let mut result = String::new();
     for c in s.chars() {
@@ -75,7 +107,7 @@ fn prelit_escape_groff_symbols(s: String) -> String {
 impl Process for Canonicalizer {
     fn process(&mut self, exp: Tree, config: &Config) -> Tree {
         log_trc!(config, "{:?}", self);
-        erase_empty(exp)
+        *erase_empty(exp, InFormat::None)
     }
 }
 

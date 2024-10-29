@@ -56,6 +56,7 @@ impl Render for Renderer {
                 }
             }
             Tree::Italic(b_exp) => format!("_{}_", self.render(*b_exp)),
+            Tree::BoldItalic(b_exp) => format!("_**{}**_", self.render(*b_exp)),
             Tree::SmallCaps(be) => format!("{{{}}}", self.render(*be)),
             Tree::CodeBlock(b1, b2) => format!("```{}\n{}```", self.render(*b1), self.render(*b2)),
             Tree::InlineCode(b_exp) => format!("`{}`", self.render(*b_exp)),
