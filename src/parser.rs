@@ -156,8 +156,11 @@ impl Parser<'_> {
             // if this heading is followed by another heading, we slurp away the newline
             // so that there is not too much vertical white space in between them
             self.consume(b'\n');
+            result
+        } else {
+            // if the heading is not followed by another heading we insert a VSpace node.
+            result.cat(Tree::VSpace())
         }
-        result
     }
 
     fn parse_footnote(&mut self) -> Tree {
@@ -490,9 +493,17 @@ impl Parser<'_> {
                 b'[' => self.parse_hyperlink(),
                 b'\n' => {
                     // if the blank line is followed by a heading do not insert a paragraph
-                    if self.peek(1, b'\n') && !self.peek(2, b'#') {
-                        self.consume(b'\n');
-                        Tree::Paragraph()
+                    if self.peek(1, b'\n') {
+                        if self.peek(2, b'#') {
+                            // a heading follows
+                            self.consume(b'\n');
+                            self.consume(b'\n');
+                            Tree::LineBreak()
+                        } else {
+                            // no heading follows
+                            self.consume(b'\n');
+                            Tree::Paragraph()
+                        }
                     } else {
                         self.consume(b'\n');
                         Tree::LineBreak()

@@ -63,6 +63,9 @@ pub enum Tree {
     Image(Box<Tree>, Box<Tree>, Box<Tree>),
     /// new line
     LineBreak(),
+    /// groff knows .SP instructions, which are important to insert
+    /// after headings to introduce some vertical space after the heading
+    VSpace(),
     // this is a neutral element, yielding no ouput
     Empty(),
 }

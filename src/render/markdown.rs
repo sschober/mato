@@ -97,6 +97,7 @@ impl Render for Renderer {
             ),
             Tree::Color(b_exp) => format!("\\{{{}}}", self.render(*b_exp)),
             Tree::ImageSizeSpec(b1, b2) => format!("{}x{}", self.render(*b1), self.render(*b2)),
+            Tree::VSpace() => String::new(),
         }
     }
 }

@@ -186,22 +186,18 @@ impl Renderer<'_> {
                             )
                         } else if 0 == level {
                             format!(
-                            ".SPACE -.7v\n.FT B\n.EW 2\n.HEADING {} \"{}\"\n.EW 0\n.FT R\n.DRH\n",
-                            level + 1,
-                            &rnd!(*b_exp)
-                        )
+                                ".FT B\n.EW 2\n.HEADING {} \"{}\"\n.EW 0\n.FT R\n.DRH",
+                                level + 1,
+                                &rnd!(*b_exp)
+                            )
                         } else if 1 == level {
                             format!(
-                                ".SPACE -.7v\n.FT B\n.EW 2\n.HEADING {} \"{}\"\n.EW 0\n.FT R\n",
+                                ".FT B\n.EW 2\n.HEADING {} \"{}\"\n.EW 0\n.FT R",
                                 level + 1,
                                 &rnd!(*b_exp)
                             )
                         } else {
-                            format!(
-                                ".SPACE -.7v\n.EW 2\n.HEADING {} \"{}\"\n.EW 0\n",
-                                level + 1,
-                                rnd!(*b_exp)
-                            )
+                            format!(".EW 2\n.HEADING {} \"{}\"\n.EW 0", level + 1, rnd!(*b_exp))
                         }
                     }
                 }
@@ -210,7 +206,7 @@ impl Renderer<'_> {
                 format!(".COLOR {}\n", rnd!(*b_exp))
             }
             Tree::ChapterMark(b_exp) => {
-                format!(".MN RIGHT\n.PT_SIZE +48\n{}\n.MN OFF\n", rnd!(*b_exp))
+                format!(".MN RIGHT\n.PT_SIZE +48\n{}\n.MN OFF", rnd!(*b_exp))
             }
             Tree::RightSidenote(b_exp) => {
                 format!("\n.MN RIGHT\n.PT_SIZE -2\n{}\n.MN OFF\n", rnd!(*b_exp))
@@ -255,6 +251,9 @@ impl Renderer<'_> {
                     rnd!(*size_spec),
                     rnd!(*b_exp)
                 )
+            }
+            Tree::VSpace() => {
+                format!("\n.SP 1v")
             }
         }
     }
