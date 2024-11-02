@@ -171,6 +171,13 @@ impl Parser<'_> {
         }
     }
 
+    fn parse_drop_cap(&mut self) -> Tree {
+        self.consume(b'%');
+        let drop_cap_char = self.parse_raw_until(&[b'%'])[0];
+        self.consume(b'%');
+        Tree::DropCap(drop_cap_char, 3)
+    }
+
     fn parse_color_spec(&mut self) -> Tree {
         self.consume(b'\\');
         match self.current_char {
@@ -480,6 +487,7 @@ impl Parser<'_> {
                 b'`' => self.parse_code(),
                 b'"' => Tree::Quote(Box::new(self.parse_symmetric_quoted())),
                 b'^' => self.parse_footnote(),
+                b'%' => self.parse_drop_cap(),
                 b'&' => {
                     self.consume(self.current_char);
                     escape_lit("&")

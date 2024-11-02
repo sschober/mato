@@ -13,15 +13,18 @@ pub enum DocType {
 #[derive(Debug)]
 pub enum Tree {
     Document(DocType, Box<Tree>),
-    /// Separate consequential pargraps
+    /// Separate consequential paragraphs
     Paragraph(),
     /// code and stuff
     PreformattedLiteral(String),
     /// A literal is a string rendered as is
     Literal(String),
-    /// An escaped literal probabely has to be treated in a special
+    /// An escaped literal probably has to be treated in a special
     /// way, depending on the rendering backend
     EscapeLit(String),
+    /// A dropping capital, usually found at the beginning of chapters
+    /// lowering down given amount of lines
+    DropCap(u8, u8),
     // A color specification
     Color(Box<Tree>),
     /// Most often a single digit signifying the chapter number, and a color
