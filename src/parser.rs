@@ -66,6 +66,15 @@ impl Parser<'_> {
         self.current_position >= self.input_len
     }
 
+    fn peek_back(&self, n: usize, char: u8) -> bool {
+        let idx: i8 = self.current_position as i8 - n as i8;
+        if idx < 0 {
+            false
+        } else {
+            char == self.input[idx as usize]
+        }
+    }
+
     const fn peek(&self, n: usize, char: u8) -> bool {
         if self.current_position + n >= self.input_len {
             false
@@ -171,11 +180,28 @@ impl Parser<'_> {
         }
     }
 
+    fn count_drop_cap_level(&mut self) -> u8 {
+        let mut level = 0;
+        while self.current_char == b'%' {
+            level += 1;
+            self.consume(b'%');
+        }
+        level
+    }
+
     fn parse_drop_cap(&mut self) -> Tree {
-        self.consume(b'%');
-        let drop_cap_char = self.parse_raw_until(&[b'%'])[0];
-        self.consume(b'%');
-        Tree::DropCap(drop_cap_char, 3)
+        if self.current_position == 0 || self.peek_back(1, b'\n') {
+            // we are at the beginning of the file,
+            // or at the beginning of a line
+            let drop_cap_level = self.count_drop_cap_level();
+            let drop_cap_char = self.current_char;
+            eprintln!("{} {}", drop_cap_char as char, drop_cap_level);
+            self.advance();
+            Tree::DropCap(drop_cap_char, drop_cap_level + 1)
+        } else {
+            self.consume(b'%');
+            lit("%")
+        }
     }
 
     fn parse_color_spec(&mut self) -> Tree {
