@@ -67,11 +67,13 @@ impl Parser<'_> {
     }
 
     fn peek_back(&self, n: usize, char: u8) -> bool {
-        let idx: i8 = self.current_position as i8 - n as i8;
+        let idx: i32 = self.current_position as i32 - n as i32;
         if idx < 0 {
             false
         } else {
-            char == self.input[idx as usize]
+            let char_at = self.input[idx as usize];
+            let res = char == char_at;
+            res
         }
     }
 
@@ -195,8 +197,11 @@ impl Parser<'_> {
             // or at the beginning of a line
             let drop_cap_level = self.count_drop_cap_level();
             let drop_cap_char = self.current_char;
-            eprintln!("{} {}", drop_cap_char as char, drop_cap_level);
             self.advance();
+            // we increase the drop cap level by one, as a drop
+            // cap of 1 does not make any sense. so if the user
+            // specifies a single '%' we have a character that
+            // drops _one_ line and spans _two_.
             Tree::DropCap(drop_cap_char, drop_cap_level + 1)
         } else {
             self.consume(b'%');
