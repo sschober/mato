@@ -143,8 +143,14 @@ fn render<R: Render, P: Process>(r: &mut R, exp: Tree, _p: &mut P) -> String {
 }
 
 pub fn grotopdf(config: &Config, input: &str) -> Vec<u8> {
+    // calling `groff` directly instead of `mompdf` has a performance
+    // adavantage, but will handle forwar references not correctly.
+    // see https://www.schaffter.ca/mom/pdf/mom-pdf.pdf and there
+    // section 6.1
     let mut child = Command::new("/usr/bin/env")
-        .arg("pdfmom")
+        .arg("groff")
+        .arg("-Tpdf")
+        .arg("-mom")
         .arg(format!("-m{}", config.lang))
         .args(["-K", "UTF-8"]) // process with preconv to support utf-8
         .stdin(Stdio::piped())
