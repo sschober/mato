@@ -134,7 +134,7 @@ impl Renderer<'_> {
                 rnd!(*b2)
             ),
             Tree::InlineCode(b_exp) => format!("\\*[CODE]{}\\*[CODE OFF]", rnd!(*b_exp)),
-            Tree::Heading(b_exp, level) => {
+            Tree::Heading(b_exp, level, name) => {
                 match self.doc_type {
                     DocType::CHAPTER => {
                         if level == 0 {
@@ -178,6 +178,11 @@ impl Renderer<'_> {
                         }
                     }
                     _ => {
+                        let name_string = if "" != name {
+                            format!(" NAMED {}", name)
+                        } else {
+                            "".to_string()
+                        };
                         // all other doc types
                         if 3 == level {
                             format!(
@@ -186,18 +191,25 @@ impl Renderer<'_> {
                             )
                         } else if 0 == level {
                             format!(
-                                ".FT B\n.EW 2\n.HEADING {} \"{}\"\n.EW 0\n.FT R\n.DRH",
+                                ".FT B\n.EW 2\n.HEADING {}{} \"{}\"\n.EW 0\n.FT R\n.DRH",
                                 level + 1,
+                                name_string,
                                 &rnd!(*b_exp)
                             )
                         } else if 1 == level {
                             format!(
-                                ".FT B\n.EW 2\n.HEADING {} \"{}\"\n.EW 0\n.FT R",
+                                ".FT B\n.EW 2\n.HEADING {}{} \"{}\"\n.EW 0\n.FT R",
                                 level + 1,
+                                name_string,
                                 &rnd!(*b_exp)
                             )
                         } else {
-                            format!(".EW 2\n.HEADING {} \"{}\"\n.EW 0", level + 1, rnd!(*b_exp))
+                            format!(
+                                ".EW 2\n.HEADING {}{} \"{}\"\n.EW 0",
+                                level + 1,
+                                name_string,
+                                rnd!(*b_exp)
+                            )
                         }
                     }
                 }
@@ -221,6 +233,9 @@ impl Renderer<'_> {
                     rnd!(*b_exp2),
                     rnd!(*b_exp1)
                 )
+            }
+            Tree::DocRef(target, link_text) => {
+                format!("\\c\n.PDF_LINK {} \"{}\"\\c\n", target, rnd!(*link_text))
             }
             Tree::Cat(b_exp1, b_exp2) => {
                 format!(

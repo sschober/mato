@@ -30,7 +30,7 @@ pub enum Tree {
     /// Most often a single digit signifying the chapter number, and a color
     ChapterMark(Box<Tree>),
     /// Section headers with a separate parameter specifying the level
-    Heading(Box<Tree>, u8),
+    Heading(Box<Tree>, u8, String),
     /// Encapsulates boldness; can contain various other formattings
     Bold(Box<Tree>),
     /// Encapsulates cursiveness; can contain varios other formattings
@@ -48,7 +48,10 @@ pub enum Tree {
     Quote(Box<Tree>),
     Footnote(Box<Tree>),
     RightSidenote(Box<Tree>),
+    // web-link
     HyperRef(Box<Tree>, Box<Tree>),
+    // document internal link
+    DocRef(String, Box<Tree>),
     // this enables composition, forming the tree
     Cat(Box<Tree>, Box<Tree>),
     // Lists, should contain ListItems
@@ -98,8 +101,8 @@ pub fn escape_lit(s: &str) -> Tree {
     Tree::EscapeLit(s.to_string())
 }
 #[must_use]
-pub fn heading(exp: Tree, lvl: u8) -> Tree {
-    Tree::Heading(Box::new(exp), lvl)
+pub fn heading(exp: Tree, lvl: u8, name: &str) -> Tree {
+    Tree::Heading(Box::new(exp), lvl, name.to_string())
 }
 #[must_use]
 pub fn color(exp: Tree) -> Tree {

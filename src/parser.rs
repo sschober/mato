@@ -158,8 +158,14 @@ impl Parser<'_> {
     fn parse_heading(&mut self) -> Tree {
         self.consume(b'#');
         let level = self.parse_heading_level(0);
-        let literal = self.parse_literal(b"\n");
-        let result = heading(literal, level);
+        let literal = self.parse_literal(b"/\n");
+        let mut heading_name = "".to_string();
+        if self.current_char == b'/' {
+            self.consume(b'/');
+            heading_name = self.parse_string_until(&[b'/']);
+            self.consume(b'/');
+        }
+        let result = heading(literal, level, &heading_name);
         if self.at_end() {
             return result;
         }
@@ -247,22 +253,31 @@ impl Parser<'_> {
         }
     }
 
-    fn parse_hyperlink(&mut self) -> Tree {
+    fn parse_link(&mut self) -> Tree {
         self.consume(b'[');
-        let exp_link_text = self.parse_until(b"]");
+        let link_text = self.parse_until(b"]");
         self.consume(b']');
         if self.current_char == b'(' {
             self.consume(b'(');
-            let exp_url = self.parse_literal(b")");
-            self.consume(b')');
-            // if there is a space after the hyperlink, we swollow it
-            // to avoid a line break in the PDf after the link
-            if self.current_char == b' ' {
-                self.consume(b' ')
+            if self.current_char == b'#' {
+                // internal link
+                self.consume(b'#');
+                let target = self.parse_string_until(b")");
+                self.consume(b')');
+                Tree::DocRef(target, Box::new(link_text))
+            } else {
+                // hyper link
+                let exp_url = self.parse_literal(b")");
+                self.consume(b')');
+                // if there is a space after the hyperlink, we swollow it
+                // to avoid a line break in the PDf after the link
+                if self.current_char == b' ' {
+                    self.consume(b' ')
+                }
+                hyperref(link_text, exp_url)
             }
-            hyperref(exp_link_text, exp_url)
         } else {
-            lit("[").cat(exp_link_text).cat(lit("]"))
+            lit("[").cat(link_text).cat(lit("]"))
         }
     }
 
@@ -529,7 +544,7 @@ impl Parser<'_> {
                 }
                 b'/' => self.parse_pass_through(),
                 b'\\' => self.parse_color_spec(),
-                b'[' => self.parse_hyperlink(),
+                b'[' => self.parse_link(),
                 b'\n' => {
                     // if the blank line is followed by a heading do not insert a paragraph
                     if self.peek(1, b'\n') {

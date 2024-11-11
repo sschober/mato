@@ -60,7 +60,7 @@ impl Render for Renderer {
             Tree::SmallCaps(be) => format!("{{{}}}", self.render(*be)),
             Tree::CodeBlock(b1, b2) => format!("```{}\n{}```", self.render(*b1), self.render(*b2)),
             Tree::InlineCode(b_exp) => format!("`{}`", self.render(*b_exp)),
-            Tree::Heading(b_exp, level) => {
+            Tree::Heading(b_exp, level, _) => {
                 let prefix = (0..level + 1).map(|_| "#").collect::<String>();
                 format!("{} {}", prefix, self.render(*b_exp))
             }
@@ -99,6 +99,7 @@ impl Render for Renderer {
             Tree::ImageSizeSpec(b1, b2) => format!("{}x{}", self.render(*b1), self.render(*b2)),
             Tree::VSpace() => String::new(),
             Tree::DropCap(_, _) => todo!(),
+            Tree::DocRef(_, _) => todo!(),
         }
     }
 }
