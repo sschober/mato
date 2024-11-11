@@ -147,6 +147,9 @@ pub fn grotopdf(config: &Config, input: &str) -> Vec<u8> {
     // adavantage, but will handle forwar references not correctly.
     // see https://www.schaffter.ca/mom/pdf/mom-pdf.pdf and there
     // section 6.1
+    // I switched to `groff` as `pdfmom` would always call `groff`
+    // three times, even when it is not necessary, because the document
+    // being processed does not contain any references.
     let mut child = Command::new("/usr/bin/env")
         .arg("groff")
         .arg("-Tpdf")
