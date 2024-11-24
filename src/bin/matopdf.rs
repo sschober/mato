@@ -141,7 +141,7 @@ mod tests {
             matogro(
                 "# heading\n\n## subheading"
             ),
-            ".DOCTYPE DEFAULT\n.START\n.SPACE -.7v\n.FT B\n.EW 2\n.HEADING 1 \"heading\"\n.EW 0\n.FT R\n.DRH\n\n.SPACE -.7v\n.FT B\n.EW 2\n.HEADING 2 \"subheading\"\n.EW 0\n.FT R\n"
+            ".DOCTYPE DEFAULT\n.START\n.FT B\n.EW 2\n.HEADING 1 \"heading\"\n.EW 0\n.FT R\n.DRH\n.FT B\n.EW 2\n.HEADING 2 \"subheading\"\n.EW 0\n.FT R"
         );
     }
 
@@ -149,14 +149,14 @@ mod tests {
     fn heading_and_paragraph() {
         assert_eq!(
             matogro("# heading\n\nA new paragraph"),
-            ".DOCTYPE DEFAULT\n.START\n.SPACE -.7v\n.FT B\n.EW 2\n.HEADING 1 \"heading\"\n.EW 0\n.FT R\n.DRH\n\n.PP\nA new paragraph"
+            ".DOCTYPE DEFAULT\n.START\n.FT B\n.EW 2\n.HEADING 1 \"heading\"\n.EW 0\n.FT R\n.DRH\n.SP 1v\n.PP\nA new paragraph"
         );
     }
     #[test]
     fn paragraph_and_heading() {
         assert_eq!(
             matogro("A new paragraph\n\n# heading"),
-            ".DOCTYPE DEFAULT\n.START\nA new paragraph\n\n.SPACE -.7v\n.FT B\n.EW 2\n.HEADING 1 \"heading\"\n.EW 0\n.FT R\n.DRH\n"
+            ".DOCTYPE DEFAULT\n.START\nA new paragraph\n.FT B\n.EW 2\n.HEADING 1 \"heading\"\n.EW 0\n.FT R\n.DRH"
         );
     }
 
@@ -179,7 +179,7 @@ mod tests {
     fn chapter_mark() {
         assert_eq!(
             matogro(">>(c)\n"),
-            ".DOCTYPE DEFAULT\n.START\n.MN RIGHT\n.PT_SIZE +48\nc\n.MN OFF\n"
+            ".DOCTYPE DEFAULT\n.START\n.MN RIGHT\n.PT_SIZE +48\nc\n.MN OFF"
         );
     }
     #[test]
