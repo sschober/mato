@@ -40,7 +40,7 @@ impl Parser<'_> {
         } else {
             let mut parser = Parser::new(input);
             // passing "" as bytes parses until the end of file
-            let ast = Box::new(parser.parse_until(b""));
+            let ast = Box::new(parser.global_parse_until(b""));
             match parser.doc_type.to_uppercase().as_ref() {
                 "SLIDES" => Tree::Document(DocType::SLIDES, ast),
                 "CHAPTER" => Tree::Document(DocType::CHAPTER, ast),
@@ -111,9 +111,30 @@ impl Parser<'_> {
     fn parse_symmetric_quoted(&mut self) -> Tree {
         let break_char = self.current_char;
         self.consume(break_char); // opening quote
-        let exp = self.parse_until(&[break_char]); // body
+        let exp = self.global_parse_until(&[break_char]); // body
         self.consume(break_char); // ending quote
         exp
+    }
+
+    fn try_bold_or_lit_until(&mut self, break_chars: &[u8]) -> Tree {
+        let break_char = self.current_char;
+        self.consume(break_char); // opening quote
+        let exp = self.fmt_parse_until(
+            format!(
+                "{}{}",
+                break_char as char,
+                str::from_utf8(break_chars).unwrap()
+            )
+            .as_bytes(),
+        ); // body
+        if self.current_char == break_char {
+            self.consume(break_char); // ending quote
+            Tree::Bold(Box::new(exp))
+        } else {
+            eprintln!("current char: {}, {:?}", self.current_char as char, exp);
+            // we consumed the '*', so we prepend it again
+            lit("*").cat(exp)
+        }
     }
 
     /// parses something that is asymmetrically quoted, like with '(' and ')'
@@ -132,7 +153,7 @@ impl Parser<'_> {
     /// parse an asymmetrically quoted substring, like
     /// something enclosed in a pair of parentheses, ( and ).
     fn parse_quoted(&mut self, break_char: u8) -> Tree {
-        self.parse_quoted_base(break_char, |a, b| Parser::parse_until(a, b))
+        self.parse_quoted_base(break_char, |a, b| Parser::global_parse_until(a, b))
     }
 
     /// parse an asymmetrically quoted substring, like
@@ -255,7 +276,7 @@ impl Parser<'_> {
 
     fn parse_link(&mut self) -> Tree {
         self.consume(b'[');
-        let link_text = self.parse_until(b"]");
+        let link_text = self.fmt_parse_until(b"]");
         self.consume(b']');
         if self.current_char == b'(' {
             self.consume(b'(');
@@ -393,7 +414,7 @@ impl Parser<'_> {
         self.consume(b'*');
         self.consume(b' ');
         loop {
-            item = item.cat(self.parse_until(b"\n"));
+            item = item.cat(self.global_parse_until(b"\n"));
             if !self.at_end() {
                 self.consume(b'\n');
             }
@@ -493,9 +514,9 @@ impl Parser<'_> {
     }
 
     fn parse_image_size(&mut self) -> Tree {
-        let x = self.parse_until(b"x");
+        let x = self.global_parse_until(b"x");
         self.consume(b'x');
-        let y = self.parse_until(b"]");
+        let y = self.global_parse_until(b"]");
         image_size(x, y)
     }
 
@@ -503,7 +524,7 @@ impl Parser<'_> {
         if self.peek(1, b'[') {
             self.consume(b'!');
             self.consume(b'[');
-            let caption = self.parse_until(b"|]");
+            let caption = self.global_parse_until(b"|]");
             let mut size_spec = image_size(lit("100"), lit("100"));
             if self.current_char == b'|' {
                 self.consume(b'|');
@@ -519,7 +540,43 @@ impl Parser<'_> {
         }
     }
 
-    fn parse_until(&mut self, break_chars: &[u8]) -> Tree {
+    fn fmt_parse_until(&mut self, break_chars: &[u8]) -> Tree {
+        let mut expression = Tree::Empty(); // we start with
+                                            // "nothing", as rust has
+                                            // no null values
+        while !self.at_end() && !break_chars.contains(&self.current_char) {
+            let expr = match self.current_char {
+                b'*' => self.try_bold_or_lit_until(&[b']']),
+                b'_' => Tree::Italic(Box::new(self.parse_symmetric_quoted())),
+                b'{' => Tree::SmallCaps(Box::new(self.parse_quoted(b'}'))),
+                b'`' => self.parse_code(),
+                b'"' => Tree::Quote(Box::new(self.parse_symmetric_quoted())),
+                b'^' => self.parse_footnote(),
+                b'%' => self.parse_drop_cap(),
+                b'&' => {
+                    self.consume(self.current_char);
+                    escape_lit("&")
+                }
+                b'.' => {
+                    self.consume(self.current_char);
+                    escape_lit(".")
+                }
+                b'/' => self.parse_pass_through(),
+                b'\\' => self.parse_color_spec(),
+                _ => self.parse_literal(
+                    format!("_*#\"^`&[{{{}>\n", str::from_utf8(break_chars).unwrap()).as_bytes(),
+                ),
+            };
+            expression = match expression {
+                Tree::Empty() => expr,
+                _ => expression.cat(expr),
+            };
+        }
+        expression
+    }
+
+    /// Parses only formatting subset of markup as opposed to global_parse_until
+    fn global_parse_until(&mut self, break_chars: &[u8]) -> Tree {
         let mut expression = Tree::Empty(); // we start with
                                             // "nothing", as rust has
                                             // no null values
@@ -577,7 +634,6 @@ impl Parser<'_> {
         expression
     }
 }
-
 #[cfg(test)]
 mod tests {
     use super::Parser;
