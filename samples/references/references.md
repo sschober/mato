@@ -2,7 +2,7 @@
 
 >>(\{mato_dark_blue}m)
 
-## Introduction
+## Introduction /intro/
 
 %In the following we describe, the motivation,
 architecture and implementation of `mato`.
@@ -29,7 +29,7 @@ it gave much better response times.
 But in addition to that, installation size of the
 rendering backend dependencies drove the decision
 to use `groff`. Modern LaTe distributions, like
-TeX-Live can easily take up above 1GB of disk 
+TeX-Live can easily take up above 1GB of disk
 space and be very unwieldy to handle.
 
 #### Community
@@ -39,13 +39,19 @@ active and live community. The mailing list has
 constant activity and since quite some time the
 code base is being developed rather constantly.
 
-Bugs that were reported are being addressed 
-thoroughly and quickly. And discussions are 
+Bugs that were reported are being addressed
+thoroughly and quickly. And discussions are
 friendly and in a welcoming tone.
+
+### Structure
+
+The structure of this document is as follows: first,
+we present the architecture of the chosen solution.
+Then we detail the implentational approach we chose.
 
 ## Architecture /arch/
 
-In the [previous section](#into), we presented the 
+In the [previous section *](#intro), we presented the
 motivation, why we created `mato`.
 
 ## Implementation /impl/
