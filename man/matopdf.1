@@ -1,0 +1,94 @@
+.\" Copyright 2024, Sven Schober <av3sch@gmail.com>
+.\"
+.\" SPDX-License-Identifier: MIT
+.\"
+.TH matopdf 1 (date) "MaTo Tools man-pages (unreleased)"
+.SH NAME
+matopdf
+\-
+transform markdown files to PDF using groff
+.SH SYNOPSIS
+.SY matopdf
+.RB [ \-dtvwZ ]
+.RB [ \-l\c
+.IR lang ]
+.I file
+.YS
+.
+.P
+.SY matopdf
+.B \-h
+.YS
+.
+.SY matopdf
+.B \-\-help
+.YS
+.
+.SH DESCRIPTION
+.B matopdf
+parses a markdown file and transforms it to
+.MR groff 1
+format with macro usage of the
+.MR groff_mom 1
+package.
+Then it uses
+.I groff
+to produce an output PDF file
+using the
+.MR gropdf 1
+output device.
+.
+.SH OPTIONS
+.
+.B \-h
+and
+.B \-\-help
+display a usage message and exit.
+.
+.
+.TP 9n \" "-m name" + 2n
+.B \-d
+Enable debug output. Implies
+.BR \-v ,
+and is superseeded by
+.BR \-t .
+.
+.
+.TP
+.B \-t
+Enable trace output. Implies
+.BR \-v\~ and\~ \-d .
+.
+.TP
+.B \-w
+Enable
+.IR "watch mode" .
+Watches for changes on source files and automatically reruns the
+transformation in case the watches file was written to.
+.
+.SH USAGE
+.
+.SS Styling
+.
+.SS Watch Mode
+.
+.SH EXAMPLES
+Use the following command line to transform a simple markdown
+file into a PDF:
+.P
+.EX
+.RB $\~ "matopdf sample.md"
+.EE
+.P
+To inspect the groff formatted output that
+.I matopdf
+generates, use the
+.B \-Z
+flag, like so:
+.P
+.EX
+.RB $\~ "matopdf -Z sample.md"
+.EE
+.SH SEE ALSO
+.MR groff 1 ,
+.MR gropdf 1
