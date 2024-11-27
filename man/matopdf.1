@@ -6,11 +6,11 @@
 .SH NAME
 matopdf
 \-
-transform markdown files to PDF using groff
+transform markdown files into PDF using groff
 .SH SYNOPSIS
 .SY matopdf
-.RB [ \-dtvwZ ]
-.RB [ \-l\c
+.RB [ \-dgGhltvVwZ ]
+.RB [ \-l
 .IR lang ]
 .I file
 .YS
@@ -47,38 +47,130 @@ display a usage message and exit.
 .
 .
 .TP 9n \" "-m name" + 2n
-.B \-d
+.B \-d, --debug
 Enable debug output. Implies
 .BR \-v ,
 and is superseeded by
 .BR \-t .
 .
+.TP
+.B \-g, --dump-groff
+Dump generated
+.I groff
+output text to standard output stream.
 .
 .TP
-.B \-t
+.B \-G, --dump-groff-file
+Dump generated
+.I groff
+output text to a file. The file name is
+created by stripping the
+.I md
+suffix and appending
+.IR groff .
+.
+.TP
+.BI \-l\~ lang, --lang\~ lang
+Set
+.IR groff 's 
+language localization to
+.IR lang .
+This can be
+.BR en ", " de ", or " den .
+Please, consult
+.MR groff_tmac 1
+for a complete list of valid languages.
+.
+.TP
+.B \-t, --trace
 Enable trace output. Implies
 .BR \-v\~ and\~ \-d .
 .
 .TP
-.B \-w
+.B \-v, --version
+Print the command version and exit.
+.
+.TP
+.B \-w, --watch
 Enable
 .IR "watch mode" .
 Watches for changes on source files and automatically reruns the
 transformation in case the watches file was written to.
 .
+.TP
+.B \-Z, --skip-render-and-dump
+Skips feeding the generated
+.I groff
+output to
+.I gropdf
+and instead dumps it onto standard output stream.
+.
+.
 .SH USAGE
 .
+In general,
+.I matopdf
+does
+.B not
+work like a standard UNIX filter, but uses a substitution
+to generate an output file name, to which the target PDF
+file content is written.
+In part this decision to deviate from
+.I groff
+best-practices was motivated by a 
+.I batteries included
+philosophy and in part by complications this filter patter
+would have introduced when using the 
+.IR "watch mode" :
+A target file can continuously be overwritten, whereas the
+semantics of constantly piping PDFs to standard out would be
+not intuitively clear.
 .SS Styling
+You can change the styling of the rendered pdf output using
+standard
+.I mom
+elements, as are described in
+.MR groff_mom 1
+or the html documentation located at 
+.UR https://\:www.\:schaffter\:.ca\:/mom\:/momdoc\:/toc.html
+.UE
+.P
+To change the styling, put your
+.I mom
+statement in a file called
+.I preamble.mom
+next to your mark\%down input file. 
+.P
+.I mato
+defines a default styling in a file called
+.IR default-pramble.mom .
+You can study the defaults it sets in the file installed
+under TODO.
 .
 .SS Watch Mode
 .
+.I matopdf
+has a blocking mode, called
+.I watch mode
+in which it performs one transformation and rendering process
+and then, instead of exiting, waits for changes on the input
+file.
+.P
+This waiting is done using
+.I kernel queues
+(see
+.MR kqueue 2 )
+a BSD concept, available natively on Mac OS X, BSDs and Linux.
 .SH EXAMPLES
-Use the following command line to transform a simple markdown
-file into a PDF:
+Use the following command line 
 .P
 .EX
 .RB $\~ "matopdf sample.md"
 .EE
+.P
+to transform a simple markdown
+file into a PDF file
+.IR sample.pdf .
 .P
 To inspect the groff formatted output that
 .I matopdf
@@ -88,7 +180,22 @@ flag, like so:
 .P
 .EX
 .RB $\~ "matopdf -Z sample.md"
+\&.DOCTYPE CHAPTER HEADER "\*[$TITLE]" "" "" FOOTER "\*[$AUTHOR]" "" ""
+\&.PRINTSTYLE TYPESET
+\&.PAGE 5.8i 9i 1i 1i .75i .75i
+\&.PAPER A5
+\&...
+\&.START
+\&.SPACE -.7v
+\&.EW 2
+\&.HEADING 3 "Motivation"
+\&.EW 0
+\&...
 .EE
+.P
+Please note, that this will
+.B not
+produce an output pdf file.
 .SH SEE ALSO
 .MR groff 1 ,
 .MR gropdf 1
