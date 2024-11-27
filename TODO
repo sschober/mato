@@ -1,5 +1,12 @@
 # matoedit
 
+* `man` rendering backend
+
+* `mato` command - similar to `groff` in that regard, that it
+supports different backends for selection with:
+    - `-T mom` for mom
+    - `-T man` for man
+
 * git integration - depending on the editor used, this might be a
 bit redundant: we could invoke `git add` and `git commit` on each
 rendering.
