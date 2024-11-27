@@ -17,6 +17,30 @@ pub enum Opt {
     },
 }
 
+impl Opt {
+    pub fn is_set(&self, r: &ParserResult) -> bool {
+        match self {
+            Opt::Flag {
+                short_name: _,
+                long_name,
+                description: _,
+            } => r.get_flag(long_name),
+            _ => false,
+        }
+    }
+
+    pub fn val(&self, r: &ParserResult) -> String {
+        match self {
+            Opt::Value {
+                short_name: _,
+                long_name,
+                description: _,
+                default: _,
+            } => r.get_opt(long_name),
+            _ => "".to_owned(),
+        }
+    }
+}
 /// Parser captures vectors of Opts and ValOpts
 pub struct Parser {
     pub long_opts: HashMap<String, Opt>,
@@ -155,7 +179,6 @@ impl Parser {
         p.add_opt(opt_flag!("V", "verbose", "Enable verbose output."));
         p.add_opt(opt_flag!("d", "debug", "Enable debug output."));
         p.add_opt(opt_flag!("t", "trace", "Enable trace output."));
-        p.add_opt(opt_val!("l", "lang", "Set document language.", "de"));
         p
     }
 
@@ -163,7 +186,7 @@ impl Parser {
     ///
     /// returns a references to the parser, so calls can be
     /// chained
-    pub fn add_opt(&mut self, opt: Opt) -> &Self {
+    pub fn add_opt(&mut self, opt: Opt) -> Opt {
         match &opt {
             Opt::Flag {
                 short_name,
@@ -183,7 +206,7 @@ impl Parser {
                 self.short_opts.insert(short_name.clone(), opt.clone());
             }
         }
-        self
+        opt
     }
 
     /// inserts `key = ""`  (long_name) into `h` for flags, and
@@ -283,9 +306,9 @@ mod tests {
     fn add_opts() {
         let mut p = Parser::new();
         let opt = opt_flag!("s", "some", "Some option");
-        assert_eq!(p.short_opts.len(), 6);
+        assert_eq!(p.short_opts.len(), 5);
         p.add_opt(opt);
-        assert_eq!(p.short_opts.len(), 7);
+        assert_eq!(p.short_opts.len(), 6);
     }
     #[test]
     fn parse_version_opt() {

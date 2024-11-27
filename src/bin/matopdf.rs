@@ -11,6 +11,7 @@ use mato::mato_dbg;
 use mato::mato_inf;
 use mato::mato_trc;
 use mato::opt_flag;
+use mato::opt_val;
 use mato::opts;
 use mato::process::canonicalize;
 use mato::process::chain;
@@ -26,22 +27,25 @@ const TARGET_FILE_EXTENSION_GRO: &str = "groff";
 fn main() -> std::io::Result<()> {
     let mut config = Config::default();
     let mut p = opts::Parser::new();
-    p.add_opt(opt_flag!(
+
+    let opt_lang = p.add_opt(opt_val!("l", "lang", "Set document language.", "de"));
+
+    let opt_watch = p.add_opt(opt_flag!(
         "w",
         "watch",
         "watch file for changes and retransform"
     ));
-    p.add_opt(opt_flag!(
+    let opt_dump_groff = p.add_opt(opt_flag!(
         "g",
         "dump-groff",
         "Dump generated groff to standard out."
     ));
-    p.add_opt(opt_flag!(
+    let opt_dump_groff_file = p.add_opt(opt_flag!(
         "G",
         "dump-groff-file",
         "Dump generated groff to file <input>.groff."
     ));
-    p.add_opt(opt_flag!(
+    let opt_z = p.add_opt(opt_flag!(
         "Z",
         "skip-render-and-dump",
         "Skip rendering and dumps groff output."
@@ -59,13 +63,11 @@ fn main() -> std::io::Result<()> {
 
     mato_dbg!("source file:\t\t{}", &config.source_file);
 
-    config.lang = parsed_opts.get_opt("lang");
-
-    config.watch = parsed_opts.get_flag("watch");
-
-    config.dump_groff = parsed_opts.get_flag("dump-groff");
-    config.dump_groff_file = parsed_opts.get_flag("dump-groff-file");
-    if parsed_opts.get_flag("skip-render-and-dump") {
+    config.lang = opt_lang.val(&parsed_opts);
+    config.watch = opt_watch.is_set(&parsed_opts);
+    config.dump_groff = opt_dump_groff.is_set(&parsed_opts);
+    config.dump_groff_file = opt_dump_groff_file.is_set(&parsed_opts);
+    if opt_z.is_set(&parsed_opts) {
         config.skip_rendering = true;
         config.dump_groff = true;
     }
