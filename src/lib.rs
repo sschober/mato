@@ -1,16 +1,18 @@
 //! markdown transformer toolkit
 
+use config::Config;
 use core::fmt::Debug;
+use opts::ParserResult;
+use parser::Parser;
 use std::fs::File;
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::time::Instant;
-
-use config::Config;
-use parser::Parser;
 use syntax::Tree;
+
 pub mod config;
+pub mod log;
 pub mod opts;
 pub mod parser;
 pub mod process;
@@ -21,8 +23,20 @@ pub mod term_cli;
 pub mod watch;
 pub mod wezterm_cli;
 
-pub fn print_version(prog: &str, version: &str) {
-    println!("{} - {}", prog, version);
+pub fn establish_log_level(parsed_opts: &ParserResult) -> u8 {
+    if parsed_opts.get_flag("verbose") {
+        1
+    } else {
+        if parsed_opts.get_flag("debug") {
+            2
+        } else {
+            if parsed_opts.get_flag("trace") {
+                3
+            } else {
+                0
+            }
+        }
+    }
 }
 
 fn read_all_from_stdin() -> String {
@@ -35,14 +49,14 @@ fn read_all_from_stdin() -> String {
     result
 }
 
-pub fn read_input(config: &Config) -> String {
+pub fn read_input(source_file: &str) -> String {
     let start = Instant::now();
-    let input = if config.source_file.is_empty() {
+    let input = if source_file.is_empty() {
         read_all_from_stdin()
     } else {
-        std::fs::read_to_string(&config.source_file).unwrap()
+        std::fs::read_to_string(source_file).unwrap()
     };
-    log_dbg!(config, "input read in:\t\t{:?}", start.elapsed());
+    m_dbg!("input read in:\t\t{:?}", start.elapsed());
     input
 }
 
@@ -56,7 +70,7 @@ pub fn replace_file_extension(file_name: &str, extension: &str) -> PathBuf {
 pub fn create_if_not_exists(file_name: &str) {
     let path_source_file = Path::new(file_name);
     if !path_source_file.is_file() {
-        eprintln!("creating {}", file_name);
+        m_dbg!("creating {}", file_name);
         File::create(file_name).unwrap();
     }
 }
@@ -66,7 +80,7 @@ const EMPTY_PDF: &[u8] = include_bytes!("empty.pdf");
 pub fn create_empty_if_not_exists(file_name: &str) {
     let path_source_file = Path::new(file_name);
     if !path_source_file.is_file() {
-        eprintln!("creating empty pdf {}", file_name);
+        m_dbg!("creating empty pdf {}", file_name);
         let mut pdf = File::create(file_name).unwrap();
         pdf.write_all(EMPTY_PDF).unwrap();
     }
@@ -75,7 +89,7 @@ pub fn create_empty_if_not_exists(file_name: &str) {
 /// executes the given `cmd` as a sub process, blocks and
 /// returns its output as a string
 fn spawn(cmd: Vec<&str>) {
-    eprintln!("exec: {:?}", cmd);
+    m_dbg!("exec: {:?}", cmd);
     Command::new("/usr/bin/env")
         .args(cmd)
         .status()
@@ -85,7 +99,7 @@ fn spawn(cmd: Vec<&str>) {
 /// executes the given `cmd` as a sub process, blocks and
 /// returns its output as a string
 fn exec(cmd: Vec<&str>) -> String {
-    eprintln!("exec: {:?}", cmd);
+    m_dbg!("exec: {:?}", cmd);
     let out = Command::new("/usr/bin/env")
         .args(cmd)
         .output()
@@ -109,11 +123,11 @@ pub fn transform<R: Render, P: Process>(
     config: &Config,
     input: &str,
 ) -> String {
-    log_trc!(config, "parsing...");
+    m_trc!("parsing...");
     let mut exp = Parser::parse(input);
-    log_trc!(config, "parsed: {:?}", exp);
+    m_trc!("parsed: {:?}", exp);
     exp = process(p, exp, config);
-    log_trc!(config, "processed: {:?}", exp);
+    m_trc!("processed: {:?}", exp);
     render(r, exp, p)
 }
 

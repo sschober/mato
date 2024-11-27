@@ -3,32 +3,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-#[macro_export]
-macro_rules! log_inf {
-    ($config:ident, $( $args:expr ), *) => {
-       if $config.log_level >= 1 {
-           eprintln!( $( $args ),* );
-       }
-    };
-}
-
-#[macro_export]
-macro_rules! log_dbg {
-    ($config:ident, $( $args:expr ), *) => {
-       if $config.log_level >= 2 {
-           eprintln!( $( $args ),* );
-       }
-    };
-}
-
-#[macro_export]
-macro_rules! log_trc {
-    ($config:ident, $( $args:expr ), *) => {
-       if $config.log_level >= 3 {
-           eprintln!( $( $args ),* );
-       }
-    };
-}
+use crate::m_dbg;
 
 /// captures configuration parsed from command line arguments
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -44,7 +19,6 @@ pub struct Config {
     pub dump_groff: bool,
     pub dump_groff_file: bool,
     pub skip_rendering: bool,
-    pub log_level: u8,
     /// language
     pub lang: String,
     pub preamble: String,
@@ -61,7 +35,6 @@ impl Config {
             dump_groff: false,
             dump_groff_file: false,
             skip_rendering: false,
-            log_level: 0,
             lang: String::new(),
             preamble: String::new(),
             skip_preamble: false,
@@ -81,9 +54,6 @@ impl Config {
                         result.skip_rendering = true;
                         result.dump_groff = true;
                     }
-                    "-v" | "--verbose" => result.log_level = 1,
-                    "-d" | "--debug" => result.log_level = 2,
-                    "-t" | "--trace" => result.log_level = 3,
                     "-len" | "-l en" => result.lang = "en".to_string(),
                     "-" => result.source_file = String::new(),
                     _ => result.source_file = arg,
@@ -109,6 +79,22 @@ impl Config {
         Ok(result)
     }
 
+    /// inspects `self.source_file` and tries to find the parent
+    /// directory.
+    pub fn establish_parent_dir(&mut self) -> std::io::Result<()> {
+        self.parent_dir = Path::new(&self.source_file)
+            .parent()
+            .ok_or(std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                "could not establish parent of source file",
+            ))?
+            .as_os_str()
+            .to_str()
+            .unwrap()
+            .to_string();
+        Ok(())
+    }
+
     pub fn target_file(&self, extention: &str) -> PathBuf {
         crate::replace_file_extension(&self.source_file, extention)
     }
@@ -120,15 +106,11 @@ impl Config {
     pub fn locate_and_load_preamble(&mut self, name: &str, default: &str) {
         let sibbling_preamble = Path::new(&self.parent_dir).join(name);
         if sibbling_preamble.as_path().is_file() {
-            log_dbg!(
-                self,
-                "found sibbling preamble: {}",
-                sibbling_preamble.display()
-            );
+            m_dbg!("found sibbling preamble: {}", sibbling_preamble.display());
             self.preamble = fs::read_to_string(sibbling_preamble).unwrap();
         } else {
             self.preamble = default.to_string();
-            log_dbg!(self, "preamble:\t\tbuilt-in");
+            m_dbg!("preamble:\t\tbuilt-in");
         }
     }
 }

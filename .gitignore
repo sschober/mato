@@ -3,3 +3,4 @@ test*
 .DS_Store
 termpdf.log
 samples/letter/
+*.swp

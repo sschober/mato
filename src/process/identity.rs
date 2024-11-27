@@ -1,5 +1,4 @@
-use crate::log_trc;
-
+use crate::m_trc;
 use crate::Process;
 
 /// Identity processor does nothing and just returns an
@@ -11,9 +10,9 @@ impl Process for Identity {
     fn process(
         &mut self,
         exp: crate::syntax::Tree,
-        config: &crate::config::Config,
+        _config: &crate::config::Config,
     ) -> crate::syntax::Tree {
-        log_trc!(config, "{:?}", self);
+        m_trc!("{:?}", self);
         exp
     }
 }

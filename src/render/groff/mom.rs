@@ -5,7 +5,7 @@ use std::fs;
 use std::path::Path;
 
 use crate::config::Config;
-use crate::{log_dbg, Render};
+use crate::{m_dbg, Render};
 use crate::{syntax::DocType, Tree};
 
 /// empty struct to attach Renderer implementation on
@@ -47,16 +47,11 @@ impl Renderer<'_> {
             return "".to_string();
         }
         let sibbling_preamble = Path::new(&self.config.parent_dir).join(name);
-        let config = &self.config;
         if sibbling_preamble.as_path().is_file() {
-            log_dbg!(
-                config,
-                "found sibbling preamble: {}",
-                sibbling_preamble.display()
-            );
+            m_dbg!("found sibbling preamble: {}", sibbling_preamble.display());
             fs::read_to_string(sibbling_preamble).unwrap()
         } else {
-            log_dbg!(config, "preamble:\t\tbuilt-in");
+            m_dbg!("preamble:\t\tbuilt-in");
             self.default_preamble.to_string()
         }
     }
@@ -84,7 +79,6 @@ impl Renderer<'_> {
             Tree::Document(dt, be) => {
                 self.doc_type = dt.clone();
                 let mut result = format!("{}", dt);
-                let config = self.config;
 
                 if !self.config.skip_preamble {
                     result = format!(
@@ -96,7 +90,7 @@ impl Renderer<'_> {
 
                 for (key, value) in self.ctx.clone().into_iter() {
                     let key = key.replace(' ', "_");
-                    log_dbg!(config, "key: {} = {}", key, value);
+                    m_dbg!("key: {} = {}", key.clone(), value.clone());
                     result = format!("{}.{} {}\n", result, key.to_uppercase(), value);
                 }
                 if !self.ctx.is_empty() && !self.ctx.contains_key("pdf title") {

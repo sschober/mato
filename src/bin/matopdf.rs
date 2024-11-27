@@ -5,9 +5,13 @@ use std::fs;
 use std::time::Instant;
 
 use mato::config::Config;
-use mato::log_dbg;
-use mato::log_inf;
-use mato::log_trc;
+use mato::die;
+use mato::establish_log_level;
+use mato::mato_dbg;
+use mato::mato_inf;
+use mato::mato_trc;
+use mato::opt_flag;
+use mato::opts;
 use mato::process::canonicalize;
 use mato::process::chain;
 use mato::process::chain::Chain;
@@ -17,15 +21,56 @@ use mato::render::groff;
 use mato::watch;
 
 const TARGET_FILE_EXTENSION_PDF: &str = "pdf";
-const TARGET_FILE_EXTENSION_GRO: &str = "gro";
+const TARGET_FILE_EXTENSION_GRO: &str = "groff";
 
 fn main() -> std::io::Result<()> {
-    let mut config = Config::from(env::args().collect())?;
-    log_dbg!(config, "config: {:#?}", config);
-    log_dbg!(config, "source file:\t\t{}", &config.source_file);
+    let mut config = Config::default();
+    let mut p = opts::Parser::new();
+    p.add_opt(opt_flag!(
+        "w",
+        "watch",
+        "watch file for changes and retransform"
+    ));
+    p.add_opt(opt_flag!(
+        "g",
+        "dump-groff",
+        "Dump generated groff to standard out."
+    ));
+    p.add_opt(opt_flag!(
+        "G",
+        "dump-groff-file",
+        "Dump generated groff to file <input>.groff."
+    ));
+    p.add_opt(opt_flag!(
+        "Z",
+        "skip-render-and-dump",
+        "Skip rendering and dumps groff output."
+    ));
+
+    let parsed_opts = p.parse(env::args().collect());
+    parsed_opts.handle_standard_flags("matopdf", "0.1.1");
+
+    // TODO support multiple markdown input files
+    if parsed_opts.params.len() < 1 {
+        die!("no markdown input file provided! please provide one.");
+    }
+    mato::log::set_log_level(establish_log_level(&parsed_opts));
+    config.watch = parsed_opts.get_flag("watch");
+
+    config.source_file = parsed_opts.params.first().unwrap().clone();
+    mato_dbg!("source file:\t\t{}", &config.source_file);
+    config.establish_parent_dir()?;
 
     config.set_target_file(TARGET_FILE_EXTENSION_PDF);
-    log_dbg!(config, "target file name:\t{}", config.target_file);
+    mato_dbg!("target file name:\t{}", config.target_file);
+    config.dump_groff = parsed_opts.get_flag("dump-groff");
+    config.dump_groff_file = parsed_opts.get_flag("dump-groff-file");
+    if parsed_opts.get_flag("skip-render-and-dump") {
+        config.skip_rendering = true;
+        config.dump_groff = true;
+    }
+    config.lang = parsed_opts.get_opt("lang");
+    mato_dbg!("config: {:#?}", config);
 
     if config.watch {
         let kqueue = watch::Kqueue::create();
@@ -39,23 +84,23 @@ fn main() -> std::io::Result<()> {
     Ok(())
 }
 
-fn create_chain(config: &Config) -> Chain {
-    log_trc!(config, "constructing chain...");
+fn create_chain() -> Chain {
+    mato_trc!("constructing chain...");
     let chain = chain::new(canonicalize::new(), image_converter::new()).append(code_block::new());
-    log_trc!(config, "done");
-    log_dbg!(config, "chain: {:?}", chain);
+    mato_trc!("done");
+    mato_dbg!("chain: {:?}", chain);
     chain
 }
 
 fn matopdf(config: &Config) {
-    let input = mato::read_input(config);
+    let input = mato::read_input(&config.source_file);
 
-    let mut chain = create_chain(config);
+    let mut chain = create_chain();
 
     // MD -> GROFF
     let start = Instant::now();
     let groff_output = mato::transform(&mut groff::mom::new(config), &mut chain, config, &input);
-    log_inf!(config, "transformed in:\t\t{:?}", start.elapsed());
+    mato_inf!("transformed in:\t\t{:?}", start.elapsed());
 
     if config.dump_groff {
         println!("{groff_output}");
@@ -69,11 +114,11 @@ fn matopdf(config: &Config) {
     if !config.skip_rendering {
         let start = Instant::now();
         let pdf_output = mato::grotopdf(config, &groff_output);
-        log_inf!(config, "groff rendering:\t{:?} ", start.elapsed());
+        mato_inf!("groff rendering:\t{:?} ", start.elapsed());
 
         let start = Instant::now();
         fs::write(&config.target_file, pdf_output).expect("Unable to write output pdf");
-        log_inf!(config, "written in:\t\t{:?} ", start.elapsed());
+        mato_inf!("written in:\t\t{:?} ", start.elapsed());
     }
 }
 
@@ -84,7 +129,7 @@ mod tests {
     fn matogro(input: &str) -> String {
         let mut config = Config::default();
         config.skip_preamble = true;
-        let mut chain = super::create_chain(&config);
+        let mut chain = super::create_chain();
         mato::transform(
             &mut super::groff::mom::new(&config),
             &mut chain,

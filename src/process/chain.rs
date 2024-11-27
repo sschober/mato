@@ -1,8 +1,9 @@
 use std::time::Instant;
 
-use crate::Process;
+use crate::log::get_log_level;
+use crate::{m_trc, Process};
 
-use crate::{config::Config, log_trc, Tree};
+use crate::{config::Config, Tree};
 use core::fmt::Debug;
 
 /// A Chain can be used to chain multiple processors
@@ -16,12 +17,12 @@ impl Process for Chain {
     fn process(&mut self, exp: Tree, config: &Config) -> Tree {
         let start = Instant::now();
         let result = self.a.process(exp, config);
-        if config.log_level >= 2 {
-            log_trc!(config, "{:?}: {:?}", self.a, start.elapsed());
+        if get_log_level() >= 2 {
+            m_trc!("{:?}: {:?}", self.a, start.elapsed());
         }
         let result = self.b.process(result, config);
-        if config.log_level >= 2 {
-            log_trc!(config, "{:?}: {:?}", self.b, start.elapsed());
+        if get_log_level() >= 2 {
+            m_trc!("{:?}: {:?}", self.b, start.elapsed());
         }
         result
     }

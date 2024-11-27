@@ -1,8 +1,8 @@
-use crate::Process;
+use crate::{m_trc, Process};
 
 use crate::config::Config;
 use crate::syntax::{lit, meta_data_block, prelit};
-use crate::{log_trc, Tree};
+use crate::Tree;
 
 /// The Canonicalizer processor removes unneeded AST
 /// elements, like empty()s
@@ -105,8 +105,8 @@ fn prelit_escape_groff_symbols(s: String) -> String {
 }
 
 impl Process for Canonicalizer {
-    fn process(&mut self, exp: Tree, config: &Config) -> Tree {
-        log_trc!(config, "{:?}", self);
+    fn process(&mut self, exp: Tree, _config: &Config) -> Tree {
+        m_trc!("{:?}", self);
         *erase_empty(exp, InFormat::None)
     }
 }

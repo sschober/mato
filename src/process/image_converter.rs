@@ -2,7 +2,7 @@ use std::path::Path;
 
 use crate::{
     config::Config,
-    log_dbg, log_trc,
+    m_dbg, m_trc,
     syntax::{image, lit, Tree},
 };
 
@@ -31,7 +31,7 @@ fn process_images(exp: Tree, config: &Config) -> Tree {
                             .unwrap()
                             .to_string();
                     }
-                    log_dbg!(config, "resolved path: {}", resolved_path);
+                    m_dbg!("resolved path: {}", resolved_path);
                     lit(&resolved_path)
                 }
                 _ => *path,
@@ -47,7 +47,7 @@ impl Process for ImageConverter {
         exp: crate::syntax::Tree,
         config: &crate::config::Config,
     ) -> crate::syntax::Tree {
-        log_trc!(config, "{:?}", self);
+        m_trc!("{:?}", self);
         process_images(exp, config)
     }
 }

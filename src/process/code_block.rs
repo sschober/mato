@@ -4,12 +4,11 @@ use std::{
     process::{Command, Stdio},
 };
 
-use crate::Process;
 use crate::{
     config::Config,
     syntax::{lit, Tree},
 };
-use crate::{log_dbg, log_trc};
+use crate::{m_dbg, m_trc, Process};
 
 /// CodeBlock processor looks inside code blocks that it finds in the AST and
 /// if the type is pic will render the pic picture embedded inside of the block.
@@ -23,7 +22,7 @@ fn process_code_blocks(exp: Tree, config: &Config) -> Tree {
             let match_copy = block_type.as_ref();
             match match_copy {
                 Tree::Literal(type_string) => {
-                    log_dbg!(config, "processing code block of type {}", type_string);
+                    m_dbg!("processing code block of type {}", type_string);
                     if type_string == "pic" {
                         // process pic contents by piping it through pic
                         let mut child = Command::new("/usr/bin/env")
@@ -53,7 +52,7 @@ fn process_code_blocks(exp: Tree, config: &Config) -> Tree {
                             let _ = io::stderr().write(&output.stderr);
                         }
                         let rendered_pic = String::from_utf8(output.stdout).unwrap();
-                        log_trc!(config, "rendered: {}", rendered_pic);
+                        m_trc!("rendered: {}", rendered_pic);
                         lit(&rendered_pic)
                     } else {
                         Tree::CodeBlock(block_type, content)
@@ -71,7 +70,7 @@ impl Process for CodeBlockProcessor {
         exp: crate::syntax::Tree,
         config: &crate::config::Config,
     ) -> crate::syntax::Tree {
-        log_trc!(config, "{:?}", self);
+        m_trc!("{:?}", self);
         process_code_blocks(exp, config)
     }
 }

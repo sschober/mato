@@ -1,5 +1,6 @@
 use std::collections::HashMap;
-/// We do our option parsing ourselves, NIH (not inventied here) syndrome.
+/// We do our option parsing ourselves,
+/// NIH (not inventied here) syndrome.
 
 #[derive(Clone, Debug)]
 pub enum Opt {
@@ -22,6 +23,10 @@ pub struct Parser {
     pub short_opts: HashMap<String, Opt>,
 }
 
+pub fn print_version(prog: &str, version: &str) {
+    println!("{} - {}", prog, version);
+}
+
 /// ParserResult captures the parsed entites extracted
 /// from the command line arguments.
 #[derive(Debug)]
@@ -34,7 +39,13 @@ pub struct ParserResult {
     pub params: Vec<String>,
     long_opts: HashMap<String, Opt>,
 }
+
 impl ParserResult {
+    /// `true`, if the flag was given, `false` otherwise
+    pub fn get_flag(&self, key: &str) -> bool {
+        self.opts.contains_key(key)
+    }
+
     /// gets option value. guaranteed to return a value, as
     /// defaults are part of the definition.
     pub fn get_opt(&self, key: &str) -> String {
@@ -58,6 +69,54 @@ impl ParserResult {
                     default,
                 } => default.clone(),
             })
+    }
+
+    pub fn print_usage_string(&self) {
+        // hashmap keys are not sorted, so we sort them
+        // I find this a bit awkward. maybe there is a better way to do that.
+        let mut sorted_keys = self.long_opts.keys().collect::<Vec<&String>>();
+        // why does sort mutate and not return a sorted vec?
+        sorted_keys.sort();
+        for key in sorted_keys {
+            let value = self.long_opts.get(key).unwrap();
+            match value {
+                Opt::Flag {
+                    short_name,
+                    long_name,
+                    description,
+                } => {
+                    println!(
+                        "\t-{0:<1}, --{1:<21}{2}",
+                        short_name, long_name, description
+                    )
+                }
+                Opt::Value {
+                    short_name,
+                    long_name,
+                    description,
+                    default,
+                } => {
+                    println!(
+                        "\t-{0:<1} <val>, --{1:<15}{2}",
+                        short_name,
+                        format!("{} <val>", long_name),
+                        format!("{} Default is value '{}'.", description, default)
+                    )
+                }
+            }
+        }
+    }
+
+    pub fn handle_standard_flags(&self, prog_name: &str, version: &str) {
+        if self.opts.contains_key("version") {
+            print_version(prog_name, version);
+            std::process::exit(0);
+        }
+        if self.opts.contains_key("help") {
+            print_version(prog_name, version);
+            self.print_usage_string();
+            std::process::exit(0);
+        }
     }
 }
 
@@ -93,6 +152,10 @@ impl Parser {
         // add standard flags for help and version
         p.add_opt(opt_flag!("h", "help", "Print command usage and exit"));
         p.add_opt(opt_flag!("v", "version", "Print command version and exit"));
+        p.add_opt(opt_flag!("V", "verbose", "Enable verbose output."));
+        p.add_opt(opt_flag!("d", "debug", "Enable debug output."));
+        p.add_opt(opt_flag!("t", "trace", "Enable trace output."));
+        p.add_opt(opt_val!("l", "lang", "Set document language.", "de"));
         p
     }
 
@@ -176,9 +239,15 @@ impl Parser {
                     None => {}
                 }
             } else if arg.starts_with("-") {
-                match self.short_opts.get(opt_name) {
-                    Some(opt) => skip_pos = self.handle_match(opt, &mut h, pos, &args),
-                    None => {}
+                // splitting the option name enables
+                // aggregated short opt clusters
+                // like `-wv`; this even works, when the
+                // last cluster option is a value option
+                for opt_name in opt_name.split("") {
+                    match self.short_opts.get(opt_name) {
+                        Some(opt) => skip_pos = self.handle_match(opt, &mut h, pos, &args),
+                        None => {}
+                    }
                 }
             } else {
                 // eprintln!("pos: {}, skip_pos: {}", pos, skip_pos);
@@ -199,41 +268,6 @@ impl Parser {
             long_opts: self.long_opts.clone(),
         }
     }
-    pub fn print_usage_string(&self) {
-        // hashmap keys are not sorted, so we sort them
-        // I find this a bit awkward. maybe there is a better way to do that.
-        let mut sorted_keys = self.short_opts.keys().collect::<Vec<&String>>();
-        // why does sort mutate and not return a sorted vec?
-        sorted_keys.sort();
-        for key in sorted_keys {
-            let value = self.short_opts.get(key).unwrap();
-            match value {
-                Opt::Flag {
-                    short_name,
-                    long_name,
-                    description,
-                } => {
-                    println!(
-                        "\t-{0:<1}, --{1:<21}{2}",
-                        short_name, long_name, description
-                    )
-                }
-                Opt::Value {
-                    short_name,
-                    long_name,
-                    description,
-                    default,
-                } => {
-                    println!(
-                        "\t-{0:<1} <val>, --{1:<15}{2}",
-                        short_name,
-                        format!("{} <val>", long_name),
-                        format!("{} Default is value '{}'.", description, default)
-                    )
-                }
-            }
-        }
-    }
 }
 
 impl Default for Parser {
@@ -249,9 +283,9 @@ mod tests {
     fn add_opts() {
         let mut p = Parser::new();
         let opt = opt_flag!("s", "some", "Some option");
-        assert_eq!(p.short_opts.len(), 2);
+        assert_eq!(p.short_opts.len(), 6);
         p.add_opt(opt);
-        assert_eq!(p.short_opts.len(), 3);
+        assert_eq!(p.short_opts.len(), 7);
     }
     #[test]
     fn parse_version_opt() {
@@ -273,5 +307,25 @@ mod tests {
             r.opts.get(&"source-file".to_string()),
             Some(&"LICENSE".to_string())
         )
+    }
+
+    #[test]
+    fn parse_short_opt_cluster() {
+        let p = Parser::new();
+        let r = p.parse(vec!["-hv".to_string()]);
+        eprintln!("{:?}", r);
+        assert!(r.get_flag("version"), "version flag set");
+        assert!(r.get_flag("help"), "help flag set");
+    }
+
+    #[test]
+    fn parse_short_opt_cluster_with_val() {
+        let mut p = Parser::new();
+        let opt = opt_val!("l", "lang", "Set language", "den");
+        p.add_opt(opt);
+        let r = p.parse(vec!["-hl".to_string(), "en".to_string()]);
+        eprintln!("{:?}", r);
+        assert!(r.get_flag("help"), "help flag set");
+        assert_eq!(r.get_opt("lang"), "en".to_string());
     }
 }
