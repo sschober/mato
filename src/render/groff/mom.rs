@@ -2,7 +2,6 @@
 use std::collections::HashMap;
 use std::fmt::Display;
 use std::fs;
-use std::path::Path;
 
 use crate::config::Config;
 use crate::{m_dbg, Render};
@@ -46,7 +45,7 @@ impl Renderer<'_> {
         if self.config.skip_preamble {
             return "".to_string();
         }
-        let sibbling_preamble = Path::new(&self.config.parent_dir).join(name);
+        let sibbling_preamble = crate::parent_dir(&self.config.source_file).join(name);
         if sibbling_preamble.as_path().is_file() {
             m_dbg!("found sibbling preamble: {}", sibbling_preamble.display());
             fs::read_to_string(sibbling_preamble).unwrap()

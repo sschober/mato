@@ -60,6 +60,10 @@ pub fn read_input(source_file: &str) -> String {
     input
 }
 
+pub fn parent_dir(file_name: &str) -> &Path {
+    Path::new(file_name).parent().unwrap()
+}
+
 pub fn replace_file_extension(file_name: &str, extension: &str) -> PathBuf {
     let path_source_file = Path::new(&file_name);
     let mut path_target_file = path_source_file.to_path_buf();

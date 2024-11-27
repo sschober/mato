@@ -1,5 +1,3 @@
-use std::path::Path;
-
 use crate::{
     config::Config,
     m_dbg, m_trc,
@@ -23,7 +21,7 @@ fn process_images(exp: Tree, config: &Config) -> Tree {
                 Tree::Literal(p) => {
                     let mut resolved_path = p.clone();
                     if !p.starts_with('/') {
-                        let parent_dir_path = Path::new(&config.parent_dir);
+                        let parent_dir_path = crate::parent_dir(&config.source_file);
                         resolved_path = parent_dir_path
                             .join(p)
                             .as_os_str()

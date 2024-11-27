@@ -49,27 +49,26 @@ fn main() -> std::io::Result<()> {
 
     let parsed_opts = p.parse(env::args().collect());
     parsed_opts.handle_standard_flags("matopdf", "0.1.1");
+    mato::log::set_log_level(establish_log_level(&parsed_opts));
 
     // TODO support multiple markdown input files
     if parsed_opts.params.len() < 1 {
         die!("no markdown input file provided! please provide one.");
     }
-    mato::log::set_log_level(establish_log_level(&parsed_opts));
+    config.source_file = parsed_opts.params.first().unwrap().clone();
+
+    mato_dbg!("source file:\t\t{}", &config.source_file);
+
+    config.lang = parsed_opts.get_opt("lang");
+
     config.watch = parsed_opts.get_flag("watch");
 
-    config.source_file = parsed_opts.params.first().unwrap().clone();
-    mato_dbg!("source file:\t\t{}", &config.source_file);
-    config.establish_parent_dir()?;
-
-    config.set_target_file(TARGET_FILE_EXTENSION_PDF);
-    mato_dbg!("target file name:\t{}", config.target_file);
     config.dump_groff = parsed_opts.get_flag("dump-groff");
     config.dump_groff_file = parsed_opts.get_flag("dump-groff-file");
     if parsed_opts.get_flag("skip-render-and-dump") {
         config.skip_rendering = true;
         config.dump_groff = true;
     }
-    config.lang = parsed_opts.get_opt("lang");
     mato_dbg!("config: {:#?}", config);
 
     if config.watch {
@@ -106,10 +105,13 @@ fn matopdf(config: &Config) {
         println!("{groff_output}");
     }
     if config.dump_groff_file {
-        let path_target_file = config.target_file(TARGET_FILE_EXTENSION_GRO);
-        fs::write(path_target_file, groff_output.clone()).expect("Unable to write gro");
+        let path_target_file =
+            mato::replace_file_extension(&config.source_file, TARGET_FILE_EXTENSION_GRO);
+        fs::write(path_target_file, groff_output.clone()).expect("Unable to write groff file");
     }
 
+    let pdf_target_file =
+        mato::replace_file_extension(&config.source_file, TARGET_FILE_EXTENSION_PDF);
     // GROFF -> PDF
     if !config.skip_rendering {
         let start = Instant::now();
@@ -117,7 +119,7 @@ fn matopdf(config: &Config) {
         mato_inf!("groff rendering:\t{:?} ", start.elapsed());
 
         let start = Instant::now();
-        fs::write(&config.target_file, pdf_output).expect("Unable to write output pdf");
+        fs::write(&pdf_target_file, pdf_output).expect("Unable to write output pdf");
         mato_inf!("written in:\t\t{:?} ", start.elapsed());
     }
 }
