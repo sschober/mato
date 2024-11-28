@@ -28,7 +28,7 @@ fn main() -> std::io::Result<()> {
     let mut config = Config::default();
     let mut p = opts::Parser::new();
 
-    let opt_lang = p.add_opt(opt_val!("l", "lang", "Set document language.", "de"));
+    let opt_lang = p.add_opt(opt_val!("l", "lang", "Set document language.", "den"));
 
     let opt_watch = p.add_opt(opt_flag!(
         "w",
