@@ -4,7 +4,8 @@ use config::Config;
 use core::fmt::Debug;
 use opts::ParserResult;
 use parser::Parser;
-use std::fs::File;
+use std::env;
+use std::fs::{self, File};
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
@@ -58,6 +59,59 @@ pub fn read_input(source_file: &str) -> String {
     };
     m_dbg!("input read in:\t\t{:?}", start.elapsed());
     input
+}
+
+const MATO_CONFIG_DIR_NAME: &str = "mato";
+
+/// locates and reads a preamble file.
+///
+/// algorithm for locating:
+///
+/// 1. a *sibbling* file, located side-by-side the input file is searched, named `name`
+/// 2. if not found, a user-wide configuration under $XDG_CONFIG_HOME/mato/`name` is searched
+/// 3. if not found, the `default_preamble` string is returned
+pub fn locate_and_load_preamble(config: &Config, name: &str, default_preamble: &str) -> String {
+    if config.skip_preamble {
+        return "".to_string();
+    }
+    let sibbling_preamble = crate::parent_dir(&config.source_file).join(name);
+    if sibbling_preamble.as_path().is_file() {
+        m_dbg!("found sibbling preamble: {}", sibbling_preamble.display());
+        fs::read_to_string(sibbling_preamble).unwrap()
+    } else {
+        // no sibbling preamble
+        // 1. try XDG_CONFIG_HOME
+        let config_home = match env::var("XDG_CONFIG_HOME") {
+            Ok(xdg_config_home) => {
+                m_dbg!("XDG_CONFIG_HOME = {}", xdg_config_home);
+                xdg_config_home
+            }
+            Err(_) => {
+                m_dbg!("XDG_CONFIG_HOME not set");
+                // 2. try $HOME/.config
+                match env::var("HOME") {
+                    Ok(home_path) => format!("{}/.config", home_path),
+                    Err(_) => "".to_string(),
+                }
+            }
+        };
+        if !config_home.is_empty() {
+            // construct mato config path
+            let mato_config_path = Path::new(&config_home).join(MATO_CONFIG_DIR_NAME);
+            if mato_config_path.exists() {
+                m_dbg!("found mato config path {:?}: ", mato_config_path);
+                let user_peamble_path = mato_config_path.join(name);
+                if user_peamble_path.exists() {
+                    m_dbg!("found user preamble: {:?}", user_peamble_path);
+                    return fs::read_to_string(user_peamble_path).unwrap();
+                }
+            } else {
+                m_dbg!("mato config path not found: {:?}", mato_config_path);
+            }
+        }
+        m_dbg!("preamble:\t\tbuilt-in");
+        default_preamble.to_owned()
+    }
 }
 
 pub fn parent_dir(file_name: &str) -> &Path {

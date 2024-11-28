@@ -1,10 +1,9 @@
 //! groff rendering backend
 use std::collections::HashMap;
 use std::fmt::Display;
-use std::fs;
 
 use crate::config::Config;
-use crate::{m_dbg, Render};
+use crate::{locate_and_load_preamble, m_dbg, Render};
 use crate::{syntax::DocType, Tree};
 
 /// empty struct to attach Renderer implementation on
@@ -41,20 +40,6 @@ impl Display for DocType {
 }
 
 impl Renderer<'_> {
-    pub fn locate_and_load_preamble(&mut self, name: &str) -> String {
-        if self.config.skip_preamble {
-            return "".to_string();
-        }
-        let sibbling_preamble = crate::parent_dir(&self.config.source_file).join(name);
-        if sibbling_preamble.as_path().is_file() {
-            m_dbg!("found sibbling preamble: {}", sibbling_preamble.display());
-            fs::read_to_string(sibbling_preamble).unwrap()
-        } else {
-            m_dbg!("preamble:\t\tbuilt-in");
-            self.default_preamble.to_string()
-        }
-    }
-
     /// groff does not support nested formattings, because it has no
     /// stackable way of switching back to the previous style. we
     /// need to emulate this by passing in the parent style as a
@@ -83,7 +68,11 @@ impl Renderer<'_> {
                     result = format!(
                         "{}\n{}",
                         result,
-                        self.locate_and_load_preamble(PREAMBLE_FILE_NAME)
+                        locate_and_load_preamble(
+                            self.config,
+                            PREAMBLE_FILE_NAME,
+                            &self.default_preamble
+                        )
                     );
                 }
 
