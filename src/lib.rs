@@ -4,6 +4,7 @@ use config::Config;
 use core::fmt::Debug;
 use opts::ParserResult;
 use parser::Parser;
+use process::chain::Chain;
 use std::env;
 use std::fs::{self, File};
 use std::io::{self, Write};
@@ -11,6 +12,8 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::time::Instant;
 use syntax::Tree;
+
+use crate::process::{canonicalize, chain, code_block, image_converter};
 
 pub mod config;
 pub mod log;
@@ -59,6 +62,14 @@ pub fn read_input(source_file: &str) -> String {
     };
     m_dbg!("input read in:\t\t{:?}", start.elapsed());
     input
+}
+
+pub fn create_default_chain() -> Chain {
+    m_trc!("constructing chain...");
+    let chain = chain::new(canonicalize::new(), image_converter::new()).append(code_block::new());
+    m_trc!("done");
+    m_dbg!("chain: {:?}", chain);
+    chain
 }
 
 const MATO_CONFIG_DIR_NAME: &str = "mato";
@@ -182,11 +193,18 @@ pub fn transform<R: Render, P: Process>(
     input: &str,
 ) -> String {
     m_trc!("parsing...");
-    let mut exp = Parser::parse(input);
-    m_trc!("parsed: {:?}", exp);
-    exp = process(p, exp, config);
-    m_trc!("processed: {:?}", exp);
-    render(r, exp, p)
+    let mut tree = Parser::parse(input);
+    m_trc!("parsed: {:?}", tree);
+    tree = process(p, tree, config);
+    m_trc!("{:?}", config);
+    if config.dump_dot_file {
+        let path_target_file = replace_file_extension(&config.source_file, "dot");
+        m_trc!("dumping processed tree to: {:?}", path_target_file);
+        fs::write(path_target_file, format!("{}", tree)).expect("Unable to write groff file");
+    } else {
+        m_trc!("processed:\n{:?}", tree);
+    }
+    render(r, tree, p)
 }
 
 /// A processor processes the AST in some way
@@ -204,7 +222,7 @@ fn process<P: Process>(p: &mut P, exp: Tree, config: &Config) -> Tree {
 /// A renderer renders an Exp into a String
 pub trait Render {
     /// render the passed-in expression into a string
-    fn render(&mut self, exp: Tree) -> String;
+    fn render(&mut self, tree: Tree) -> String;
 }
 
 /// helper function for static dispatch

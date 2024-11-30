@@ -10,6 +10,8 @@ pub struct Config {
     /// dump intermediate representation
     pub dump_groff: bool,
     pub dump_groff_file: bool,
+    /// write a graphviz dot representation to a file?
+    pub dump_dot_file: bool,
     pub skip_rendering: bool,
     /// language
     pub lang: String,
@@ -23,6 +25,7 @@ impl Config {
             watch: false,
             dump_groff: false,
             dump_groff_file: false,
+            dump_dot_file: false,
             skip_rendering: false,
             lang: String::new(),
             skip_preamble: false,

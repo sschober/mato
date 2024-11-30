@@ -87,7 +87,11 @@ impl Renderer<'_> {
                 match dt {
                     DocType::CHAPTER | DocType::SLIDES => (),
                     _ => {
-                        result = format!("{}\n.START\n", result);
+                        // only insert new line char, if preamble does not
+                        // end alread with one
+                        let new_line = if result.ends_with("\n") { "" } else { "\n" };
+                        eprintln!("new_line: '{}'", new_line);
+                        result = format!("{}{}.START\n", result, new_line);
                     }
                 }
                 format!("{}{}", result, rnd_pf!(*be, parent_format))

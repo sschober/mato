@@ -5,21 +5,15 @@ use std::fs;
 use std::time::Instant;
 
 use mato::config::Config;
+use mato::create_default_chain;
 use mato::die;
 use mato::establish_log_level;
 use mato::mato_dbg;
 use mato::mato_inf;
-use mato::mato_trc;
 use mato::opt_flag;
 use mato::opt_val;
 use mato::opts;
-use mato::process::canonicalize;
-use mato::process::chain;
-use mato::process::chain::Chain;
-use mato::process::code_block;
-use mato::process::image_converter;
-use mato::render::groff;
-use mato::watch;
+use mato::{render::groff, watch};
 
 const TARGET_FILE_EXTENSION_PDF: &str = "pdf";
 const TARGET_FILE_EXTENSION_GRO: &str = "groff";
@@ -60,7 +54,6 @@ fn main() -> std::io::Result<()> {
         die!("no markdown input file provided! please provide one.");
     }
     config.source_file = parsed_opts.params.first().unwrap().clone();
-
     mato_dbg!("source file:\t\t{}", &config.source_file);
 
     config.lang = opt_lang.val(&parsed_opts);
@@ -85,18 +78,10 @@ fn main() -> std::io::Result<()> {
     Ok(())
 }
 
-fn create_chain() -> Chain {
-    mato_trc!("constructing chain...");
-    let chain = chain::new(canonicalize::new(), image_converter::new()).append(code_block::new());
-    mato_trc!("done");
-    mato_dbg!("chain: {:?}", chain);
-    chain
-}
-
 fn matopdf(config: &Config) {
     let input = mato::read_input(&config.source_file);
 
-    let mut chain = create_chain();
+    let mut chain = create_default_chain();
 
     // MD -> GROFF
     let start = Instant::now();
@@ -133,7 +118,7 @@ mod tests {
     fn matogro(input: &str) -> String {
         let mut config = Config::default();
         config.skip_preamble = true;
-        let mut chain = super::create_chain();
+        let mut chain = super::create_default_chain();
         mato::transform(
             &mut super::groff::mom::new(&config),
             &mut chain,
