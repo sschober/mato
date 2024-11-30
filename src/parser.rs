@@ -495,7 +495,10 @@ impl Parser<'_> {
         } else {
             self.parse_literal(b"`")
         };
-        let exp = exp.cat(code_exp);
+        let exp = match exp {
+            Tree::Empty() => code_exp,
+            _ => exp.cat(code_exp),
+        };
         self.consume(b'`'); // closing quote
         if is_code_block {
             self.consume(b'`'); // closing quote
