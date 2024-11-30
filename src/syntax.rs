@@ -1,6 +1,8 @@
 //! capture the essence of a markdown abstract syntax tree
 //!
 
+use std::fmt;
+
 #[derive(Debug, Clone)]
 pub enum DocType {
     DEFAULT,
@@ -84,6 +86,103 @@ impl Tree {
     }
     pub fn cat_box(self, expr: Box<Self>) -> Box<Self> {
         Box::new(Self::Cat(Box::new(self), expr))
+    }
+}
+
+fn address_of(t: &Tree) -> String {
+    format!("{:p}", t).strip_prefix("0").unwrap().to_owned()
+}
+
+/// incomplete display impl that generates graphviz dot
+/// notation tree
+impl fmt::Display for Tree {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Tree::Cat(t1, t2) => {
+                write!(
+                    f,
+                    "{}[label=\"||\"];\n{} -> {{{},{}}};\n{}\n{}",
+                    address_of(self),
+                    address_of(self),
+                    address_of(t1),
+                    address_of(t2),
+                    *t1,
+                    *t2
+                )
+            }
+            Tree::Literal(s) => write!(
+                f,
+                "{} [label=\"l('{}')\"];",
+                address_of(self),
+                s.replace("\"", "")
+            ),
+            Tree::Document(_, t) => write!(
+                f,
+                "digraph graphname {{\n{}[label=\"Root\"];\n{} ->{};\n{}\n}}",
+                address_of(self),
+                address_of(self),
+                address_of(t),
+                t
+            ),
+            Tree::Paragraph() => write!(f, "{} [label=\"P\"];", address_of(self)),
+            Tree::PreformattedLiteral(_) => todo!(),
+            Tree::EscapeLit(_) => todo!(),
+            Tree::DropCap(_, _) => todo!(),
+            Tree::Color(_) => todo!(),
+            Tree::ChapterMark(_) => todo!(),
+            Tree::Heading(t, lvl, _) => {
+                write!(
+                    f,
+                    "{} [label=\"H {}\"];\n{} -> {};\n{}",
+                    address_of(self),
+                    lvl,
+                    address_of(self),
+                    address_of(t),
+                    *t
+                )
+            }
+            Tree::Bold(t) => write!(
+                f,
+                "{} [label=\"B\"];\n{} -> {};\n{}",
+                address_of(self),
+                address_of(self),
+                address_of(t),
+                *t
+            ),
+            Tree::Italic(t) => write!(
+                f,
+                "{} [label=\"I\"];\n{} -> {};\n{}",
+                address_of(self),
+                address_of(self),
+                address_of(t),
+                *t
+            ),
+            Tree::BoldItalic(_) => todo!(),
+            Tree::SmallCaps(_) => todo!(),
+            Tree::CodeBlock(_, _) => todo!(),
+            Tree::InlineCode(t) => write!(
+                f,
+                "{} [label=\"C\"]; {} -> {};\n{}",
+                address_of(self),
+                address_of(self),
+                address_of(t),
+                *t
+            ),
+            Tree::Quote(_) => todo!(),
+            Tree::Footnote(_) => todo!(),
+            Tree::RightSidenote(_) => todo!(),
+            Tree::HyperRef(_, _) => todo!(),
+            Tree::DocRef(_, _) => todo!(),
+            Tree::List(_, _) => todo!(),
+            Tree::ListItem(_, _) => todo!(),
+            Tree::MetaDataBlock(_) => todo!(),
+            Tree::MetaDataItem(_, _) => todo!(),
+            Tree::ImageSizeSpec(_, _) => todo!(),
+            Tree::Image(_, _, _) => todo!(),
+            Tree::LineBreak() => write!(f, "{} [label=\"\\\\n\"]", address_of(self)),
+            Tree::VSpace() => write!(f, "{} [label=\"V\"]", address_of(self)),
+            Tree::Empty() => write!(f, "{} [label=\"\"]", address_of(self)),
+        }
     }
 }
 
