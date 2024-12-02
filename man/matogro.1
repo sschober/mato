@@ -1,0 +1,69 @@
+.TH matogro 1 29.11.2024 "MaTo Tools man-pages 0.1.1"
+
+.
+.SH NAME
+.P
+matogro - transform markdown file to groff
+.
+.SH SYNOPSIS
+.P
+.SY matogro
+ [\c
+.B -dhtVvX\c
+] [\c
+.B -l\c
+ \c
+.I lang\c
+] [\c
+.B --lang\c
+ \c
+.I lang\c
+] [\c
+.B -T\c
+ \c
+.I device\c
+] [\c
+.B --device\c
+ \c
+.I device\c
+] \c
+.I file\c
+
+.P
+.YS
+.SY matogro
+ \c
+.B -h|--help\c
+
+.P
+.YS
+.SY matogro
+ \c
+.B -v|--version\c
+
+.YS
+.
+.SH DESCRIPTION
+.P
+matogro parses markdown files and transforms them
+to groff format. Depending on the output device
+selected with the \c
+.B -T\c
+ option - mom or man -
+macro specifc output is generated.
+.P
+Specific markdown conventions have to be followed
+in order to get adequate results, when rendering
+to groff man.
+.P
+A first level heading line, introduced by a single
+pound character at the beginning of a line, will
+create the man page header line.
+.
+.SH OPTIONS
+.P
+- -X, --dump-dot-file Dumps the parsed syntax
+  tree of the markdown input file to an outfile.
+  The name of that file is the same as the input
+  file, but the suffix is replaced with dot\&.
+
