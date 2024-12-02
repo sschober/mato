@@ -356,7 +356,7 @@ impl Parser<'_> {
     }
 
     fn parse_meta_data_item(&mut self) -> Tree {
-        println!("parsing metadata header");
+        //println!("parsing metadata header");
         let key = self.parse_string_until(b":");
         self.consume(b':');
         while self.current_char == b' ' {
@@ -382,7 +382,7 @@ impl Parser<'_> {
     }
 
     fn parse_meta_data_block(&mut self) -> Tree {
-        println!("parsing meta data block");
+        //println!("parsing meta data block");
         if self.peek(1, b'-') && self.peek(2, b'-') {
             self.consume(b'-');
             self.consume(b'-');
@@ -616,7 +616,8 @@ impl Parser<'_> {
                         } else {
                             // no heading follows
                             self.consume(b'\n');
-                            Tree::Paragraph()
+                            self.consume(b'\n');
+                            Tree::LineBreak().cat(Tree::Paragraph())
                         }
                     } else {
                         self.consume(b'\n');

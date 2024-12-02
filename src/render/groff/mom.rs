@@ -96,7 +96,7 @@ impl Renderer<'_> {
                 }
                 format!("{}{}", result, rnd_pf!(*be, parent_format))
             }
-            Tree::Paragraph() => "\n.PP".to_string(),
+            Tree::Paragraph() => ".PP\n".to_string(),
             Tree::LineBreak() => "\n".to_string(),
             Tree::Literal(s) | Tree::PreformattedLiteral(s) => s,
             Tree::EscapeLit(s) => match s.as_str() {
