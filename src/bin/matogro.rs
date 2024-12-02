@@ -1,8 +1,8 @@
 use std::env;
 
 use mato::{
-    config::Config, create_default_chain, die, establish_log_level, m_trc, mato_dbg, mato_trc,
-    opt_flag, opt_val, opts, render::groff,
+    config::Config, create_default_chain, die, establish_log_level, mato_dbg, mato_trc, opt_flag,
+    opt_val, opts, render::groff,
 };
 
 /// command close to groffs idea, which renders output to

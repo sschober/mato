@@ -21,7 +21,10 @@ impl Render for ManRenderer {
             }
             crate::syntax::Tree::PreformattedLiteral(_) => todo!(),
             crate::syntax::Tree::Literal(l) => l,
-            crate::syntax::Tree::EscapeLit(_) => todo!(),
+            crate::syntax::Tree::EscapeLit(s) => match s.as_str() {
+                "." => "\\&.".to_string(),
+                _ => s,
+            },
             crate::syntax::Tree::DropCap(_, _) => todo!(),
             crate::syntax::Tree::Color(_) => todo!(),
             crate::syntax::Tree::ChapterMark(_) => todo!(),

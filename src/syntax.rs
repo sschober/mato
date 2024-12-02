@@ -126,7 +126,12 @@ impl fmt::Display for Tree {
             ),
             Tree::Paragraph() => write!(f, "{} [label=\"P\"];", address_of(self)),
             Tree::PreformattedLiteral(_) => todo!(),
-            Tree::EscapeLit(_) => todo!(),
+            Tree::EscapeLit(s) => write!(
+                f,
+                "{} [label=\"el('{}')\"];",
+                address_of(self),
+                s.replace("\"", "")
+            ),
             Tree::DropCap(_, _) => todo!(),
             Tree::Color(_) => todo!(),
             Tree::ChapterMark(_) => todo!(),
