@@ -90,7 +90,7 @@ impl Renderer<'_> {
                         // only insert new line char, if preamble does not
                         // end alread with one
                         let new_line = if result.ends_with("\n") { "" } else { "\n" };
-                        eprintln!("new_line: '{}'", new_line);
+                        // eprintln!("new_line: '{}'", new_line);
                         result = format!("{}{}.START\n", result, new_line);
                     }
                 }
