@@ -403,15 +403,19 @@ impl Parser<'_> {
             }
             Tree::MetaDataBlock(Box::new(items))
         } else {
-            self.advance();
-            lit("-")
+            if self.peek(1, b' ') {
+                self.parse_list(0, b'-')
+            } else {
+                self.advance();
+                lit("-")
+            }
         }
     }
 
-    fn parse_list_item(&mut self, level: u8) -> Tree {
+    fn parse_list_item(&mut self, level: u8, list_char: u8) -> Tree {
         let mut item = empty();
         self.consume_all_space_until(level * LIST_INDENT);
-        self.consume(b'*');
+        self.consume(list_char);
         self.consume(b' ');
         loop {
             item = item.cat(self.global_parse_until(b"\n"));
@@ -419,7 +423,10 @@ impl Parser<'_> {
                 self.consume(b'\n');
             }
             if self.is_all_space_until((level * LIST_INDENT) + LIST_INDENT)
-                && !self.peek((level * LIST_INDENT) as usize + LIST_INDENT as usize, b'*')
+                && !self.peek(
+                    (level * LIST_INDENT) as usize + LIST_INDENT as usize,
+                    list_char,
+                )
             {
                 self.consume_all_space_until((level * LIST_INDENT) + LIST_INDENT);
                 // reappend the newline we swallowed above
@@ -431,38 +438,43 @@ impl Parser<'_> {
         list_item(item, level)
     }
 
-    fn parse_list(&mut self, level: u8) -> Tree {
+    fn parse_list(&mut self, level: u8, list_char: u8) -> Tree {
         if self.peek((level * LIST_INDENT) as usize + 1, b' ') {
             // if * is followed by white space
             let mut iterator = empty();
             loop {
-                if self.peek((level * LIST_INDENT) as usize, b'*')
+                if self.peek((level * LIST_INDENT) as usize, list_char)
                     && self.peek((level * LIST_INDENT) as usize + 1, b' ')
                 {
-                    iterator = iterator.cat(self.parse_list_item(level));
+                    iterator = iterator.cat(self.parse_list_item(level, list_char));
                     continue;
-                } else if self.peek(((level + 1) * LIST_INDENT) as usize, b'*')
+                } else if self.peek(((level + 1) * LIST_INDENT) as usize, list_char)
                     && self.peek(((level + 1) * LIST_INDENT) as usize + 1, b' ')
                 {
-                    iterator = iterator.cat(self.parse_list(level + 1));
+                    iterator = iterator.cat(self.parse_list(level + 1, list_char));
                 } else {
                     break;
                 }
             }
             list(iterator, level)
         } else {
-            // assume emphasize (*word*)
-            if self.peek(1, b'*') {
-                self.consume(b'*')
+            if list_char == b'*' {
+                self.parse_bold()
+            } else {
+                lit(&format!("{}", list_char as char))
             }
-            let res = bold(self.parse_symmetric_quoted());
-            if self.current_char == b'*' {
-                self.consume(b'*')
-            }
-            res
         }
     }
-
+    fn parse_bold(&mut self) -> Tree {
+        if self.peek(1, b'*') {
+            self.consume(b'*')
+        }
+        let res = bold(self.parse_symmetric_quoted());
+        if self.current_char == b'*' {
+            self.consume(b'*')
+        }
+        res
+    }
     fn parse_code(&mut self) -> Tree {
         self.consume(b'`'); // opening quote
         let mut is_code_block: bool = false;
@@ -587,7 +599,7 @@ impl Parser<'_> {
             let expr = match self.current_char {
                 b'-' => self.parse_meta_data_block(),
                 b'#' => self.parse_heading(),
-                b'*' => self.parse_list(0),
+                b'*' => self.parse_list(0, b'*'),
                 b'_' => Tree::Italic(Box::new(self.parse_symmetric_quoted())),
                 b'{' => Tree::SmallCaps(Box::new(self.parse_quoted(b'}'))),
                 b'`' => self.parse_code(),
