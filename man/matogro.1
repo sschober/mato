@@ -45,7 +45,9 @@ matogro - transform markdown file to groff
 .
 .SH DESCRIPTION
 .P
-matogro parses markdown files and transforms them
+\c
+.B matogro\c
+ parses markdown files and transforms them
 to groff format. Depending on the output device
 selected with the \c
 .B -T\c
@@ -62,8 +64,21 @@ create the man page header line.
 .
 .SH OPTIONS
 .P
-- -X, --dump-dot-file Dumps the parsed syntax
-  tree of the markdown input file to an outfile.
-  The name of that file is the same as the input
-  file, but the suffix is replaced with dot\&.
-
+.
+.TP
+.B -d, --debug
+Enable debug log level, which is one level above
+\c
+.I verbose\c
+, producing more fine grained output.
+.
+.TP
+.B -h, --help
+Output help message and exit.
+.
+.TP
+.B -X, --dump-dot-file
+Dumps the parsed syntax
+tree of the markdown input file to an outfile.
+The name of that file is the same as the input
+file, but the suffix is replaced with dot\&.
