@@ -178,8 +178,24 @@ impl fmt::Display for Tree {
             Tree::RightSidenote(_) => todo!(),
             Tree::HyperRef(_, _) => todo!(),
             Tree::DocRef(_, _) => todo!(),
-            Tree::List(_, _) => todo!(),
-            Tree::ListItem(_, _) => todo!(),
+            Tree::List(t, l) => write!(
+                f,
+                "{} [label=\"L {}\"];\n{} -> {};\n{}",
+                address_of(self),
+                l,
+                address_of(self),
+                address_of(t),
+                *t
+            ),
+            Tree::ListItem(t, l) => write!(
+                f,
+                "{} [label=\"Li {}\"];\n{} -> {};\n{}",
+                address_of(self),
+                l,
+                address_of(self),
+                address_of(t),
+                *t
+            ),
             Tree::MetaDataBlock(_) => todo!(),
             Tree::MetaDataItem(_, _) => todo!(),
             Tree::ImageSizeSpec(_, _) => todo!(),
