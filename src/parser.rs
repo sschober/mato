@@ -559,7 +559,7 @@ impl Parser<'_> {
                                             // no null values
         while !self.at_end() && !break_chars.contains(&self.current_char) {
             let expr = match self.current_char {
-                b'*' => self.try_bold_or_lit_until(&[b']']),
+                b'*' => self.try_bold_or_lit_until(b"]"),
                 b'_' => Tree::Italic(Box::new(self.parse_symmetric_quoted())),
                 b'{' => Tree::SmallCaps(Box::new(self.parse_quoted(b'}'))),
                 b'`' => self.parse_code(),
