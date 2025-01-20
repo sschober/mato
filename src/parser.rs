@@ -13,6 +13,7 @@ pub struct Parser<'a> {
     input_len: usize,
     /// the current position of parsing
     current_position: usize,
+    current_line: usize,
     /// the character at the current parsing position
     current_char: u8,
     doc_type: String,
@@ -29,6 +30,7 @@ impl Parser<'_> {
             input_len: input_byte_slice.len(),
             current_position: 0,
             current_char: input_byte_slice[0],
+            current_line: 1,
             doc_type: "".to_owned(),
         }
     }
@@ -52,6 +54,9 @@ impl Parser<'_> {
 
     /// increases index and updates current char
     fn advance(&mut self) {
+        if self.current_char == b'\n' {
+            self.current_line += 1;
+        }
         self.current_position += 1;
         if !self.at_end() {
             self.current_char = self.input[self.current_position];
@@ -72,8 +77,7 @@ impl Parser<'_> {
             false
         } else {
             let char_at = self.input[idx as usize];
-            let res = char == char_at;
-            res
+            char == char_at
         }
     }
 
@@ -91,10 +95,12 @@ impl Parser<'_> {
     fn consume(&mut self, char: u8) {
         assert!(
             !self.at_end(),
-            "consume({}): index {} out of bounds {} ",
+            "at line {}: consume({}): index {} out of bounds {}; was expecting '{}' but hit EOF before.",
+            self.current_line,
             char as char,
             self.current_position,
-            self.input_len
+            self.input_len,
+            char as char
         );
         assert!(
             self.current_char == char,
@@ -183,7 +189,7 @@ impl Parser<'_> {
         let mut heading_name = "".to_string();
         if self.current_char == b'/' {
             self.consume(b'/');
-            heading_name = self.parse_string_until(&[b'/']);
+            heading_name = self.parse_string_until(b"/");
             self.consume(b'/');
         }
         let result = heading(literal, level, &heading_name);
@@ -553,6 +559,7 @@ impl Parser<'_> {
         }
     }
 
+    /// Parses only formatting subset of markup as opposed to global_parse_until
     fn fmt_parse_until(&mut self, break_chars: &[u8]) -> Tree {
         let mut expression = Tree::Empty(); // we start with
                                             // "nothing", as rust has
@@ -588,7 +595,7 @@ impl Parser<'_> {
         expression
     }
 
-    /// Parses only formatting subset of markup as opposed to global_parse_until
+    /// parses complete mark-up set, as opposed to only formatting, like above fmt_parse_until
     fn global_parse_until(&mut self, break_chars: &[u8]) -> Tree {
         let mut expression = Tree::Empty(); // we start with
                                             // "nothing", as rust has
@@ -651,6 +658,10 @@ impl Parser<'_> {
 #[cfg(test)]
 mod tests {
     use super::Parser;
+    fn parse_to_ast(s: &str) -> String {
+        let p = Parser::parse(s);
+        format!("{:?}", p)
+    }
     #[test]
     fn construction() {
         let parser = Parser::new("\"quoted\"");
@@ -658,26 +669,24 @@ mod tests {
     }
     #[test]
     fn expression() {
-        let parser = Parser::parse("\"quoted\"");
         assert_eq!(
-            format!("{:?}", parser),
+            parse_to_ast("\"quoted\""),
             "Document(DEFAULT, Quote(Literal(\"quoted\")))"
         );
     }
     #[test]
     fn ampersand() {
-        let parser = Parser::parse("&");
-        assert_eq!(
-            format!("{:?}", parser),
-            "Document(DEFAULT, EscapeLit(\"&\"))"
-        );
+        assert_eq!(parse_to_ast("&"), "Document(DEFAULT, EscapeLit(\"&\"))");
     }
     #[test]
     fn dot() {
-        let parser = Parser::parse(".");
+        assert_eq!(parse_to_ast("."), "Document(DEFAULT, EscapeLit(\".\"))");
+    }
+    #[test]
+    fn wrong_nesting() {
         assert_eq!(
-            format!("{:?}", parser),
-            "Document(DEFAULT, EscapeLit(\".\"))"
-        );
+            parse_to_ast("*this is _wrong* nesting_"),
+            "Document(DEFAULT)"
+        )
     }
 }
