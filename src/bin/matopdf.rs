@@ -50,7 +50,7 @@ fn main() -> std::io::Result<()> {
     mato::log::set_log_level(establish_log_level(&parsed_opts));
 
     // TODO support multiple markdown input files
-    if parsed_opts.params.len() < 1 {
+    if parsed_opts.params.is_empty() {
         die!("no markdown input file provided! please provide one.");
     }
     config.source_file = parsed_opts.params.first().unwrap().clone();
@@ -198,7 +198,6 @@ mod tests {
     fn code_block() {
         assert_eq!(
             matogro("```\nPP\n```\n"),
-            //            ".QUOTE_STYLE INDENT 1\n.QUOTE\n.CODE\n.BOX OUTLINED black INSET 18p\nPP\n.BOX OFF\n.QUOTE OFF"
             ".DOCTYPE DEFAULT\n.START\n.QUOTE_STYLE INDENT 1\n.QUOTE\n.CODE\nPP\n.QUOTE OFF\n"
         );
     }
