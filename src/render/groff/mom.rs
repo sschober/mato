@@ -116,7 +116,7 @@ impl Renderer<'_> {
             // Currently there seems to be a bug: https://savannah.gnu.org/bugs/index.php?64561
             // Exp::CodeBlock(b_exp) => format!(".QUOTE_STYLE INDENT 1\n.QUOTE\n.CODE\n.BOX OUTLINED black INSET 18p\n{}.BOX OFF\n.QUOTE OFF", self.render(*b_exp)),
             Tree::CodeBlock(_b1, b2) => format!(
-                ".QUOTE_STYLE INDENT 1\n.QUOTE\n.CODE\n{}.QUOTE OFF\n",
+                ".QUOTE_STYLE INDENT 1\n.QUOTE\n.CODE\n{}.QUOTE OFF",
                 rnd!(*b2)
             ),
             Tree::InlineCode(b_exp) => format!("\\*[CODE]{}\\*[CODE OFF]", rnd!(*b_exp)),
