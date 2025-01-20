@@ -402,13 +402,11 @@ impl Parser<'_> {
                 self.consume(b'\n');
             }
             Tree::MetaDataBlock(Box::new(items))
+        } else if self.peek(1, b' ') {
+            self.parse_list(0, b'-')
         } else {
-            if self.peek(1, b' ') {
-                self.parse_list(0, b'-')
-            } else {
-                self.advance();
-                lit("-")
-            }
+            self.advance();
+            lit("-")
         }
     }
 
@@ -457,12 +455,10 @@ impl Parser<'_> {
                 }
             }
             list(iterator, level)
+        } else if list_char == b'*' {
+            self.parse_bold()
         } else {
-            if list_char == b'*' {
-                self.parse_bold()
-            } else {
-                lit(&format!("{}", list_char as char))
-            }
+            lit(&format!("{}", list_char as char))
         }
     }
     fn parse_bold(&mut self) -> Tree {
@@ -475,23 +471,42 @@ impl Parser<'_> {
         }
         res
     }
+    fn parse_code_block(&mut self) -> Tree {
+        let mut block_type = empty();
+        self.consume(b'`');
+        self.consume(b'`');
+        self.consume_all_space(); // slurp away aditional white space
+        if self.current_char != b'\n' {
+            block_type = self.parse_literal(b"\n");
+        }
+        self.consume(b'\n');
+        let mut result = self.parse_preformatted_literal(b"`");
+        // when parse_preformatted_literal returns, it encountered a ` char we are in a code block
+        // and such a block is only ended by three backticks on a line
+        while !self.at_end() && !(self.peek(1, b'`') && self.peek(2, b'`')) {
+            result = result.cat(lit("\\[ga]"));
+            self.consume(b'`');
+            result = result.cat(self.parse_preformatted_literal(b"`"))
+        }
+        if !self.at_end() {
+            self.consume(b'`');
+            if !self.at_end() && self.current_char != 4 {
+                self.consume(b'`');
+                if !self.at_end() && self.current_char != 4 {
+                    self.consume(b'`');
+                }
+            }
+        }
+        Tree::CodeBlock(Box::new(block_type), Box::new(result))
+    }
+
     fn parse_code(&mut self) -> Tree {
         self.consume(b'`'); // opening quote
-        let mut is_code_block: bool = false;
-        let mut block_type = empty();
-        // here, we need to peek 1 and 2 characters ahead to see if
-        // they are also back ticks, and if so parse a code block
-        // instead of an inline code snippet.
+                            // here, we need to peek 1 and 2 characters ahead to see if
+                            // they are also back ticks, and if so parse a code block
+                            // instead of an inline code snippet.
         if self.peek(0, b'`') && self.peek(1, b'`') {
-            // parse code block
-            is_code_block = true;
-            self.consume(b'`');
-            self.consume(b'`');
-            self.consume_all_space(); // slurp away aditional white space
-            if self.current_char != b'\n' {
-                block_type = self.parse_literal(b"\n");
-            }
-            self.consume(b'\n');
+            return self.parse_code_block();
         }
 
         // this is an ugly groff necessity: if our code snippet
@@ -502,30 +517,13 @@ impl Parser<'_> {
         } else {
             Tree::Empty()
         };
-        let code_exp = if is_code_block {
-            self.parse_preformatted_literal(b"`")
-        } else {
-            self.parse_literal(b"`")
-        };
+        let code_exp = self.parse_literal(b"`");
         let exp = match exp {
             Tree::Empty() => code_exp,
             _ => exp.cat(code_exp),
         };
         self.consume(b'`'); // closing quote
-        if is_code_block {
-            self.consume(b'`'); // closing quote
-            self.consume(b'`'); // closing quote
-            self.consume_all_space(); // slurp away aditional white space
-            if !self.at_end() {
-                // comsuming the newline is optional, as the code block
-                // might be the last element in the file and might not
-                // end with a newline (been there, done that)
-                self.consume(b'\n'); // extra newline
-            }
-            Tree::CodeBlock(Box::new(block_type), Box::new(exp))
-        } else {
-            Tree::InlineCode(Box::new(exp))
-        }
+        Tree::InlineCode(Box::new(exp))
     }
 
     fn parse_image_size(&mut self) -> Tree {
