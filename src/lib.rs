@@ -30,16 +30,12 @@ pub mod wezterm_cli;
 pub fn establish_log_level(parsed_opts: &ParserResult) -> u8 {
     if parsed_opts.get_flag("verbose") {
         1
+    } else if parsed_opts.get_flag("debug") {
+        2
+    } else if parsed_opts.get_flag("trace") {
+        3
     } else {
-        if parsed_opts.get_flag("debug") {
-            2
-        } else {
-            if parsed_opts.get_flag("trace") {
-                3
-            } else {
-                0
-            }
-        }
+        0
     }
 }
 
