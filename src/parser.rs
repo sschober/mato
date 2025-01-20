@@ -483,7 +483,7 @@ impl Parser<'_> {
         let mut result = self.parse_preformatted_literal(b"`");
         // when parse_preformatted_literal returns, it encountered a ` char we are in a code block
         // and such a block is only ended by three backticks on a line
-        while !self.at_end() && !(self.peek(1, b'`') && self.peek(2, b'`')) {
+        while !(self.at_end() || self.peek(1, b'`') && self.peek(2, b'`')) {
             result = result.cat(lit("\\[ga]"));
             self.consume(b'`');
             result = result.cat(self.parse_preformatted_literal(b"`"))
