@@ -1,5 +1,8 @@
 # matoedit
 
+* Brackets in footnotes are not working properly: the closing
+bracket ends the footnote prematurely. 
+
 * `man` rendering backend
 
 * `mato` command - similar to `groff` in that regard, that it
