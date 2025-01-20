@@ -70,7 +70,7 @@ fn main() -> std::io::Result<()> {
     // OPEN editor and block on call
     term_cli.open_editor(&source_file);
 
-    // CLOSE evrything
+    // CLOSE everything
     term_cli.close(mato_handle);
     term_cli.close(termpdf_handle);
 
