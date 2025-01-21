@@ -1,7 +1,10 @@
 # matoedit
+* Better error reporting (maybe with the anyhow crate): currently,
+mato is panicing all over the place.
 
 * Brackets in footnotes are not working properly: the closing
-bracket ends the footnote prematurely. 
+bracket ends the footnote prematurely. Did not witness this
+yesterday.
 
 * `man` rendering backend
 
