@@ -90,7 +90,7 @@ impl Parser<'_> {
     }
 
     /// eat up a given character, or panic if that is not found at
-    /// the current position or we are already at the end of the
+    /// the current position or if we are already at the end of the
     /// input string
     fn consume(&mut self, char: u8) {
         assert!(
@@ -104,7 +104,8 @@ impl Parser<'_> {
         );
         assert!(
             self.current_char == char,
-            "expected char '{}' at index {}, but found '{}'",
+            "at line {}: expected char '{}' at index {}, but found '{}'",
+            self.current_line,
             char as char,
             self.current_position,
             self.current_char as char
@@ -486,6 +487,9 @@ impl Parser<'_> {
             block_type = self.parse_literal(b"\n");
         }
         self.consume(b'\n');
+        // groff requires '.'s at the beginning of the line to be escaped, even in code blocks;
+        // maybe, we can change the character in code blocks, temporarily
+        // TODO escape '.' at line beginnings
         let mut result = self.parse_preformatted_literal(b"`");
         // when parse_preformatted_literal returns, it encountered a ` char we are in a code block
         // and such a block is only ended by three backticks on a line
