@@ -42,7 +42,7 @@ impl Parser<'_> {
         } else {
             let mut parser = Parser::new(input);
             // passing "" as bytes parses until the end of file
-            let ast = Box::new(parser.global_parse_until(b""));
+            let ast = Box::new(parser.parse_complete_until(b""));
             match parser.doc_type.to_uppercase().as_ref() {
                 "SLIDES" => Tree::Document(DocType::SLIDES, ast),
                 "CHAPTER" => Tree::Document(DocType::CHAPTER, ast),
@@ -52,7 +52,8 @@ impl Parser<'_> {
         }
     }
 
-    /// increases index and updates current char
+    /// increase index, update current char and increase line counter if newline is encountered.
+    /// if after advancing the index, we are at the end of the input, we set current char to EOF.
     fn advance(&mut self) {
         if self.current_char == b'\n' {
             self.current_line += 1;
@@ -71,6 +72,8 @@ impl Parser<'_> {
         self.current_position >= self.input_len
     }
 
+    /// compare backwards `n` characters with `char`. return `true`, if the character at that
+    /// position is equal to the passed in character.
     fn peek_back(&self, n: usize, char: u8) -> bool {
         let idx: i32 = self.current_position as i32 - n as i32;
         if idx < 0 {
@@ -81,6 +84,7 @@ impl Parser<'_> {
         }
     }
 
+    /// compare forward `n` characters with `char`
     const fn peek(&self, n: usize, char: u8) -> bool {
         if self.current_position + n >= self.input_len {
             false
@@ -118,7 +122,7 @@ impl Parser<'_> {
     fn parse_symmetric_quoted(&mut self) -> Tree {
         let break_char = self.current_char;
         self.consume(break_char); // opening quote
-        let exp = self.global_parse_until(&[break_char]); // body
+        let exp = self.parse_complete_until(&[break_char]); // body
         self.consume(break_char); // ending quote
         exp
     }
@@ -126,7 +130,7 @@ impl Parser<'_> {
     fn try_bold_or_lit_until(&mut self, break_chars: &[u8]) -> Tree {
         let break_char = self.current_char;
         self.consume(break_char); // opening quote
-        let exp = self.fmt_parse_until(
+        let exp = self.parse_format_until(
             format!(
                 "{}{}",
                 break_char as char,
@@ -160,7 +164,7 @@ impl Parser<'_> {
     /// parse an asymmetrically quoted substring, like
     /// something enclosed in a pair of parentheses, ( and ).
     fn parse_quoted(&mut self, break_char: u8) -> Tree {
-        self.parse_quoted_base(break_char, |a, b| Parser::global_parse_until(a, b))
+        self.parse_quoted_base(break_char, |a, b| Parser::parse_complete_until(a, b))
     }
 
     /// parse an asymmetrically quoted substring, like
@@ -169,6 +173,8 @@ impl Parser<'_> {
         self.parse_quoted_base(break_char, |a, b| Parser::parse_literal(a, b))
     }
 
+    /// advances over input string until a non-hash character is encountered and returns number of
+    /// encountered hash characters.
     fn parse_heading_level(&mut self, level: u8) -> u8 {
         match self.current_char {
             b'#' => {
@@ -183,6 +189,15 @@ impl Parser<'_> {
         }
     }
 
+    /// parse markdown headings of unspecified level:
+    ///
+    ///     `# heading`
+    ///
+    /// is a level 1 heading,
+    ///
+    ///     `## heading`
+    ///
+    /// is a level 2 heading.
     fn parse_heading(&mut self) -> Tree {
         self.consume(b'#');
         let level = self.parse_heading_level(0);
@@ -198,16 +213,21 @@ impl Parser<'_> {
             return result;
         }
         if self.peek(2, b'#') && level != 2 {
-            // if this heading is followed by another heading, we slurp away the newline
+            // this heading is followed by another heading, so we slurp away the newline
             // so that there is not too much vertical white space in between them
             self.consume(b'\n');
             result
         } else {
-            // if the heading is not followed by another heading we insert a VSpace node.
+            // heading is not followed by another heading, so we insert a VSpace node.
             result.cat(Tree::VSpace())
         }
     }
 
+    /// prase a markdown footnote, of the form:
+    ///
+    /// `^(some foot note text)`
+    ///
+    /// if the tilde `^` is not followed by `(`, a literal tilde is returned
     fn parse_footnote(&mut self) -> Tree {
         self.consume(b'^');
         match self.current_char {
@@ -283,7 +303,7 @@ impl Parser<'_> {
 
     fn parse_link(&mut self) -> Tree {
         self.consume(b'[');
-        let link_text = self.fmt_parse_until(b"]");
+        let link_text = self.parse_format_until(b"]");
         self.consume(b']');
         if self.current_char == b'(' {
             self.consume(b'(');
@@ -362,6 +382,7 @@ impl Parser<'_> {
         }
     }
 
+    /// parse a key value pair in a meta data header. key and value are delimited by `:`.
     fn parse_meta_data_item(&mut self) -> Tree {
         //println!("parsing metadata header");
         let key = self.parse_string_until(b":");
@@ -379,6 +400,7 @@ impl Parser<'_> {
         }
     }
 
+    /// parse a list of key value items in a meta data block
     fn parse_meta_data_items(&mut self) -> Tree {
         let mut items = empty();
         while self.current_char != b'-' && self.current_char != b'\n' {
@@ -388,6 +410,8 @@ impl Parser<'_> {
         items
     }
 
+    /// try to parse a meta data block. such blocks beginn with three `---` on a line, followed by
+    /// a key value list of undefined length and end with a `---` line.
     fn parse_meta_data_block(&mut self) -> Tree {
         //println!("parsing meta data block");
         if self.peek(1, b'-') && self.peek(2, b'-') {
@@ -423,7 +447,7 @@ impl Parser<'_> {
         self.consume(list_char);
         self.consume(b' ');
         loop {
-            item = item.cat(self.global_parse_until(b"\n"));
+            item = item.cat(self.parse_complete_until(b"\n"));
             if !self.at_end() {
                 self.consume(b'\n');
             }
@@ -537,9 +561,9 @@ impl Parser<'_> {
     }
 
     fn parse_image_size(&mut self) -> Tree {
-        let x = self.global_parse_until(b"x");
+        let x = self.parse_complete_until(b"x");
         self.consume(b'x');
-        let y = self.global_parse_until(b"]");
+        let y = self.parse_complete_until(b"]");
         image_size(x, y)
     }
 
@@ -547,7 +571,7 @@ impl Parser<'_> {
         if self.peek(1, b'[') {
             self.consume(b'!');
             self.consume(b'[');
-            let caption = self.global_parse_until(b"|]");
+            let caption = self.parse_complete_until(b"|]");
             let mut size_spec = image_size(lit("100"), lit("100"));
             if self.current_char == b'|' {
                 self.consume(b'|');
@@ -564,7 +588,7 @@ impl Parser<'_> {
     }
 
     /// Parses only formatting subset of markup as opposed to global_parse_until
-    fn fmt_parse_until(&mut self, break_chars: &[u8]) -> Tree {
+    fn parse_format_until(&mut self, break_chars: &[u8]) -> Tree {
         let mut expression = Tree::Empty(); // we start with
                                             // "nothing", as rust has
                                             // no null values
@@ -599,11 +623,12 @@ impl Parser<'_> {
         expression
     }
 
-    /// parses complete mark-up set, as opposed to only formatting, like above fmt_parse_until
-    fn global_parse_until(&mut self, break_chars: &[u8]) -> Tree {
-        let mut expression = Tree::Empty(); // we start with
-                                            // "nothing", as rust has
-                                            // no null values
+    /// parses complete mark-up set, as opposed to only formatting, like above fmt_parse_until.
+    /// stops parsing when one of the characters in `break_chars` is encountered.
+    fn parse_complete_until(&mut self, break_chars: &[u8]) -> Tree {
+        // we start with "nothing", as rust has no null values
+        let mut expression = Tree::Empty();
+        // main parsing loop. note that this function might be called recursivly.
         while !self.at_end() && !break_chars.contains(&self.current_char) {
             let expr = match self.current_char {
                 b'-' => self.parse_meta_data_block(),
