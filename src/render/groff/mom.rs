@@ -164,7 +164,7 @@ impl Renderer<'_> {
                         }
                     }
                     _ => {
-                        let name_string = if "" != name {
+                        let name_string = if !name.is_empty() {
                             format!(" NAMED {}", name)
                         } else {
                             "".to_string()
@@ -253,9 +253,7 @@ impl Renderer<'_> {
                     rnd!(*b_exp)
                 )
             }
-            Tree::VSpace() => {
-                format!("\n.SP 1v")
-            }
+            Tree::VSpace() => "\n.SP 1v".to_owned(),
             Tree::DropCap(c, l) => format!("\n.DROPCAP {} {}\n", c as char, l),
         }
     }
