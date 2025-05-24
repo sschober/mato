@@ -27,7 +27,7 @@ fn main() -> std::io::Result<()> {
     let parsed_opts = p.parse(env::args().collect());
     parsed_opts.handle_standard_flags("mato", "0.1.1");
     mato::log::set_log_level(establish_log_level(&parsed_opts));
-    if parsed_opts.params.len() < 1 {
+    if parsed_opts.params.is_empty() {
         die!("no markdown input file provided! please provide one.");
     }
 
