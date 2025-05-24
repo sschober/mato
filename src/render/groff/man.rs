@@ -15,7 +15,7 @@ pub fn new() -> ManRenderer {
 impl Render for ManRenderer {
     fn render(&mut self, tree: crate::syntax::Tree) -> String {
         match tree {
-            crate::syntax::Tree::Document(_, t) => format!("{}", self.render(*t)),
+            crate::syntax::Tree::Document(_, t) => self.render(*t),
             crate::syntax::Tree::Paragraph() => ".P\n".to_owned(),
             crate::syntax::Tree::PreformattedLiteral(_) => todo!(),
             crate::syntax::Tree::Literal(l) => l,
