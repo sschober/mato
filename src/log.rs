@@ -3,7 +3,7 @@ static mut LEVEL: u8 = 0;
 pub fn set_log_level(l: u8) -> u8 {
     unsafe {
         LEVEL = l;
-        return LEVEL;
+        LEVEL
     }
 }
 
@@ -47,7 +47,7 @@ macro_rules! mato_dbg {
 #[macro_export]
 macro_rules! m_dbg {
     ($( $args:expr ), *) => {
-       if crate::log::get_log_level() >= 2 {
+       if $crate::log::get_log_level() >= 2 {
            eprintln!( $( $args ),* );
        }
     };
@@ -65,7 +65,7 @@ macro_rules! mato_trc {
 #[macro_export]
 macro_rules! m_trc {
     ($( $args:expr ), *) => {
-       if crate::log::get_log_level() >= 3 {
+       if $crate::log::get_log_level() >= 3 {
            eprintln!( $( $args ),* );
        }
     };
