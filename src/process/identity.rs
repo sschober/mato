@@ -7,11 +7,7 @@ use crate::Process;
 pub struct Identity {}
 
 impl Process for Identity {
-    fn process(
-        &mut self,
-        exp: crate::syntax::Tree,
-        _config: &crate::config::Config,
-    ) -> crate::syntax::Tree {
+    fn process(&mut self, exp: crate::syntax::Tree) -> crate::syntax::Tree {
         m_trc!("{:?}", self);
         exp
     }

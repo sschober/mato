@@ -1,6 +1,5 @@
 use crate::{m_trc, Process};
 
-use crate::config::Config;
 use crate::syntax::{lit, meta_data_block, prelit};
 use crate::Tree;
 
@@ -124,7 +123,7 @@ fn prelit_escape_groff_symbols(s: String) -> String {
 }
 
 impl Process for Canonicalizer {
-    fn process(&mut self, exp: Tree, _config: &Config) -> Tree {
+    fn process(&mut self, exp: Tree) -> Tree {
         m_trc!("{:?}", self);
         *self.erase_empty(exp, InFormat::None)
     }

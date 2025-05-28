@@ -3,7 +3,7 @@ use std::time::Instant;
 use crate::log::get_log_level;
 use crate::{m_trc, Process};
 
-use crate::{config::Config, Tree};
+use crate::Tree;
 use core::fmt::Debug;
 
 /// A Chain can be used to chain multiple processors
@@ -14,13 +14,13 @@ pub struct Chain<'a> {
 }
 
 impl Process for Chain<'_> {
-    fn process(&mut self, exp: Tree, config: &Config) -> Tree {
+    fn process(&mut self, exp: Tree) -> Tree {
         let start = Instant::now();
-        let result = self.a.process(exp, config);
+        let result = self.a.process(exp);
         if get_log_level() >= 2 {
             m_trc!("{:?}: {:?}", self.a, start.elapsed());
         }
-        let result = self.b.process(result, config);
+        let result = self.b.process(result);
         if get_log_level() >= 2 {
             m_trc!("{:?}: {:?}", self.b, start.elapsed());
         }

@@ -195,7 +195,7 @@ pub fn transform<R: Render, P: Process>(
     m_trc!("parsing...");
     let mut tree = Parser::parse(input);
     m_trc!("parsed: {:?}", tree);
-    tree = process(p, tree, config);
+    tree = process(p, tree);
     m_trc!("{:?}", config);
     if config.dump_dot_file {
         let path_target_file = replace_file_extension(&config.source_file, "dot");
@@ -209,14 +209,14 @@ pub fn transform<R: Render, P: Process>(
 
 /// A processor processes the AST in some way
 pub trait Process: Debug {
-    fn process(&mut self, exp: Tree, config: &Config) -> Tree;
+    fn process(&mut self, exp: Tree) -> Tree;
 }
 
 /// helper function for static dispatch
 ///
 /// calls the passed in processor on the given exp
-fn process<P: Process>(p: &mut P, exp: Tree, config: &Config) -> Tree {
-    p.process(exp, config)
+fn process<P: Process>(p: &mut P, exp: Tree) -> Tree {
+    p.process(exp)
 }
 
 /// A renderer renders an Exp into a String

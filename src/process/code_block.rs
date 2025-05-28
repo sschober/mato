@@ -4,10 +4,7 @@ use std::{
     process::{Command, Stdio},
 };
 
-use crate::{
-    config::Config,
-    syntax::{lit, Tree},
-};
+use crate::syntax::{lit, Tree};
 use crate::{m_dbg, m_trc, Process};
 
 /// CodeBlock processor looks inside code blocks that it finds in the AST and
@@ -15,9 +12,9 @@ use crate::{m_dbg, m_trc, Process};
 #[derive(Default, Debug)]
 pub struct CodeBlockProcessor {}
 
-fn process_code_blocks(exp: Tree, config: &Config) -> Tree {
+fn process_code_blocks(exp: Tree) -> Tree {
     match exp {
-        Tree::Cat(b1, b2) => process_code_blocks(*b1, config).cat(process_code_blocks(*b2, config)),
+        Tree::Cat(b1, b2) => process_code_blocks(*b1).cat(process_code_blocks(*b2)),
         Tree::CodeBlock(block_type, content) => {
             let match_copy = block_type.as_ref();
             match match_copy {
@@ -65,13 +62,9 @@ fn process_code_blocks(exp: Tree, config: &Config) -> Tree {
     }
 }
 impl Process for CodeBlockProcessor {
-    fn process(
-        &mut self,
-        exp: crate::syntax::Tree,
-        config: &crate::config::Config,
-    ) -> crate::syntax::Tree {
+    fn process(&mut self, exp: crate::syntax::Tree) -> crate::syntax::Tree {
         m_trc!("{:?}", self);
-        process_code_blocks(exp, config)
+        process_code_blocks(exp)
     }
 }
 

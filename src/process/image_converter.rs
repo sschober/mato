@@ -44,11 +44,7 @@ impl ImageConverter<'_> {
     }
 }
 impl Process for ImageConverter<'_> {
-    fn process(
-        &mut self,
-        exp: crate::syntax::Tree,
-        _config: &crate::config::Config,
-    ) -> crate::syntax::Tree {
+    fn process(&mut self, exp: crate::syntax::Tree) -> crate::syntax::Tree {
         m_trc!("{:?}", self);
         self.process_images(exp)
     }
