@@ -147,7 +147,7 @@ impl ParserResult {
 #[macro_export]
 macro_rules! opt_val {
     ($sn:tt, $ln:tt, $ds:tt, $de:tt) => {
-        crate::opts::Opt::Value {
+        $crate::opts::Opt::Value {
             short_name: $sn.to_owned(),
             long_name: $ln.to_owned(),
             description: $ds.to_owned(),
@@ -159,7 +159,7 @@ macro_rules! opt_val {
 #[macro_export]
 macro_rules! opt_flag {
     ($sn:tt, $ln:tt, $ds:tt) => {
-        crate::opts::Opt::Flag {
+        $crate::opts::Opt::Flag {
             short_name: $sn.to_owned(),
             long_name: $ln.to_owned(),
             description: $ds.to_owned(),
@@ -218,7 +218,7 @@ impl Parser {
         opt: &Opt,
         h: &mut HashMap<String, String>,
         pos: usize,
-        args: &Vec<String>,
+        args: &[String],
     ) -> usize {
         // different things need to be done, if opt is a
         // val or a flag
@@ -257,9 +257,8 @@ impl Parser {
         for (pos, arg) in args.iter().enumerate() {
             let opt_name = arg.trim_start_matches('-');
             if arg.starts_with("--") {
-                match self.long_opts.get(opt_name) {
-                    Some(opt) => skip_pos = self.handle_match(opt, &mut h, pos, &args),
-                    None => {}
+                if let Some(opt) = self.long_opts.get(opt_name) {
+                    skip_pos = self.handle_match(opt, &mut h, pos, &args)
                 }
             } else if arg.starts_with("-") {
                 // splitting the option name enables
@@ -267,9 +266,8 @@ impl Parser {
                 // like `-wv`; this even works, when the
                 // last cluster option is a value option
                 for opt_name in opt_name.split("") {
-                    match self.short_opts.get(opt_name) {
-                        Some(opt) => skip_pos = self.handle_match(opt, &mut h, pos, &args),
-                        None => {}
+                    if let Some(opt) = self.short_opts.get(opt_name) {
+                        skip_pos = self.handle_match(opt, &mut h, pos, &args)
                     }
                 }
             } else {
@@ -317,7 +315,7 @@ mod tests {
         p.add_opt(opt);
         let r = p.parse(vec!["-s".to_string()]);
         eprintln!("{:?}", r);
-        assert_eq!(r.opts.get(&"some".to_string()), Some(&"".to_string()))
+        assert_eq!(r.opts.get("some"), Some(&"".to_string()))
     }
     #[test]
     fn parse_source_file_val_opt() {
@@ -326,10 +324,7 @@ mod tests {
         p.add_opt(opt);
         let r = p.parse(vec!["-s".to_string(), "LICENSE".to_string()]);
         eprintln!("{:?}", r);
-        assert_eq!(
-            r.opts.get(&"source-file".to_string()),
-            Some(&"LICENSE".to_string())
-        )
+        assert_eq!(r.opts.get("source-file"), Some(&"LICENSE".to_string()))
     }
 
     #[test]
