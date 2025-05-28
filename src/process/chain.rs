@@ -8,12 +8,12 @@ use core::fmt::Debug;
 
 /// A Chain can be used to chain multiple processors
 /// together and form a transformation chain or pipeline.
-pub struct Chain {
-    pub a: Box<dyn Process>,
-    pub b: Box<dyn Process>,
+pub struct Chain<'a> {
+    pub a: Box<dyn Process + 'a>,
+    pub b: Box<dyn Process + 'a>,
 }
 
-impl Process for Chain {
+impl Process for Chain<'_> {
     fn process(&mut self, exp: Tree, config: &Config) -> Tree {
         let start = Instant::now();
         let result = self.a.process(exp, config);
@@ -28,18 +28,18 @@ impl Process for Chain {
     }
 }
 
-impl Debug for Chain {
+impl Debug for Chain<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:?} -> {:?}", self.a, self.b)
     }
 }
 
-impl Chain {
-    pub fn append(self, p: Box<dyn Process>) -> Self {
+impl<'a> Chain<'a> {
+    pub fn append(self, p: Box<dyn Process + 'a>) -> Self {
         new(Box::new(self), p)
     }
 }
 
-pub fn new(a: Box<dyn Process>, b: Box<dyn Process>) -> Chain {
+pub fn new<'a>(a: Box<dyn Process + 'a>, b: Box<dyn Process + 'a>) -> Chain<'a> {
     Chain { a, b }
 }

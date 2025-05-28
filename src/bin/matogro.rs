@@ -48,19 +48,27 @@ fn main() -> std::io::Result<()> {
 fn mato(config: &Config, device: &str) {
     let input = mato::read_input(&config.source_file);
 
-    let mut chain = create_default_chain();
     match device {
         "mom" => {
+            let mut chain = create_default_chain(config, true);
             println!(
                 "{}",
                 mato::transform(&mut groff::mom::new(config), &mut chain, config, &input)
             );
         }
         "man" => {
+            let mut chain = create_default_chain(config, true);
             println!(
                 "{}",
                 mato::transform(&mut groff::man::new(), &mut chain, config, &input)
             );
+        }
+        "mdoc" => {
+            let mut chain = create_default_chain(config, false);
+            println!(
+                "{}",
+                mato::transform(&mut groff::mandoc::new(), &mut chain, config, &input)
+            )
         }
         _ => {
             die!("Unknown device: {}", device);

@@ -60,9 +60,13 @@ pub fn read_input(source_file: &str) -> String {
     input
 }
 
-pub fn create_default_chain() -> Chain {
+pub fn create_default_chain(config: &Config, replace_numerals: bool) -> Chain<'_> {
     m_trc!("constructing chain...");
-    let chain = chain::new(canonicalize::new(), image_converter::new()).append(code_block::new());
+    let chain = chain::new(
+        canonicalize::new(replace_numerals),
+        image_converter::new(config),
+    )
+    .append(code_block::new());
     m_trc!("done");
     m_dbg!("chain: {:?}", chain);
     chain
