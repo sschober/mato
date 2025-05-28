@@ -2,7 +2,7 @@ use std::env;
 
 use mato::{
     config::Config, create_default_chain, die, establish_log_level, mato_dbg, mato_trc, opt_flag,
-    opt_val, opts, render::groff,
+    opt_val, opts, process::chain::Chain, render::groff, Render,
 };
 
 /// command close to groffs idea, which renders output to
@@ -40,38 +40,30 @@ fn main() -> std::io::Result<()> {
 
     mato_trc!("{:?}", config);
 
-    mato(&config, &opt_device.val(&parsed_opts));
-
-    Ok(())
-}
-
-fn mato(config: &Config, device: &str) {
-    let input = mato::read_input(&config.source_file);
-
-    match device {
+    let mut render: Box<dyn Render + '_>;
+    let mut chain: Chain;
+    let device = opt_device.val(&parsed_opts);
+    match device.as_str() {
         "mom" => {
-            let mut chain = create_default_chain(config, true);
-            println!(
-                "{}",
-                mato::transform(&mut groff::mom::new(config), &mut chain, config, &input)
-            );
+            chain = create_default_chain(&config, true);
+            render = Box::new(groff::mom::new(&config));
         }
         "man" => {
-            let mut chain = create_default_chain(config, true);
-            println!(
-                "{}",
-                mato::transform(&mut groff::man::new(), &mut chain, config, &input)
-            );
+            chain = create_default_chain(&config, true);
+            render = Box::new(groff::man::new());
         }
         "mdoc" => {
-            let mut chain = create_default_chain(config, false);
-            println!(
-                "{}",
-                mato::transform(&mut groff::mandoc::new(), &mut chain, config, &input)
-            )
+            chain = create_default_chain(&config, false);
+            render = Box::new(groff::mandoc::new());
         }
         _ => {
             die!("Unknown device: {}", device);
         }
     };
+    let input = mato::read_input(&config.source_file);
+    println!(
+        "{}",
+        mato::transform(&mut render, &mut chain, &config, &input)
+    );
+    Ok(())
 }

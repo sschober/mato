@@ -186,8 +186,8 @@ fn exec(cmd: Vec<&str>) -> String {
 }
 
 /// top-level helper method to transform a given input string into a target language specified by the passed in renderer
-pub fn transform<R: Render, P: Process>(
-    r: &mut R,
+pub fn transform<P: Process>(
+    r: &mut Box<dyn Render + '_>,
     p: &mut P,
     config: &Config,
     input: &str,
@@ -228,7 +228,7 @@ pub trait Render {
 /// helper function for static dispatch
 ///
 /// calls the passed in renderer on the result created by the parser
-fn render<R: Render, P: Process>(r: &mut R, exp: Tree, _p: &mut P) -> String {
+fn render<P: Process>(r: &mut Box<dyn Render + '_>, exp: Tree, _p: &mut P) -> String {
     r.render(exp)
 }
 

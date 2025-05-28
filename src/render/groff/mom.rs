@@ -15,7 +15,7 @@ pub struct Renderer<'a> {
     config: &'a Config,
 }
 
-pub fn new(config: &Config) -> Renderer {
+pub fn new(config: &Config) -> Renderer<'_> {
     let default_mom_preamble = include_str!("default-preamble.mom").to_string();
 
     Renderer {
