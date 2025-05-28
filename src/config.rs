@@ -51,11 +51,9 @@ impl Config {
                 }
             }
         }
-        if !result.source_file.is_empty() {
-            if !Path::new(&result.source_file).exists() {
-                eprintln!("Could not open source file: {}", result.source_file);
-                std::process::exit(1);
-            }
+        if !result.source_file.is_empty() && !Path::new(&result.source_file).exists() {
+            eprintln!("Could not open source file: {}", result.source_file);
+            std::process::exit(1);
         }
         Ok(result)
     }
