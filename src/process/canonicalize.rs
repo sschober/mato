@@ -14,7 +14,7 @@ pub struct Canonicalizer {
 /// We need to remember in which kind of format we are currently in
 /// to decided, if we need to inject a Tree::BoldItalic instead of
 /// Tree::Bold or Tree::Italic.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 enum InFormat {
     Bold,
     Italic,
@@ -28,43 +28,33 @@ impl Canonicalizer {
     ///   This also works, if the nesting is not direct, but 'far' like **bold and _italic_**
     /// * replaces numerals with old style figures
     /// * replaces Tree::SmallCaps nodes with literal groff .sc characters
-    fn erase_empty(&mut self, exp: Tree, fmt: InFormat) -> Box<Tree> {
+    fn walk(&mut self, exp: Tree, fmt: InFormat) -> Box<Tree> {
         Box::new(match exp {
-            Tree::Document(dt, be) => Tree::Document(dt, self.erase_empty(*be, fmt)),
+            Tree::Document(dt, be) => Tree::Document(dt, self.walk(*be, fmt)),
             Tree::Cat(b_exp1, b_exp2) => match *b_exp1 {
                 // this arm erases the empty node and is the actual meat of this processor
-                Tree::Empty() => *self.erase_empty(*b_exp2, fmt),
-                _ => *self
-                    .erase_empty(*b_exp1, fmt)
-                    .cat_box(self.erase_empty(*b_exp2, fmt)),
+                Tree::Empty() => *self.walk(*b_exp2, fmt),
+                _ => *self.walk(*b_exp1, fmt).cat_box(self.walk(*b_exp2, fmt)),
             },
             Tree::Bold(b_exp) => match *b_exp {
-                Tree::Italic(b_inn) => {
-                    Tree::BoldItalic(self.erase_empty(*b_inn, InFormat::BoldItalic))
-                }
+                Tree::Italic(b_inn) => Tree::BoldItalic(self.walk(*b_inn, InFormat::BoldItalic)),
                 _ => match fmt {
-                    InFormat::Italic => {
-                        Tree::BoldItalic(self.erase_empty(*b_exp, InFormat::BoldItalic))
-                    }
-                    _ => Tree::Bold(self.erase_empty(*b_exp, InFormat::Bold)),
+                    InFormat::Italic => Tree::BoldItalic(self.walk(*b_exp, InFormat::BoldItalic)),
+                    _ => Tree::Bold(self.walk(*b_exp, InFormat::Bold)),
                 },
             },
             Tree::Italic(b_exp) => match *b_exp {
-                Tree::Bold(b_inn) => {
-                    Tree::BoldItalic(self.erase_empty(*b_inn, InFormat::BoldItalic))
-                }
+                Tree::Bold(b_inn) => Tree::BoldItalic(self.walk(*b_inn, InFormat::BoldItalic)),
                 _ => match fmt {
-                    InFormat::Bold => {
-                        Tree::BoldItalic(self.erase_empty(*b_exp, InFormat::BoldItalic))
-                    }
-                    _ => Tree::Italic(self.erase_empty(*b_exp, InFormat::Italic)),
+                    InFormat::Bold => Tree::BoldItalic(self.walk(*b_exp, InFormat::BoldItalic)),
+                    _ => Tree::Italic(self.walk(*b_exp, InFormat::Italic)),
                 },
             },
-            Tree::CodeBlock(b1, b2) => Tree::CodeBlock(b1, self.erase_empty(*b2, fmt)),
-            Tree::MetaDataBlock(b_exp) => meta_data_block(*self.erase_empty(*b_exp, fmt)),
-            Tree::ChapterMark(b_exp) => Tree::ChapterMark(self.erase_empty(*b_exp, fmt)),
+            Tree::CodeBlock(b1, b2) => Tree::CodeBlock(b1, self.walk(*b2, fmt)),
+            Tree::MetaDataBlock(b_exp) => meta_data_block(*self.walk(*b_exp, fmt)),
+            Tree::ChapterMark(b_exp) => Tree::ChapterMark(self.walk(*b_exp, fmt)),
             Tree::PreformattedLiteral(s) => prelit(&prelit_escape_groff_symbols(s)),
-            Tree::Footnote(be) => Tree::Footnote(self.erase_empty(*be, fmt)),
+            Tree::Footnote(be) => Tree::Footnote(self.walk(*be, fmt)),
             // the next rule replaces old style numerals in text body literals,
             // but not in literals in headings
             Tree::Literal(s) => {
@@ -125,7 +115,7 @@ fn prelit_escape_groff_symbols(s: String) -> String {
 impl Process for Canonicalizer {
     fn process(&mut self, exp: Tree) -> Tree {
         m_trc!("{:?}", self);
-        *self.erase_empty(exp, InFormat::None)
+        *self.walk(exp, InFormat::None)
     }
 }
 
