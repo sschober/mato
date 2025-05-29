@@ -6,7 +6,7 @@ use std::time::Instant;
 use mato::config::Config;
 use mato::process::identity;
 use mato::render::markdown;
-use mato::{die, mato_dbg, mato_trc};
+use mato::{die, mato_dbg, mato_trc, Render};
 
 fn main() -> std::io::Result<()> {
     let config = Config::from(env::args().collect())?;
@@ -25,7 +25,7 @@ fn main() -> std::io::Result<()> {
 fn matofmt(config: &Config, input: &str) -> String {
     let start = Instant::now();
     let mut processor = identity::Identity {};
-    let mut renderer = markdown::Renderer::new();
+    let mut renderer: Box<dyn Render + '_> = Box::new(markdown::Renderer::new());
     let output = mato::transform(&mut renderer, &mut processor, config, input);
     mato_dbg!("transformed in:\t\t{:?}", start.elapsed());
     output

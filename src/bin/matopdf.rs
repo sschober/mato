@@ -13,6 +13,7 @@ use mato::mato_inf;
 use mato::opt_flag;
 use mato::opt_val;
 use mato::opts;
+use mato::Render;
 use mato::{render::groff, watch};
 
 const TARGET_FILE_EXTENSION_PDF: &str = "pdf";
@@ -81,11 +82,11 @@ fn main() -> std::io::Result<()> {
 fn matopdf(config: &Config) {
     let input = mato::read_input(&config.source_file);
 
-    let mut chain = create_default_chain();
-
+    let mut chain = create_default_chain(config, true);
+    let mut render: Box<dyn Render + '_> = Box::new(groff::mom::new(config));
     // MD -> GROFF
     let start = Instant::now();
-    let groff_output = mato::transform(&mut groff::mom::new(config), &mut chain, config, &input);
+    let groff_output = mato::transform(&mut render, &mut chain, config, &input);
     mato_inf!("transformed in:\t\t{:?}", start.elapsed());
 
     if config.dump_groff {
@@ -113,18 +114,14 @@ fn matopdf(config: &Config) {
 
 #[cfg(test)]
 mod tests {
-    use mato::config::Config;
+    use mato::{config::Config, Render};
 
     fn matogro(input: &str) -> String {
         let mut config = Config::default();
         config.skip_preamble = true;
-        let mut chain = super::create_default_chain();
-        mato::transform(
-            &mut super::groff::mom::new(&config),
-            &mut chain,
-            &config,
-            input,
-        )
+        let mut chain = super::create_default_chain(&config, true);
+        let mut render: Box<dyn Render + '_> = Box::new(super::groff::mom::new(&config));
+        mato::transform(&mut render, &mut chain, &config, input)
     }
 
     #[test]
