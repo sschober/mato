@@ -694,7 +694,7 @@ mod tests {
     #[test]
     fn construction() {
         let parser = Parser::new("\"quoted\"");
-        assert_eq!(format!("{:?}", parser), "Parser { input: [34, 113, 117, 111, 116, 101, 100, 34], input_len: 8, current_position: 0, current_char: 34, doc_type: \"\" }");
+        assert_eq!(format!("{:?}", parser), "Parser { input: [34, 113, 117, 111, 116, 101, 100, 34], input_len: 8, current_position: 0, current_line: 1, current_char: 34, doc_type: \"\" }");
     }
     #[test]
     fn expression() {
