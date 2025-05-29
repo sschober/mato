@@ -351,6 +351,8 @@ impl Parser<'_> {
         prelit(&self.parse_string_until(break_chars))
     }
 
+    /// a 'pass through' is a command written in the source markdown language, but to be passed on
+    /// or through to the target language, like groff
     fn parse_pass_through(&mut self) -> Tree {
         self.consume(b'/');
         if self.peek(0, b'/') {
@@ -412,7 +414,7 @@ impl Parser<'_> {
 
     /// try to parse a meta data block. such blocks beginn with three `---` on a line, followed by
     /// a key value list of undefined length and end with a `---` line.
-    fn parse_meta_data_block(&mut self) -> Tree {
+    fn parse_mdb_or_list_or_lit(&mut self) -> Tree {
         //println!("parsing meta data block");
         if self.peek(1, b'-') && self.peek(2, b'-') {
             self.consume(b'-');
@@ -434,7 +436,7 @@ impl Parser<'_> {
             }
             Tree::MetaDataBlock(Box::new(items))
         } else if self.peek(1, b' ') {
-            self.parse_list(0, b'-')
+            self.parse_list_or_bold_or_lit(0, b'-')
         } else {
             self.advance();
             lit("-")
@@ -467,30 +469,37 @@ impl Parser<'_> {
         list_item(item, level)
     }
 
-    fn parse_list(&mut self, level: u8, list_char: u8) -> Tree {
+    fn parse_list_or_bold_or_lit(&mut self, level: u8, list_char: u8) -> Tree {
+        // we try to decide if the author wanted to start a bold segment or write a list:
+        // ATM we simply check, if c + (l * li) + 1 is a white space
         if self.peek((level * LIST_INDENT) as usize + 1, b' ') {
             // if * is followed by white space
-            let mut iterator = empty();
-            loop {
-                if self.peek((level * LIST_INDENT) as usize, list_char)
-                    && self.peek((level * LIST_INDENT) as usize + 1, b' ')
-                {
-                    iterator = iterator.cat(self.parse_list_item(level, list_char));
-                    continue;
-                } else if self.peek(((level + 1) * LIST_INDENT) as usize, list_char)
-                    && self.peek(((level + 1) * LIST_INDENT) as usize + 1, b' ')
-                {
-                    iterator = iterator.cat(self.parse_list(level + 1, list_char));
-                } else {
-                    break;
-                }
-            }
-            list(iterator, level)
+            self.parse_list(level, list_char)
         } else if list_char == b'*' {
             self.parse_bold()
         } else {
             lit(&format!("{}", list_char as char))
         }
+    }
+
+    fn parse_list(&mut self, level: u8, list_char: u8) -> Tree {
+        let mut iterator = empty();
+        loop {
+            if self.peek((level * LIST_INDENT) as usize, list_char)
+                && self.peek((level * LIST_INDENT) as usize + 1, b' ')
+            {
+                iterator = iterator.cat(self.parse_list_item(level, list_char));
+                continue;
+            } else if self.peek(((level + 1) * LIST_INDENT) as usize, list_char)
+                && self.peek(((level + 1) * LIST_INDENT) as usize + 1, b' ')
+            {
+                // nested list
+                iterator = iterator.cat(self.parse_list_or_bold_or_lit(level + 1, list_char));
+            } else {
+                break;
+            }
+        }
+        list(iterator, level)
     }
     fn parse_bold(&mut self) -> Tree {
         if self.peek(1, b'*') {
@@ -631,9 +640,9 @@ impl Parser<'_> {
         // main parsing loop. note that this function might be called recursivly.
         while !self.at_end() && !break_chars.contains(&self.current_char) {
             let expr = match self.current_char {
-                b'-' => self.parse_meta_data_block(),
+                b'-' => self.parse_mdb_or_list_or_lit(),
                 b'#' => self.parse_heading(),
-                b'*' => self.parse_list(0, b'*'),
+                b'*' => self.parse_list_or_bold_or_lit(0, b'*'),
                 b'_' => Tree::Italic(Box::new(self.parse_symmetric_quoted())),
                 b'{' => Tree::SmallCaps(Box::new(self.parse_quoted(b'}'))),
                 b'`' => self.parse_code(),
