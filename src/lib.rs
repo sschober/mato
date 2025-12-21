@@ -60,6 +60,11 @@ pub fn read_input(source_file: &str) -> String {
     input
 }
 
+/// constructs what is considered by us to be a default chain:
+///
+/// `canonicalize -> image_converter -> code_block_converter`
+///
+/// and returns it
 pub fn create_default_chain(config: &Config, replace_numerals: bool) -> Chain<'_> {
     m_trc!("constructing chain...");
     let chain = chain::new(
@@ -129,6 +134,7 @@ pub fn parent_dir(file_name: &str) -> &Path {
     Path::new(file_name).parent().unwrap()
 }
 
+/// replaces file extension in `file_name` with `extension`
 pub fn replace_file_extension(file_name: &str, extension: &str) -> PathBuf {
     let path_source_file = Path::new(&file_name);
     let mut path_target_file = path_source_file.to_path_buf();
@@ -232,6 +238,12 @@ fn render<P: Process>(r: &mut Box<dyn Render + '_>, exp: Tree, _p: &mut P) -> St
     r.render(exp)
 }
 
+/// renders `input` to PDF using `groff` and its `mom` package. returns
+/// the PDF source as a result.
+///
+/// forks out a new process and sets command-line arguments accordingly.
+/// `stdout` and `stderr` are piped and if an error occurs, it is written to `stderr` of the
+/// parent process.
 pub fn grotopdf(config: &Config, input: &str) -> Vec<u8> {
     // calling `groff` directly instead of `mompdf` has a performance
     // adavantage, but will handle forwar references not correctly.

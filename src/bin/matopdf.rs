@@ -79,6 +79,9 @@ fn main() -> std::io::Result<()> {
     Ok(())
 }
 
+/// matopdf is implementing a pipeline, first reading the input, then
+/// transforming the input using a chain, rendering the transformed input into groff
+/// and lastly using groff to render a pdf
 fn matopdf(config: &Config) {
     let input = mato::read_input(&config.source_file);
 
@@ -95,11 +98,17 @@ fn matopdf(config: &Config) {
     if config.dump_groff_file {
         let path_target_file =
             mato::replace_file_extension(&config.source_file, TARGET_FILE_EXTENSION_GRO);
-        fs::write(path_target_file, groff_output.clone()).expect("Unable to write groff file");
+        mato_dbg!("dumping groff output to: {}", path_target_file.display());
+        fs::write(path_target_file.clone(), groff_output.clone()).expect(
+            format!("Unable to write groff file: {}", path_target_file.display())
+                .to_owned()
+                .as_str(),
+        );
     }
 
     let pdf_target_file =
         mato::replace_file_extension(&config.source_file, TARGET_FILE_EXTENSION_PDF);
+    mato_dbg!("writing to:\t\t{}", pdf_target_file.display());
     // GROFF -> PDF
     if !config.skip_rendering {
         let start = Instant::now();
