@@ -1,0 +1,22 @@
+.DOCTYPE DEFAULT
+.PRINTSTYLE TYPESET
+.PAGE 5.8i 9i 1i 1i .75i .75i
+.PAPER A5
+.PT_SIZE 11
+.START
+.PP
+This file contains only two
+paragraphs of text. It can be
+used to test verify some
+formatting properties. For
+some reason, the next PP command
+has no effect.
+.PP
+This is the second paragraph.
+It contains a few sentences.
+Use mato to inspect, what
+groff source code results.
+.PP
+This is a third paragraph.
+It follows, that the first
+sentence above is a lie.
