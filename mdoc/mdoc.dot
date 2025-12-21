@@ -1,0 +1,35 @@
+digraph graphname {
+x16f509a50[label="Root"];
+x16f509a50 ->x6000027cc600;
+x6000027cc600[label="||"];
+x6000027cc600 -> {x6000027cc540,x6000027cc630};
+x6000027cc540[label="||"];
+x6000027cc540 -> {x6000027cc5d0,x6000027cc5a0};
+x6000027cc5d0[label="||"];
+x6000027cc5d0 -> {x6000027cc480,x6000027cc450};
+x6000027cc480[label="||"];
+x6000027cc480 -> {x6000027cc810,x6000027cc3f0};
+x6000027cc810[label="||"];
+x6000027cc810 -> {x6000027cc7e0,x6000027cc7b0};
+x6000027cc7e0[label="||"];
+x6000027cc7e0 -> {x6000027cc750,x6000027cc720};
+x6000027cc750 [label="H 0"];
+x6000027cc750 -> x6000027cc390;
+x6000027cc390 [label="l('24. Mai 2025')"];
+x6000027cc720 [label="H 1"];
+x6000027cc720 -> x6000027cc3c0;
+x6000027cc3c0 [label="l('Samstag')"];
+x6000027cc7b0 [label="\\n"]
+x6000027cc3f0[label="||"];
+x6000027cc3f0 -> {x6000027cc780,x6000027cc420};
+x6000027cc780 [label="H 2"];
+x6000027cc780 -> x6000027cc4b0;
+x6000027cc4b0 [label="l('Nacht und Schlaf')"];
+x6000027cc420 [label="V"]
+x6000027cc450[label="||"];
+x6000027cc450 -> {x6000027cc510,x6000027cc4e0};
+x6000027cc510 [label="\\n"]
+x6000027cc4e0 [label="P"];
+x6000027cc5a0 [label="l('Heute Nacht habe ich gut geschlafen.')"];
+x6000027cc630 [label="\\n"]
+}
