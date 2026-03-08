@@ -1,6 +1,6 @@
 //! a small library of utility functions for interacting with the
 //! wezterm command line interface
-use std::{env, usize};
+use std::env;
 
 /// acquires and returns the current directory as a `String``
 fn current_dir() -> String {
@@ -100,7 +100,7 @@ impl SplitOptsBuilder {
     /// add a percentage option
     pub fn percent(&mut self, percentage: usize) -> &mut SplitOptsBuilder {
         self.opts.push("--percent".to_string());
-        self.opts.push(format!("{}", percentage));
+        self.opts.push(format!("{percentage}"));
         self
     }
     /// add a bottom option
