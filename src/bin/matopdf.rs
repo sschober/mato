@@ -99,11 +99,9 @@ fn matopdf(config: &Config) {
         let path_target_file =
             mato::replace_file_extension(&config.source_file, TARGET_FILE_EXTENSION_GRO);
         mato_dbg!("dumping groff output to: {}", path_target_file.display());
-        fs::write(path_target_file.clone(), groff_output.clone()).expect(
-            format!("Unable to write groff file: {}", path_target_file.display())
-                .to_owned()
-                .as_str(),
-        );
+        fs::write(path_target_file.clone(), groff_output.clone()).unwrap_or_else(|_| {
+            panic!("Unable to write groff file: {}", path_target_file.display());
+        });
     }
 
     let pdf_target_file =
