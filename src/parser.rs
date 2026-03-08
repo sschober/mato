@@ -394,7 +394,7 @@ impl Parser<'_> {
         }
         let value = self.parse_string_until(b"\n");
         if "doctype" == key {
-            println!("setting docype {}", value);
+            println!("setting docype {value}");
             self.doc_type = value;
             empty()
         } else {
@@ -698,12 +698,12 @@ mod tests {
     use super::Parser;
     fn parse_to_ast(s: &str) -> String {
         let p = Parser::parse(s);
-        format!("{:?}", p)
+        format!("{p:?}")
     }
     #[test]
     fn construction() {
         let parser = Parser::new("\"quoted\"");
-        assert_eq!(format!("{:?}", parser), "Parser { input: [34, 113, 117, 111, 116, 101, 100, 34], input_len: 8, current_position: 0, current_line: 1, current_char: 34, doc_type: \"\" }");
+        assert_eq!(format!("{parser:?}"), "Parser { input: [34, 113, 117, 111, 116, 101, 100, 34], input_len: 8, current_position: 0, current_line: 1, current_char: 34, doc_type: \"\" }");
     }
     #[test]
     fn expression() {
