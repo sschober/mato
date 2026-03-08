@@ -48,7 +48,7 @@ pub struct Parser {
 }
 
 pub fn print_version(prog: &str, version: &str) {
-    println!("{} - {}", prog, version);
+    println!("{prog} - {version}");
 }
 
 /// ParserResult captures the parsed entites extracted
@@ -110,8 +110,7 @@ impl ParserResult {
                     description,
                 } => {
                     println!(
-                        "\t-{0:<1}, --{1:<21}{2}",
-                        short_name, long_name, description
+                        "\t-{short_name:<1}, --{long_name:<21}{description}"
                     )
                 }
                 Opt::Value {
@@ -121,10 +120,7 @@ impl ParserResult {
                     default,
                 } => {
                     println!(
-                        "\t-{0:<1} <val>, --{1:<15}{2}",
-                        short_name,
-                        format!("{} <val>", long_name),
-                        format!("{} Default is value '{}'.", description, default)
+                        "\t-{short_name:<1} <val>, --{long_name} <val>{description} Default is value '{default}'."
                     )
                 }
             }
@@ -241,7 +237,7 @@ impl Parser {
                     h.insert(long_name.clone(), args[pos + 1].clone());
                     pos + 1
                 } else {
-                    panic!("option without value: {}", long_name)
+                    panic!("option without value: {long_name}")
                 }
             }
         }
@@ -314,7 +310,7 @@ mod tests {
         let opt = opt_flag!("s", "some", "Some option");
         p.add_opt(opt);
         let r = p.parse(vec!["-s".to_string()]);
-        eprintln!("{:?}", r);
+        eprintln!("{r:?}");
         assert_eq!(r.opts.get("some"), Some(&"".to_string()))
     }
     #[test]
@@ -323,7 +319,7 @@ mod tests {
         let opt = opt_val!("s", "source-file", "Some option", "def");
         p.add_opt(opt);
         let r = p.parse(vec!["-s".to_string(), "LICENSE".to_string()]);
-        eprintln!("{:?}", r);
+        eprintln!("{r:?}");
         assert_eq!(r.opts.get("source-file"), Some(&"LICENSE".to_string()))
     }
 
@@ -331,7 +327,7 @@ mod tests {
     fn parse_short_opt_cluster() {
         let p = Parser::new();
         let r = p.parse(vec!["-hv".to_string()]);
-        eprintln!("{:?}", r);
+        eprintln!("{r:?}");
         assert!(r.get_flag("version"), "version flag set");
         assert!(r.get_flag("help"), "help flag set");
     }
@@ -342,7 +338,7 @@ mod tests {
         let opt = opt_val!("l", "lang", "Set language", "den");
         p.add_opt(opt);
         let r = p.parse(vec!["-hl".to_string(), "en".to_string()]);
-        eprintln!("{:?}", r);
+        eprintln!("{r:?}");
         assert!(r.get_flag("help"), "help flag set");
         assert_eq!(r.get_opt("lang"), "en".to_string());
     }
