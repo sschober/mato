@@ -63,7 +63,7 @@ impl TermCli {
                     id: t_handle.to_string(),
                 };
                 let mato_pane = editor_pane
-                    .split(format!("matopdf -w -V -l {} {}", lang, source_file).as_str())
+                    .split(format!("matopdf -w -V -l {lang} {source_file}").as_str())
                     .percent(10)
                     .bottom()
                     .exec();
@@ -80,7 +80,7 @@ impl TermCli {
                     id: t_handle.to_string(),
                 };
                 let termpdf_pane = editor_pane
-                    .split(&format!("termpdf.py {}", target_file))
+                    .split(&format!("termpdf.py {target_file}"))
                     .top_level()
                     .right()
                     .exec();
