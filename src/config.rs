@@ -16,6 +16,10 @@ pub struct Config {
     /// language
     pub lang: String,
     pub skip_preamble: bool,
+    /// skip searching for gropdf_zig and use standard gropdf
+    pub use_standard_gropdf: bool,
+    /// pass -d to gropdf_zig
+    pub gropdf_zig_debug: bool,
 }
 
 impl Config {
@@ -29,6 +33,8 @@ impl Config {
             skip_rendering: false,
             lang: String::new(),
             skip_preamble: false,
+            use_standard_gropdf: false,
+            gropdf_zig_debug: false,
         }
     }
 

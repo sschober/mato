@@ -45,6 +45,16 @@ fn main() -> std::io::Result<()> {
         "skip-render-and-dump",
         "Skip rendering and dumps groff output."
     ));
+    let opt_standard_gropdf = p.add_opt(opt_flag!(
+        "p",
+        "standard-gropdf",
+        "Use standard gropdf instead of gropdf_zig even if found in PATH."
+    ));
+    let opt_gropdf_zig_debug = p.add_opt(opt_flag!(
+        "d",
+        "gropdf-zig-debug",
+        "Pass -d to gropdf_zig for debug output."
+    ));
 
     let parsed_opts = p.parse(env::args().collect());
     parsed_opts.handle_standard_flags("matopdf", "0.1.1");
@@ -65,6 +75,8 @@ fn main() -> std::io::Result<()> {
         config.skip_rendering = true;
         config.dump_groff = true;
     }
+    config.use_standard_gropdf = opt_standard_gropdf.is_set(&parsed_opts);
+    config.gropdf_zig_debug = opt_gropdf_zig_debug.is_set(&parsed_opts);
     mato_dbg!("config: {:#?}", config);
 
     if config.watch {
@@ -109,8 +121,16 @@ fn matopdf(config: &Config) {
     mato_dbg!("writing to:\t\t{}", pdf_target_file.display());
     // GROFF -> PDF
     if !config.skip_rendering {
+        let gropdf_zig = if config.use_standard_gropdf {
+            None
+        } else {
+            mato::find_in_path("gropdf_zig")
+        };
+        if let Some(ref path) = gropdf_zig {
+            mato_dbg!("using gropdf_zig:\t{}", path.display());
+        }
         let start = Instant::now();
-        let pdf_output = mato::grotopdf(config, &groff_output);
+        let pdf_output = mato::grotopdf(config, &groff_output, gropdf_zig.as_deref());
         mato_inf!("groff rendering:\t{:?} ", start.elapsed());
 
         let start = Instant::now();

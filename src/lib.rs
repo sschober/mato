@@ -238,13 +238,26 @@ fn render<P: Process>(r: &mut Box<dyn Render + '_>, exp: Tree, _p: &mut P) -> St
     r.render(exp)
 }
 
+/// Searches the directories in `PATH` for an executable named `name`.
+/// Returns the full path if found, `None` otherwise.
+pub fn find_in_path(name: &str) -> Option<PathBuf> {
+    let path_var = env::var_os("PATH")?;
+    env::split_paths(&path_var)
+        .map(|dir| dir.join(name))
+        .find(|p| p.is_file())
+}
+
 /// renders `input` to PDF using `groff` and its `mom` package. returns
 /// the PDF source as a result.
 ///
 /// forks out a new process and sets command-line arguments accordingly.
 /// `stdout` and `stderr` are piped and if an error occurs, it is written to `stderr` of the
 /// parent process.
-pub fn grotopdf(config: &Config, input: &str) -> Vec<u8> {
+///
+/// When `custom_gropdf` is `Some(path)`, a two-stage pipeline is used:
+/// `groff -Z` produces intermediate ditroff output which is then piped into the
+/// provided postprocessor binary instead of the standard `gropdf` perl implementation.
+pub fn grotopdf(config: &Config, input: &str, custom_gropdf: Option<&Path>) -> Vec<u8> {
     // calling `groff` directly instead of `mompdf` has a performance
     // adavantage, but will handle forwar references not correctly.
     // see https://www.schaffter.ca/mom/pdf/mom-pdf.pdf and there
@@ -252,29 +265,93 @@ pub fn grotopdf(config: &Config, input: &str) -> Vec<u8> {
     // I switched to `groff` as `pdfmom` would always call `groff`
     // three times, even when it is not necessary, because the document
     // being processed does not contain any references.
-    let mut child = Command::new("/usr/bin/env")
-        .arg("groff")
-        .arg("-Tpdf")
-        .arg("-mom")
-        .arg(format!("-m{}", config.lang))
-        .args(["-K", "UTF-8"]) // process with preconv to support utf-8
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-        .expect("Failed to spawn pdfmom");
+    if let Some(gropdf_path) = custom_gropdf {
+        // Stage 1: run groff with -Z to produce intermediate ditroff output
+        // without invoking the postprocessor.
+        let mut troff_child = Command::new("/usr/bin/env")
+            .arg("groff")
+            .arg("-Z")
+            .arg("-Tpdf")
+            .arg("-mom")
+            .arg(format!("-m{}", config.lang))
+            .args(["-K", "UTF-8"])
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .expect("Failed to spawn groff -Z");
 
-    {
-        // this lexical block is only here to let stdin run out of scope to be closed...
-        let mut stdin = child.stdin.take().expect("Failed to open stdin for pdfmom");
-        stdin
-            .write_all(input.as_bytes())
-            .expect("Failed to write to stdin of pdfmom");
+        {
+            let mut stdin = troff_child
+                .stdin
+                .take()
+                .expect("Failed to open stdin for groff -Z");
+            stdin
+                .write_all(input.as_bytes())
+                .expect("Failed to write to stdin of groff -Z");
+        }
+
+        let troff_output = troff_child
+            .wait_with_output()
+            .expect("Failed to read stdout of groff -Z");
+        if !troff_output.stderr.is_empty() {
+            let _ = io::stderr().write(&troff_output.stderr);
+        }
+
+        // Stage 2: pipe the ditroff output into the custom gropdf binary.
+        let mut gropdf_cmd = Command::new(gropdf_path);
+        if config.gropdf_zig_debug {
+            gropdf_cmd.arg("-d");
+        }
+        let mut gropdf_child = gropdf_cmd
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .expect("Failed to spawn gropdf_zig");
+
+        {
+            let mut stdin = gropdf_child
+                .stdin
+                .take()
+                .expect("Failed to open stdin for gropdf_zig");
+            stdin
+                .write_all(&troff_output.stdout)
+                .expect("Failed to write to stdin of gropdf_zig");
+        }
+
+        let output = gropdf_child
+            .wait_with_output()
+            .expect("Failed to read stdout of gropdf_zig");
+        if !output.stderr.is_empty() {
+            let _ = io::stderr().write(&output.stderr);
+        }
+        output.stdout
+    } else {
+        let mut child = Command::new("/usr/bin/env")
+            .arg("groff")
+            .arg("-Tpdf")
+            .arg("-mom")
+            .arg(format!("-m{}", config.lang))
+            .args(["-K", "UTF-8"]) // process with preconv to support utf-8
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .expect("Failed to spawn pdfmom");
+
+        {
+            // this lexical block is only here to let stdin run out of scope to be closed...
+            let mut stdin = child.stdin.take().expect("Failed to open stdin for pdfmom");
+            stdin
+                .write_all(input.as_bytes())
+                .expect("Failed to write to stdin of pdfmom");
+        }
+        // ... otherwise this call would not terminate
+        let output = child.wait_with_output().expect("Failed to read stdout");
+        if !output.stderr.is_empty() {
+            let _ = io::stderr().write(&output.stderr);
+        }
+        output.stdout
     }
-    // ... otherwise this call would not terminate
-    let output = child.wait_with_output().expect("Failed to read stdout");
-    if !output.stderr.is_empty() {
-        let _ = io::stderr().write(&output.stderr);
-    }
-    output.stdout
 }
