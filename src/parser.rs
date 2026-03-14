@@ -123,7 +123,9 @@ impl Parser<'_> {
         let break_char = self.current_char;
         self.consume(break_char); // opening quote
         let exp = self.parse_complete_until(&[break_char]); // body
-        self.consume(break_char); // ending quote
+        if !self.at_end() && self.current_char == break_char {
+            self.consume(break_char); // ending quote
+        }
         exp
     }
 
@@ -481,8 +483,9 @@ impl Parser<'_> {
     fn parse_list_or_bold_or_lit(&mut self, level: u8, list_char: u8) -> Tree {
         // we try to decide if the author wanted to start a bold segment or write a list:
         // ATM we simply check, if c + (l * li) + 1 is a white space
-        if self.peek((level * LIST_INDENT) as usize + 1, b' ') {
-            // if * is followed by white space
+        let at_line_start = self.current_position == 0 || self.peek_back(1, b'\n');
+        if at_line_start && self.peek((level * LIST_INDENT) as usize + 1, b' ') {
+            // if * is followed by white space and we are at the start of a line
             self.parse_list(level, list_char)
         } else if list_char == b'*' {
             self.parse_bold()
@@ -753,9 +756,11 @@ mod tests {
     }
     #[test]
     fn wrong_nesting() {
+        // wrong nesting is parsed gracefully without panicking; bold and italic are applied
+        // as best-effort based on the order markers are encountered
         assert_eq!(
             parse_to_ast("*this is _wrong* nesting_"),
-            "Document(DEFAULT)"
+            "Document(DEFAULT, Bold(Cat(Literal(\"this is \"), Italic(Cat(Literal(\"wrong\"), Bold(Cat(Literal(\" nesting\"), Italic(Empty))))))))"
         )
     }
 }
