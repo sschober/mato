@@ -90,6 +90,8 @@ impl Render for ManDocRenderer {
             }
             crate::syntax::Tree::VSpace() => "".to_owned(),
             crate::syntax::Tree::Empty() => "".to_owned(),
+            crate::syntax::Tree::EmDash => "\\(em".to_owned(),
+            crate::syntax::Tree::EnDash => "\\(en".to_owned(),
         }
     }
 }

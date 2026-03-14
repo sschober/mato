@@ -262,6 +262,20 @@ mod tests {
         );
     }
     #[test]
+    fn em_dash() {
+        assert_eq!(
+            matogro("word---word"),
+            ".DOCTYPE DEFAULT\n.START\nword\\(emword"
+        );
+    }
+    #[test]
+    fn en_dash() {
+        assert_eq!(
+            matogro("word--word"),
+            ".DOCTYPE DEFAULT\n.START\nword\\(enword"
+        );
+    }
+    #[test]
     fn list_1() {
         assert_eq!(
             matogro("* list item\n"),

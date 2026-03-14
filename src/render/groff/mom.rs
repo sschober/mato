@@ -255,6 +255,8 @@ impl Renderer<'_> {
             }
             Tree::VSpace() => "\n.SP 1v".to_owned(),
             Tree::DropCap(c, l) => format!("\n.DROPCAP {} {}\n", c as char, l),
+            Tree::EmDash => "\\(em".to_owned(),
+            Tree::EnDash => "\\(en".to_owned(),
         }
     }
     fn render_with_default_format(&mut self, exp: Tree) -> String {

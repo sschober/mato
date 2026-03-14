@@ -80,6 +80,8 @@ impl Render for ManRenderer {
             crate::syntax::Tree::LineBreak() => "\n".to_owned(),
             crate::syntax::Tree::VSpace() => "".to_owned(),
             crate::syntax::Tree::Empty() => "".to_owned(),
+            crate::syntax::Tree::EmDash => "\\(em".to_owned(),
+            crate::syntax::Tree::EnDash => "\\(en".to_owned(),
         }
     }
 }

@@ -76,6 +76,10 @@ pub enum Tree {
     VSpace(),
     // this is a neutral element, yielding no ouput
     Empty(),
+    /// typographic em dash (---)
+    EmDash,
+    /// typographic en dash (--)
+    EnDash,
 }
 
 impl Tree {
@@ -203,6 +207,8 @@ impl fmt::Display for Tree {
             Tree::LineBreak() => write!(f, "{} [label=\"\\\\n\"]", address_of(self)),
             Tree::VSpace() => write!(f, "{} [label=\"V\"]", address_of(self)),
             Tree::Empty() => write!(f, "{} [label=\"\"]", address_of(self)),
+            Tree::EmDash => write!(f, "{} [label=\"---\"]", address_of(self)),
+            Tree::EnDash => write!(f, "{} [label=\"--\"]", address_of(self)),
         }
     }
 }

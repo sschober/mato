@@ -100,6 +100,8 @@ impl Render for Renderer {
             Tree::VSpace() => String::new(),
             Tree::DropCap(_, _) => todo!(),
             Tree::DocRef(_, _) => todo!(),
+            Tree::EmDash => "\u{2014}".to_owned(),
+            Tree::EnDash => "\u{2013}".to_owned(),
         }
     }
 }

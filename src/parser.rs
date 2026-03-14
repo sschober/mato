@@ -415,8 +415,8 @@ impl Parser<'_> {
     /// try to parse a meta data block. such blocks beginn with three `---` on a line, followed by
     /// a key value list of undefined length and end with a `---` line.
     fn parse_mdb_or_list_or_lit(&mut self) -> Tree {
-        //println!("parsing meta data block");
-        if self.peek(1, b'-') && self.peek(2, b'-') {
+        let at_line_start = self.current_position == 0 || self.peek_back(1, b'\n');
+        if at_line_start && self.peek(1, b'-') && self.peek(2, b'-') {
             self.consume(b'-');
             self.consume(b'-');
             self.consume(b'-');
@@ -435,8 +435,17 @@ impl Parser<'_> {
                 self.consume(b'\n');
             }
             Tree::MetaDataBlock(Box::new(items))
-        } else if self.peek(1, b' ') {
+        } else if at_line_start && self.peek(1, b' ') {
             self.parse_list_or_bold_or_lit(0, b'-')
+        } else if self.peek(1, b'-') && self.peek(2, b'-') {
+            self.consume(b'-');
+            self.consume(b'-');
+            self.consume(b'-');
+            Tree::EmDash
+        } else if self.peek(1, b'-') {
+            self.consume(b'-');
+            self.consume(b'-');
+            Tree::EnDash
         } else {
             self.advance();
             lit("-")
@@ -621,7 +630,7 @@ impl Parser<'_> {
                 b'/' => self.parse_pass_through(),
                 b'\\' => self.parse_color_spec(),
                 _ => self.parse_literal(
-                    format!("_*#\"^`&[{{{}>\n", str::from_utf8(break_chars).unwrap()).as_bytes(),
+                    format!("-_*#\"^`&[{{{}>\n", str::from_utf8(break_chars).unwrap()).as_bytes(),
                 ),
             };
             expression = match expression {
@@ -682,7 +691,7 @@ impl Parser<'_> {
                 b'>' => self.parse_right_sidenote(),
                 b'!' => self.parse_image(),
                 _ => self.parse_literal(
-                    format!("_*#\"^`&[{{{}>\n", str::from_utf8(break_chars).unwrap()).as_bytes(),
+                    format!("-_*#\"^`&[{{{}>\n", str::from_utf8(break_chars).unwrap()).as_bytes(),
                 ),
             };
             expression = match expression {
@@ -719,6 +728,28 @@ mod tests {
     #[test]
     fn dot() {
         assert_eq!(parse_to_ast("."), "Document(DEFAULT, EscapeLit(\".\"))");
+    }
+    #[test]
+    fn em_dash_inline() {
+        assert_eq!(
+            parse_to_ast("word---word"),
+            "Document(DEFAULT, Cat(Cat(Literal(\"word\"), EmDash), Literal(\"word\")))"
+        );
+    }
+    #[test]
+    fn en_dash_inline() {
+        assert_eq!(
+            parse_to_ast("word--word"),
+            "Document(DEFAULT, Cat(Cat(Literal(\"word\"), EnDash), Literal(\"word\")))"
+        );
+    }
+    #[test]
+    fn em_dash_not_at_line_start() {
+        // --- at line start is a metadata block delimiter, not an em dash
+        assert_eq!(
+            parse_to_ast("some text---more text"),
+            "Document(DEFAULT, Cat(Cat(Literal(\"some text\"), EmDash), Literal(\"more text\")))"
+        );
     }
     #[test]
     fn wrong_nesting() {
