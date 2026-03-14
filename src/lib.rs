@@ -106,7 +106,7 @@ pub fn locate_and_load_preamble(config: &Config, name: &str, default_preamble: &
                 m_dbg!("XDG_CONFIG_HOME not set");
                 // 2. try $HOME/.config
                 match env::var("HOME") {
-                    Ok(home_path) => format!("{}/.config", home_path),
+                    Ok(home_path) => format!("{home_path}/.config"),
                     Err(_) => "".to_string(),
                 }
             }
@@ -206,7 +206,7 @@ pub fn transform<P: Process>(
     if config.dump_dot_file {
         let path_target_file = replace_file_extension(&config.source_file, "dot");
         m_trc!("dumping processed tree to: {:?}", path_target_file);
-        fs::write(path_target_file, format!("{}", tree)).expect("Unable to write groff file");
+        fs::write(path_target_file, format!("{tree}")).expect("Unable to write groff file");
     } else {
         m_trc!("processed:\n{:?}", tree);
     }

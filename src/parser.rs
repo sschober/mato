@@ -193,13 +193,8 @@ impl Parser<'_> {
 
     /// parse markdown headings of unspecified level:
     ///
-    ///     `# heading`
-    ///
-    /// is a level 1 heading,
-    ///
-    ///     `## heading`
-    ///
-    /// is a level 2 heading.
+    /// `# heading` is a level 1 heading,
+    /// `## heading` is a level 2 heading.
     fn parse_heading(&mut self) -> Tree {
         self.consume(b'#');
         let level = self.parse_heading_level(0);

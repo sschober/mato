@@ -94,7 +94,7 @@ impl Tree {
 }
 
 fn address_of(t: &Tree) -> String {
-    format!("{:p}", t).strip_prefix("0").unwrap().to_owned()
+    format!("{t:p}").strip_prefix('0').unwrap().to_owned()
 }
 
 /// incomplete display impl that generates graphviz dot

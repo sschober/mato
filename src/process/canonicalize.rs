@@ -37,7 +37,13 @@ impl Canonicalizer {
                 _ => *self.walk(*b_exp1, fmt).cat_box(self.walk(*b_exp2, fmt)),
             },
             Tree::List(be, lvl) => Tree::List(self.walk(*be, fmt), lvl),
-            Tree::ListItem(be, lvl) => Tree::ListItem(self.walk(*be, fmt), lvl),
+            Tree::ListItem(be, lvl) => {
+                let orig = self.replace_numerals;
+                self.replace_numerals = false;
+                let result = Tree::ListItem(self.walk(*be, fmt), lvl);
+                self.replace_numerals = orig;
+                result
+            }
             Tree::Bold(b_exp) => match *b_exp {
                 Tree::Italic(b_inn) => Tree::BoldItalic(self.walk(*b_inn, InFormat::BoldItalic)),
                 _ => match fmt {
