@@ -1,8 +1,6 @@
 # TODOs
 #
 
-* Support n-, and m-dashes
-
 * Improved hyphenation settings: currently, german requires setting explicit
 hyphenation codes. These should be introduced automatically, when german
 language files are selected.
