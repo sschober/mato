@@ -160,6 +160,21 @@ sedi() {
   fi
 }
 
+# Build an extended map file: system text.map + self-referential mappings for
+# .oldstyle and .taboldstyle glyphs (not present in the default text.map).
+EXTENDED_TEXTMAP="$TMPDIR/text.map"
+{
+  cat "$TEXTMAP"
+  for suffix in oldstyle taboldstyle; do
+    for base in zero one two three four five six seven eight nine \
+                cent dollar Euro franc lira sterling yen \
+                colonmonetary florin franc numbersign percent perthousand \
+                estimated; do
+      echo "${base}.${suffix} ${base}.${suffix}"
+    done
+  done
+} > "$EXTENDED_TEXTMAP"
+
 for groff_name in "${!VARIANTS[@]}"; do
   otf="${VARIANTS[$groff_name]}"
   afm="$WORK_DIR/$groff_name.afm"
@@ -190,7 +205,7 @@ for groff_name in "${!VARIANTS[@]}"; do
     *)      afmtodit_opts="-i0 -m" ;;
   esac
   # shellcheck disable=SC2086
-  afmtodit -e "$ENC" $afmtodit_opts "$afm" "$TEXTMAP" "$dest"
+  afmtodit -e "$ENC" $afmtodit_opts "$afm" "$EXTENDED_TEXTMAP" "$dest"
 
   # Inject correct groff name into the font file
   sedi "s/^name .*/name $groff_name/" "$dest"
