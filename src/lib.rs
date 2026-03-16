@@ -268,6 +268,7 @@ pub fn grotopdf(config: &Config, input: &str, custom_gropdf: Option<&Path>) -> V
     if let Some(gropdf_path) = custom_gropdf {
         // Stage 1: run groff with -Z to produce intermediate ditroff output
         // without invoking the postprocessor.
+        let start = Instant::now();
         let mut troff_child = Command::new("/usr/bin/env")
             .arg("groff")
             .arg("-Z")
@@ -297,8 +298,10 @@ pub fn grotopdf(config: &Config, input: &str, custom_gropdf: Option<&Path>) -> V
         if !troff_output.stderr.is_empty() {
             let _ = io::stderr().write(&troff_output.stderr);
         }
+        if crate::log::get_log_level() >= 1 { eprintln!("groff -Z:\t\t{:?}", start.elapsed()); }
 
         // Stage 2: pipe the ditroff output into the custom gropdf binary.
+        let start = Instant::now();
         let mut gropdf_cmd = Command::new(gropdf_path);
         if config.gropdf_zig_debug {
             gropdf_cmd.arg("-d");
@@ -326,8 +329,10 @@ pub fn grotopdf(config: &Config, input: &str, custom_gropdf: Option<&Path>) -> V
         if !output.stderr.is_empty() {
             let _ = io::stderr().write(&output.stderr);
         }
+        if crate::log::get_log_level() >= 1 { eprintln!("gropdf_zig:\t\t{:?}", start.elapsed()); }
         output.stdout
     } else {
+        let start = Instant::now();
         let mut child = Command::new("/usr/bin/env")
             .arg("groff")
             .arg("-Tpdf")
@@ -352,6 +357,7 @@ pub fn grotopdf(config: &Config, input: &str, custom_gropdf: Option<&Path>) -> V
         if !output.stderr.is_empty() {
             let _ = io::stderr().write(&output.stderr);
         }
+        if crate::log::get_log_level() >= 1 { eprintln!("groff:\t\t\t{:?}", start.elapsed()); }
         output.stdout
     }
 }

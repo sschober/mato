@@ -131,7 +131,7 @@ fn matopdf(config: &Config) {
         }
         let start = Instant::now();
         let pdf_output = mato::grotopdf(config, &groff_output, gropdf_zig.as_deref());
-        mato_inf!("groff rendering:\t{:?} ", start.elapsed());
+        mato_inf!("rendering total:\t{:?}", start.elapsed());
 
         let start = Instant::now();
         fs::write(&pdf_target_file, pdf_output).expect("Unable to write output pdf");
