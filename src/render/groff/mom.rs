@@ -232,11 +232,11 @@ impl Renderer<'_> {
             }
             Tree::Empty() => String::new(),
             Tree::List(b_exp, _) => {
-                format!(".LIST\n.SHIFT_LIST 18p\n{}.LIST OFF\n", rnd!(*b_exp))
+                format!(".LIST\n.SHIFT_LIST 18p\n.PARA_INDENT 0\n{}.LIST OFF\n", rnd!(*b_exp))
             }
             Tree::ListItem(b_exp, _) => match *b_exp {
                 Tree::Empty() => String::new(),
-                _ => format!(".ITEM\n{}\n", rnd!(*b_exp)),
+                _ => format!(".ITEM\n.PP\n{}\n", rnd!(*b_exp)),
             },
             Tree::MetaDataBlock(b_exp) => rnd!(*b_exp),
             Tree::MetaDataItem(key, value) => {
