@@ -57,7 +57,7 @@ fn main() -> std::io::Result<()> {
     ));
 
     let parsed_opts = p.parse(env::args().collect());
-    parsed_opts.handle_standard_flags("matopdf", "0.1.1");
+    parsed_opts.handle_standard_flags("matopdf", env!("CARGO_PKG_VERSION"));
     mato::log::set_log_level(establish_log_level(&parsed_opts));
 
     // TODO support multiple markdown input files

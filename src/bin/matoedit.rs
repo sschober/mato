@@ -3,7 +3,7 @@ use std::env;
 use mato::term_cli::TermCli;
 use mato::{die, establish_log_level, mato_dbg, opt_val, opts};
 
-const VERSION: &str = "0.1.1";
+const VERSION: &str = env!("CARGO_PKG_VERSION");
 const PROG_NAME: &str = "matoedit";
 
 /// spawns a new wezterm pane in a new tab and opens the
