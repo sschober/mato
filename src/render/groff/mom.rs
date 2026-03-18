@@ -62,7 +62,7 @@ impl Renderer<'_> {
         match exp {
             Tree::Document(dt, be) => {
                 self.doc_type = dt.clone();
-                let mut result = format!("{}", dt);
+                let mut result = format!("{dt}");
 
                 if !self.config.skip_preamble {
                     result = format!(
@@ -82,7 +82,7 @@ impl Renderer<'_> {
                     result = format!("{}.{} {}\n", result, key.to_uppercase(), value);
                 }
                 if !self.ctx.is_empty() && !self.ctx.contains_key("pdf title") {
-                    result = format!("{}.PDF_TITLE \"\\*[$TITLE]\"\n", result)
+                    result = format!("{result}.PDF_TITLE \"\\*[$TITLE]\"\n")
                 }
                 match dt {
                     DocType::CHAPTER | DocType::SLIDES => (),
@@ -91,7 +91,7 @@ impl Renderer<'_> {
                         // end alread with one
                         let new_line = if result.ends_with("\n") { "" } else { "\n" };
                         // eprintln!("new_line: '{}'", new_line);
-                        result = format!("{}{}.START\n", result, new_line);
+                        result = format!("{result}{new_line}.START\n");
                     }
                 }
                 format!("{}{}", result, rnd_pf!(*be, parent_format))
@@ -165,7 +165,7 @@ impl Renderer<'_> {
                     }
                     _ => {
                         let name_string = if !name.is_empty() {
-                            format!(" NAMED {}", name)
+                            format!(" NAMED {name}")
                         } else {
                             "".to_string()
                         };

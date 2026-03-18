@@ -41,9 +41,9 @@ impl Render for ManDocRenderer {
                         // the first level 1 (read ##) header ends the title section
                         self.in_title = false;
                         self.title_open = false;
-                        format!(".Nd {}", section_header_name)
+                        format!(".Nd {section_header_name}")
                     } else {
-                        format!(".Sh {}", section_header_name)
+                        format!(".Sh {section_header_name}")
                     }
                 }
                 2 => format!(".Ss {}", self.render(*t)),
@@ -52,7 +52,7 @@ impl Render for ManDocRenderer {
             crate::syntax::Tree::Bold(t) => format!("\\c\n.B {}\\c\n", self.render(*t)),
             crate::syntax::Tree::Italic(t) => {
                 let italic_text = self.render(*t);
-                format!("\\c\n.I {}\\c\n", italic_text)
+                format!("\\c\n.I {italic_text}\\c\n")
             }
             crate::syntax::Tree::BoldItalic(_) => todo!(),
             crate::syntax::Tree::SmallCaps(_) => todo!(),

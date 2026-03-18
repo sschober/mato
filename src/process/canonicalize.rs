@@ -85,7 +85,7 @@ fn replace_small_caps(s: String) -> String {
     let mut result = String::new();
     for c in s.chars() {
         if c.is_ascii_alphabetic() {
-            result.push_str(&format!("\\[{}.sc]", c));
+            result.push_str(&format!("\\[{c}.sc]"));
         } else {
             result.push(c);
         }

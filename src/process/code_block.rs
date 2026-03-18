@@ -48,7 +48,7 @@ fn process_pic(content: Tree) -> Tree {
         Tree::Literal(value) => value,
         _ => "".to_string(),
     };
-    let pic_input = format!(".PS\n{}\n.PE\n", code_block_contents);
+    let pic_input = format!(".PS\n{code_block_contents}\n.PE\n");
     {
         // this lexical block is only here to let stdin run out of scope to be closed...
         let mut stdin = child.stdin.take().expect("Failed to open stdin for pdfmom");

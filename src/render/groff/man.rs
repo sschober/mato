@@ -40,7 +40,7 @@ impl Render for ManRenderer {
                             self.sy_open = false;
                         }
                     };
-                    format!("{}.\n.SH {}", sy_closing, section_header_name)
+                    format!("{sy_closing}.\n.SH {section_header_name}")
                 }
                 2 => format!(".SS {}\n", self.render(*t)),
                 _ => self.render(*t),
@@ -48,7 +48,7 @@ impl Render for ManRenderer {
             crate::syntax::Tree::Bold(t) => format!("\\c\n.B {}\\c\n", self.render(*t)),
             crate::syntax::Tree::Italic(t) => {
                 let italic_text = self.render(*t);
-                format!("\\c\n.I {}\\c\n", italic_text)
+                format!("\\c\n.I {italic_text}\\c\n")
             }
             crate::syntax::Tree::BoldItalic(_) => todo!(),
             crate::syntax::Tree::SmallCaps(_) => todo!(),

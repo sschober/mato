@@ -21,13 +21,13 @@ impl Renderer {
         for word in s.split(&[' ', '\n']) {
             if self.char_index + word.len() < col {
                 if !result.is_empty() && result != " " {
-                    result = format!("{} {}", result, word);
+                    result = format!("{result} {word}");
                 } else {
-                    result = format!("{}{}", result, word);
+                    result = format!("{result}{word}");
                 }
                 self.char_index += word.len();
             } else {
-                result = format!("{}\n{}", result, word);
+                result = format!("{result}\n{word}");
                 self.char_index = word.len();
             }
             self.char_index += 1;
@@ -50,9 +50,9 @@ impl Render for Renderer {
                 if bold_text.starts_with('\n') {
                     bold_text.remove(0);
                     self.char_index += 1;
-                    format!("\n*{}*", bold_text)
+                    format!("\n*{bold_text}*")
                 } else {
-                    format!("*{}*", bold_text)
+                    format!("*{bold_text}*")
                 }
             }
             Tree::Italic(b_exp) => format!("_{}_", self.render(*b_exp)),
@@ -88,7 +88,7 @@ impl Render for Renderer {
                 format!("{}{}", indent, self.render(*b_exp))
             }
             Tree::MetaDataBlock(b_exp) => format!("---\n{}---\n\n", self.render(*b_exp)),
-            Tree::MetaDataItem(key, value) => format!("{}: {}\n", key, value),
+            Tree::MetaDataItem(key, value) => format!("{key}: {value}\n"),
             Tree::Image(b1, b2, b3) => format!(
                 "![{}|{}]({})",
                 self.render(*b1),
