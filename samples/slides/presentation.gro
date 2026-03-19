@@ -9,7 +9,7 @@
 
 .QUOTE_STYLE QUAD LEFT
 .CODE_SIZE 80
-.CODE_FAMILY IosevkaTerm
+.CODE_FAMILY IosevkaCurlySlab
 .NEWCOLOR grey RGB #dddddd
 .QUAD LEFT
 .AUTOLEAD 2
@@ -95,7 +95,7 @@ Define code style
 .CODE
 \&.QUOTE_STYLE QUAD LEFT
 \&.CODE_SIZE 80
-\&.CODE_FAMILY IosevkaTerm
+\&.CODE_FAMILY IosevkaCurlySlab
 \&.START
 
 .QUOTE OFF

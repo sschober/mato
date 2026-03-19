@@ -60,7 +60,7 @@ Define code style
 ```
 .QUOTE_STYLE QUAD LEFT
 \&.CODE_SIZE 80
-\&.CODE_FAMILY IosevkaTerm
+\&.CODE_FAMILY IosevkaCurlySlab
 \&.START
 
 ```
