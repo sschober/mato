@@ -386,3 +386,124 @@ mod golden_tests {
 
     // Skipped: samples/man/ — uses the man/mandoc renderer, not the mom renderer.
 }
+
+/// End-to-end PDF rendering tests using `groff -Z` intermediate ditroff output
+/// as the golden format.
+///
+/// `groff -Z` produces deterministic, human-readable device-independent troff
+/// output that captures all layout decisions without timestamps, making it ideal
+/// for regression testing.
+///
+/// These tests are marked `#[ignore]` because they require `groff` to be present
+/// in PATH.  Run them explicitly with:
+///
+///   cargo test --bin matopdf -- --ignored
+///
+/// To regenerate golden files after an intentional rendering change:
+///
+///   UPDATE_GOLDEN=1 cargo test --bin matopdf -- --ignored
+#[cfg(test)]
+mod golden_pdf_tests {
+    use mato::{config::Config, Render};
+    use std::path::{Path, PathBuf};
+    use std::process::{Command, Stdio};
+    use std::io::Write;
+
+    /// Returns `false` (and prints a message) when `groff` is not in PATH,
+    /// so callers can skip gracefully rather than panic.
+    fn groff_available() -> bool {
+        mato::find_in_path("groff").is_some()
+    }
+
+    /// Transform `.md` → groff mom source, then pipe through `groff -Z` to
+    /// obtain deterministic intermediate ditroff output.
+    fn to_ditroff(md_path: &str) -> String {
+        let mut config = Config::default();
+        config.source_file = md_path.to_string();
+        let input = std::fs::read_to_string(md_path)
+            .unwrap_or_else(|e| panic!("could not read {md_path}: {e}"));
+        let mut chain = super::create_default_chain(&config, true);
+        let mut render: Box<dyn Render + '_> = Box::new(super::groff::mom::new(&config));
+        let groff_src = mato::transform(&mut render, &mut chain, &config, &input);
+
+        let mut child = Command::new("groff")
+            .args(["-Z", "-Tpdf", "-mom", "-mden", "-K", "UTF-8"])
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .expect("failed to spawn groff -Z");
+
+        {
+            let mut stdin = child.stdin.take().expect("failed to open groff stdin");
+            stdin.write_all(groff_src.as_bytes()).expect("failed to write to groff stdin");
+        }
+
+        let out = child.wait_with_output().expect("groff -Z failed");
+        if !out.stderr.is_empty() {
+            eprintln!("groff -Z stderr: {}", String::from_utf8_lossy(&out.stderr));
+        }
+        String::from_utf8(out.stdout).expect("groff -Z output was not valid UTF-8")
+    }
+
+    fn golden_path(md_path: &str) -> PathBuf {
+        Path::new(md_path).with_extension("dit")
+    }
+
+    fn assert_golden(md_path: &str) {
+        if !groff_available() {
+            eprintln!("skipping {md_path}: groff not found in PATH");
+            return;
+        }
+
+        let actual = to_ditroff(md_path);
+        let golden = golden_path(md_path);
+
+        if std::env::var("UPDATE_GOLDEN").is_ok() {
+            std::fs::write(&golden, &actual)
+                .unwrap_or_else(|e| panic!("could not write {}: {e}", golden.display()));
+            return;
+        }
+
+        let expected = std::fs::read_to_string(&golden).unwrap_or_else(|_| {
+            panic!(
+                "golden file {} not found — run with UPDATE_GOLDEN=1 to create it",
+                golden.display()
+            )
+        });
+        assert_eq!(actual, expected, "ditroff output changed for {md_path}");
+    }
+
+    // simple/
+    #[test] #[ignore] fn simple_minimal()            { assert_golden("samples/simple/minimal.md"); }
+    #[test] #[ignore] fn simple_doc()                { assert_golden("samples/simple/doc.md"); }
+    #[test] #[ignore] fn simple_list()               { assert_golden("samples/simple/list.md"); }
+    #[test] #[ignore] fn simple_heading()            { assert_golden("samples/simple/heading.md"); }
+    #[test] #[ignore] fn simple_footnote()           { assert_golden("samples/simple/footnote.md"); }
+    #[test] #[ignore] fn simple_sidenote()           { assert_golden("samples/simple/sidenote.md"); }
+    #[test] #[ignore] fn simple_codeblock()          { assert_golden("samples/simple/codeblock.md"); }
+    #[test] #[ignore] fn simple_missing_dot()        { assert_golden("samples/simple/missing-dot.md"); }
+    #[test] #[ignore] fn simple_paragraph_no_break() { assert_golden("samples/simple/paragraph-no-break.md"); }
+
+    // font-features/
+    #[test] #[ignore] fn font_bold_italics_code()    { assert_golden("samples/font-features/bold-italics-code.md"); }
+    #[test] #[ignore] fn font_drop_caps()            { assert_golden("samples/font-features/drop-caps.md"); }
+    #[test] #[ignore] fn font_old_style_figures()    { assert_golden("samples/font-features/old-style-figures.md"); }
+    #[test] #[ignore] fn font_small_caps()           { assert_golden("samples/font-features/small-caps.md"); }
+
+    // references/
+    #[test] #[ignore] fn references()               { assert_golden("samples/references/references.md"); }
+
+    // showcase/
+    #[test] #[ignore] fn showcase()                 { assert_golden("samples/showcase/doc.md"); }
+
+    // refactorings/
+    #[test] #[ignore] fn refactoring_lose_context() { assert_golden("samples/refactorings/lose_the_context.md"); }
+    #[test] #[ignore] fn refactoring_warp_at()      { assert_golden("samples/refactorings/warp_at.md"); }
+
+    // chapters/
+    #[test] #[ignore] fn chapters()                 { assert_golden("samples/chapters/chapters.md"); }
+
+    // slides/
+    #[test] #[ignore] fn slides()                   { assert_golden("samples/slides/presentation.md"); }
+}
