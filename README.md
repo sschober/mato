@@ -2,14 +2,14 @@
 
 [^1]:
     Actually, the acronym is somewhat of a historical mess. Originally, this tool
-    started out as `matote`, which read "markdown to TeX ". Then, I further evolutionized[^2]
+    started out as `matote`, which read "markdown to TeX". Then, I further evolutionized[^2]
     it into a framework, which could emit groff source code as well, so "framework" fit
     well in that case. Then, I dropped the TeX emitting part, thus "framework" no longer
     fits, but I am tired of renaming the thing in the meantime.
 
 [^2]: Ah, is that even a word? I think, you get what I mean.
 
-![mato logo](assets/logo.svg)
+![mato logo](assets/logo.png)
 
 With `matopdf`, you can transform markdown formatted text into PDFs,
 and even more.
@@ -27,7 +27,7 @@ graph LR
 md -- matogro --> groff::mom -- pdfmom --> PDF
 ```
 
-The `groff::mom` back-end is quiet fast: It
+The `groff::mom` back-end is quite fast: It
 usually takes only around 1 second to process the input and produce
 the resulting PDF.
 
@@ -46,10 +46,10 @@ standard styles. Settings therein can be overwritten by placing a
 To test `matopdf`, the `groff` based transformer, use:
 
 ```
-cargo run --bin matopdf sample/src/index.md
+cargo run --bin matopdf samples/simple/minimal.md
 ```
 
-This will result in a file called `sample/src/index.pdf` with the
+This will result in a file called `samples/simple/minimal.pdf` with the
 rendering, if all went well.
 
 ## Installation
@@ -60,22 +60,56 @@ Just use
 cargo install --path .
 ```
 
-to install `matopdf`, `matote` and `matofmt` and to your rust binary
-directory.
+to install `matopdf`, `matogro`, `matofmt`, `matoedit` and `matochk` to your
+rust binary directory.
+
+### Checking your installation
+
+Run `matochk` to verify that `groff` is installed and that the required fonts
+are available:
+
+```
+matochk
+```
+
+It checks for:
+- `groff` on your `PATH`
+- Required font families (Minion Pro and Iosevka Curly Slab) in groff's devpdf directories
+
+If fonts are missing, run `mato-install-fonts.sh` to install them.
+
+## Binaries
+
+| Binary | Description |
+|--------|-------------|
+| `matopdf` | Transforms a markdown file into a PDF |
+| `matogro` | Renders markdown to groff/mom source (stdout), similar to groff's `-T` interface |
+| `matofmt` | Formats/normalises a markdown file |
+| `matoedit` | WYSIWYG editing orchestrator — opens editor and live PDF preview side by side |
+| `matochk` | Checks that groff and required fonts are installed |
+
+## Image support
+
+Images can be embedded in markdown using the standard syntax. JPEG and PDF images are
+supported directly by the groff back-end via `.PDF_IMAGE`. SVG images are automatically
+converted to PDF before embedding.
+
+```markdown
+![Alt text|widthxheight](image.pdf)
+```
+
+See [`samples/images/`](samples/images/) for a working example.
 
 ## Watch mode
 
-There is also a super-duper-watch-mode, which can be activated via
+There is also a super-duper-watch mode, which can be activated via
 the `-w` flag. If activated, the source file will be watched and if written
 to will be reprocessed. The cool thing about the chosen solution is, that
 this does not require polling, but the code is being signalled by the OS
-of changes to files. If you are interessted, how this is being done
-take a look at [`watch.rs`](src/watch.rs). The feature is called
-kernel queues, and I think it is a BSD innovation. For further information
-consult the 
-[apple documentation](https://developer.apple.com/library/archive/documentation/Darwin/Conceptual/FSEvents_ProgGuide/KernelQueues/KernelQueues.html) or
-or [this](https://people.freebsd.org/~jmg/kq.html)
-page by a freebsd contributer.
+of changes to files.
+
+On Linux, this uses `inotify`. On macOS and FreeBSD, it uses kernel queues
+(kqueue). If you are interested, take a look at [`src/watch.rs`](src/watch.rs).
 
 ### WYSIWYG Experience
 
@@ -84,7 +118,7 @@ The watch mode can be used to create a kind of WYSIWYG experience when writing.
 ![WYSIWYG editing](doc/WYSIWYG-editing.png)
 
 The processing and update time of the PDF is usually around and
-below 1 second, so this is not instantaneous, but good enough, 
+below 1 second, so this is not instantaneous, but good enough,
 for me at least.
 
 In the image above, I used [kitty](https://sw.kovidgoyal.net/kitty/)
@@ -92,7 +126,7 @@ and `termpdf.py` to display the PDF side by side with the markdown
 source file.
 
 There is a binary, `matoedit`, which creates a setup like the above
-in a supported terminal (`kitty` and `wezterm` at the moment)
+in a supported terminal (`wezterm` and `alacritty` at the moment)
 automatically.
 
 ## Developing
@@ -109,7 +143,7 @@ binary sources, I'd recommend [src/bin/matopdf.rs](src/bin/matopdf.rs).
 
 There, mato is used to create groff source code from markdown
 markup and then `pdfmom`, a `groff`-based script, is used to
-creat the final PDF:
+create the final PDF:
 
 ```mermaid
 graph LR
@@ -134,7 +168,7 @@ More concretely, this means for the following markdown document:
 ```markdown
 # A heading
 
-Some text in a pragraph.
+Some text in a paragraph.
 ```
 
 the parser constructs the following syntax tree:
@@ -154,7 +188,7 @@ The syntax tree can be dumped when setting the loglevel trace
 with the `-t` command line option. Its textual representation is as follows:
 
 ```
-Document(DEFAULT, Cat(Cat(Heading(Literal("A heading"), 0), LineBreak), Literal("Some text in a pragraph.")))
+Document(DEFAULT, Cat(Cat(Heading(Literal("A heading"), 0), LineBreak), Literal("Some text in a paragraph.")))
 ```
 
 This is then rendered to the following groff/mom source:
@@ -170,7 +204,7 @@ This is then rendered to the following groff/mom source:
 .FT R
 .DRH
 
-Some text in a pragraph.
+Some text in a paragraph.
 ```
 
 # Author
