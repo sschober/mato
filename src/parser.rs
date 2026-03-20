@@ -599,6 +599,7 @@ impl Parser<'_> {
             self.consume(b')');
             image(caption, path, size_spec)
         } else {
+            self.consume(b'!');
             lit("!")
         }
     }
@@ -916,8 +917,13 @@ mod tests {
         );
     }
 
-    // NOTE: a bare `!` not followed by `[` triggers an infinite loop in parse_image because the
-    // character is never consumed. This is a known pre-existing parser bug.
+    #[test]
+    fn bang_without_bracket_is_literal() {
+        assert_eq!(
+            parse_to_ast("!hello"),
+            "Document(DEFAULT, Cat(Literal(\"!\"), Literal(\"hello\")))"
+        );
+    }
 
     // --- Footnote / sidenotes / chapter marks ---
 
