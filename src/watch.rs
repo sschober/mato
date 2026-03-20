@@ -129,6 +129,9 @@ mod imp {
     const IN_CLOSE_WRITE: u32 = 0x0000_0008;
     const IN_DELETE_SELF: u32 = 0x0000_0400;
     const IN_MOVE_SELF: u32 = 0x0000_0800;
+    // sent by the kernel when a watch descriptor is removed; must be filtered out
+    // to avoid spurious wake-ups on the next wait call
+    const IN_IGNORED: u32 = 0x0000_8000;
 
     extern "C" {
         fn inotify_init() -> i32;
@@ -152,19 +155,52 @@ mod imp {
 
         pub fn wait_for_write_on_file_name(&self, file_name: &str) -> std::io::Result<()> {
             let path = CString::new(file_name).expect("file name contains null byte");
-            let wd = unsafe {
-                inotify_add_watch(
-                    self.fd,
-                    path.as_ptr(),
-                    IN_CLOSE_WRITE | IN_DELETE_SELF | IN_MOVE_SELF,
-                )
-            };
-            assert!(wd >= 0, "{}", std::io::Error::last_os_error());
             // buffer must fit at least one inotify_event (16 bytes header + name)
             let mut buf = [0u8; 256];
-            let res = unsafe { read(self.fd, buf.as_mut_ptr(), buf.len()) };
-            assert!(res >= 0, "{}", std::io::Error::last_os_error());
-            unsafe { inotify_rm_watch(self.fd, wd) };
+            loop {
+                // Add (or re-add after an atomic replace) a watch on the current
+                // inode.  If the file is temporarily absent mid-rename, spin until
+                // it reappears.
+                let wd = loop {
+                    let wd = unsafe {
+                        inotify_add_watch(
+                            self.fd,
+                            path.as_ptr(),
+                            IN_CLOSE_WRITE | IN_DELETE_SELF | IN_MOVE_SELF,
+                        )
+                    };
+                    if wd >= 0 {
+                        break wd;
+                    }
+                    // File doesn't exist yet (editor is mid-rename); retry shortly.
+                    std::thread::sleep(std::time::Duration::from_millis(10));
+                };
+
+                let res = unsafe { read(self.fd, buf.as_mut_ptr(), buf.len()) };
+                assert!(res >= 0, "{}", std::io::Error::last_os_error());
+                // inotify_event layout: wd(i32) mask(u32) cookie(u32) len(u32) name[]
+                // mask sits at byte offset 4
+                let mask = u32::from_ne_bytes([buf[4], buf[5], buf[6], buf[7]]);
+
+                if mask & IN_IGNORED != 0 {
+                    // Stale event from a previous inotify_rm_watch; discard and
+                    // loop to re-add the watch.
+                    continue;
+                }
+
+                if mask & (IN_DELETE_SELF | IN_MOVE_SELF) != 0 {
+                    // The editor replaced the file atomically (e.g. neovim renames
+                    // a temp file over the original).  Remove the now-stale watch
+                    // and loop: we'll re-add a watch on the new inode and wait for
+                    // its IN_CLOSE_WRITE before triggering a render.
+                    unsafe { inotify_rm_watch(self.fd, wd) };
+                    continue;
+                }
+
+                // IN_CLOSE_WRITE on the current inode: the file is fully written.
+                unsafe { inotify_rm_watch(self.fd, wd) };
+                break;
+            }
             Ok(())
         }
     }
