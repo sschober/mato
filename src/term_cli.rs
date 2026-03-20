@@ -1,5 +1,6 @@
 use std::env;
 
+use crate::alacritty_cli::AlaCli;
 use crate::wezterm_cli::{WTCli, WTPane};
 
 const DEFAULT_EDITOR: &str = "nvim";
@@ -8,6 +9,7 @@ const DEFAULT_EDITOR: &str = "nvim";
 /// delegates calls to concrete cli interface implementations.
 pub enum TermCli {
     WezTerm,
+    Alacritty,
     Kitty,
     Other,
 }
@@ -26,6 +28,8 @@ impl TermCli {
             TermCli::WezTerm
         } else if env::var("KITTY_WINDOW_ID").is_ok() {
             panic!("kitty not supported.");
+        } else if env::var("ALACRITTY_WINDOW_ID").is_ok() {
+            TermCli::Alacritty
         } else {
             panic!("unknown terminal not supported.");
         }
@@ -34,13 +38,18 @@ impl TermCli {
     pub fn get_active_windows_handle(&self) -> usize {
         match self {
             Self::WezTerm => WTCli::new().active_pane().id.parse::<usize>().unwrap(),
+            // alacritty has no remote api — the editor runs in the current terminal
+            Self::Alacritty => 0,
             _ => 0,
         }
     }
     /// opens an editor and blocks on the call
     pub fn open_editor(&self, source_file: &str) {
-        if let Self::WezTerm = self {
-            crate::spawn(vec![&get_editor(), source_file]);
+        match self {
+            Self::WezTerm | Self::Alacritty => {
+                crate::spawn(vec![&get_editor(), source_file]);
+            }
+            _ => {}
         }
     }
 
@@ -51,6 +60,11 @@ impl TermCli {
                 let wt_cli = WTCli::new();
                 let editor_pane = wt_cli.spawn(&format!("{} {}", get_editor(), source_file));
                 editor_pane.id.parse::<usize>().unwrap()
+            }
+            Self::Alacritty => {
+                let window = AlaCli::new()
+                    .spawn_window(&format!("{} {}", get_editor(), source_file));
+                window.pid as usize
             }
             _ => 0,
         }
@@ -69,6 +83,11 @@ impl TermCli {
                     .exec();
                 mato_pane.id.parse::<usize>().unwrap()
             }
+            Self::Alacritty => {
+                let window = AlaCli::new()
+                    .spawn_window(&format!("matopdf -w -V -l {lang} {source_file}"));
+                window.pid as usize
+            }
             _ => 0,
         }
     }
@@ -86,6 +105,13 @@ impl TermCli {
                     .exec();
                 termpdf_pane.id.parse::<usize>().unwrap()
             }
+            Self::Alacritty => {
+                std::process::Command::new("xdg-open")
+                    .arg(target_file)
+                    .spawn()
+                    .expect("failed to open pdf");
+                0
+            }
             _ => 0,
         }
     }
@@ -93,11 +119,16 @@ impl TermCli {
     /// sets the focus to the given pane or window
     /// identified by the given handle
     pub fn focus(&self, t_handle: usize) {
-        if let Self::WezTerm = self {
-            let pane = WTPane {
-                id: t_handle.to_string(),
-            };
-            pane.activate();
+        match self {
+            Self::WezTerm => {
+                let pane = WTPane {
+                    id: t_handle.to_string(),
+                };
+                pane.activate();
+            }
+            // no-op for alacritty: focus management is left to the window manager
+            Self::Alacritty => {}
+            _ => {}
         }
     }
 
@@ -110,6 +141,11 @@ impl TermCli {
                     id: t_handle.to_string(),
                 };
                 pane.kill();
+            }
+            TermCli::Alacritty => {
+                if t_handle != 0 {
+                    crate::alacritty_cli::AlaWindow { pid: t_handle as u32 }.kill();
+                }
             }
             TermCli::Kitty => todo!(),
             TermCli::Other => todo!(),

@@ -23,6 +23,7 @@ pub mod process;
 
 pub mod render;
 pub mod syntax;
+pub mod alacritty_cli;
 pub mod term_cli;
 pub mod watch;
 pub mod wezterm_cli;

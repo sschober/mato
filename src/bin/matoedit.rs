@@ -38,6 +38,16 @@ fn main() -> std::io::Result<()> {
     // ACQUIRE cli handle, panics if not supported
     let term_cli = TermCli::get();
 
+    // CHECK required tools are available
+    if mato::find_in_path("groff").is_none() {
+        die!("groff not found in PATH");
+    }
+    if let TermCli::WezTerm = term_cli {
+        if mato::find_in_path("termpdf.py").is_none() {
+            die!("termpdf.py not found in PATH");
+        }
+    }
+
     // we create the source file in any case, so that we can
     // immediately transform it.
     mato::create_if_not_exists(&source_file);
