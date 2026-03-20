@@ -1,3 +1,6 @@
+use std::path::Path;
+use std::process::Command;
+
 use crate::{
     config::Config,
     m_dbg, m_trc,
@@ -40,11 +43,45 @@ impl ImageConverter<'_> {
                         .to_string();
                 }
                 m_dbg!("resolved path: {}", resolved_path);
+                let resolved_path = self.convert_svg_if_needed(&resolved_path);
                 lit(&resolved_path)
             }
             _ => path,
         };
         image(caption, path, size_spec)
+    }
+
+    /// if `path` points to an SVG file, converts it to PDF using `rsvg-convert`
+    /// and returns the PDF path. skips conversion when the PDF is already up to date.
+    fn convert_svg_if_needed(&self, path: &str) -> String {
+        if !path.to_lowercase().ends_with(".svg") {
+            return path.to_string();
+        }
+        let svg_path = Path::new(path);
+        let pdf_path = svg_path.with_extension("pdf");
+
+        let needs_conversion = if pdf_path.exists() {
+            let svg_mtime = svg_path.metadata().and_then(|m| m.modified()).ok();
+            let pdf_mtime = pdf_path.metadata().and_then(|m| m.modified()).ok();
+            match (svg_mtime, pdf_mtime) {
+                (Some(svg_t), Some(pdf_t)) => svg_t > pdf_t,
+                _ => true,
+            }
+        } else {
+            true
+        };
+
+        if needs_conversion {
+            m_dbg!("converting svg to pdf: {}", path);
+            Command::new("rsvg-convert")
+                .args(["-f", "pdf", "-o", pdf_path.to_str().unwrap(), path])
+                .status()
+                .expect("failed to run rsvg-convert");
+        } else {
+            m_dbg!("svg pdf cache hit: {}", pdf_path.display());
+        }
+
+        pdf_path.to_str().unwrap().to_string()
     }
 }
 impl Process for ImageConverter<'_> {
