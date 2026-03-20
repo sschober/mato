@@ -758,4 +758,296 @@ mod tests {
             "Document(DEFAULT, Bold(Cat(Literal(\"this is \"), Italic(Cat(Literal(\"wrong\"), Bold(Cat(Literal(\" nesting\"), Italic(Empty))))))))"
         )
     }
+
+    // --- Headings ---
+
+    #[test]
+    fn heading_level_1() {
+        assert_eq!(
+            parse_to_ast("# My Title\n"),
+            "Document(DEFAULT, Cat(Cat(Heading(Literal(\"My Title\"), 0, \"\"), VSpace), LineBreak))"
+        );
+    }
+
+    #[test]
+    fn heading_level_2() {
+        assert_eq!(
+            parse_to_ast("## Sub\n"),
+            "Document(DEFAULT, Cat(Cat(Heading(Literal(\"Sub\"), 1, \"\"), VSpace), LineBreak))"
+        );
+    }
+
+    #[test]
+    fn heading_level_3() {
+        assert_eq!(
+            parse_to_ast("### Deep\n"),
+            "Document(DEFAULT, Cat(Cat(Heading(Literal(\"Deep\"), 2, \"\"), VSpace), LineBreak))"
+        );
+    }
+
+    #[test]
+    fn heading_with_named_anchor() {
+        assert_eq!(
+            parse_to_ast("# Title/anchor/\n"),
+            "Document(DEFAULT, Cat(Cat(Heading(Literal(\"Title\"), 0, \"anchor\"), VSpace), LineBreak))"
+        );
+    }
+
+    // --- Lists (unordered with *) ---
+
+    #[test]
+    fn list_single_item_star() {
+        assert_eq!(
+            parse_to_ast("* item\n"),
+            "Document(DEFAULT, List(Cat(Empty, ListItem(Cat(Empty, Literal(\"item\")), 0)), 0))"
+        );
+    }
+
+    #[test]
+    fn list_two_items_star() {
+        assert_eq!(
+            parse_to_ast("* a\n* b\n"),
+            "Document(DEFAULT, List(Cat(Cat(Empty, ListItem(Cat(Empty, Literal(\"a\")), 0)), ListItem(Cat(Empty, Literal(\"b\")), 0)), 0))"
+        );
+    }
+
+    #[test]
+    fn list_single_item_dash() {
+        assert_eq!(
+            parse_to_ast("- item\n"),
+            "Document(DEFAULT, List(Cat(Empty, ListItem(Cat(Empty, Literal(\"item\")), 0)), 0))"
+        );
+    }
+
+    #[test]
+    fn list_nested() {
+        assert_eq!(
+            parse_to_ast("* outer\n  * inner\n"),
+            "Document(DEFAULT, List(Cat(Cat(Empty, ListItem(Cat(Empty, Literal(\"outer\")), 0)), List(Cat(Empty, ListItem(Cat(Empty, Literal(\"inner\")), 1)), 1)), 0))"
+        );
+    }
+
+    #[test]
+    fn list_multiline_item() {
+        assert_eq!(
+            parse_to_ast("* line one\n  continues\n"),
+            "Document(DEFAULT, List(Cat(Empty, ListItem(Cat(Cat(Cat(Empty, Literal(\"line one\")), Literal(\"\\n\")), Literal(\"continues\")), 0)), 0))"
+        );
+    }
+
+    // --- Inline code ---
+
+    #[test]
+    fn inline_code() {
+        assert_eq!(
+            parse_to_ast("`foo`"),
+            "Document(DEFAULT, InlineCode(Literal(\"foo\")))"
+        );
+    }
+
+    #[test]
+    fn inline_code_dot_prefix() {
+        // a backtick-code starting with '.' must escape the dot
+        assert_eq!(
+            parse_to_ast("`.PP`"),
+            "Document(DEFAULT, InlineCode(Cat(EscapeLit(\".\"), Literal(\"PP\"))))"
+        );
+    }
+
+    // --- Code block ---
+
+    #[test]
+    fn code_block_plain() {
+        assert_eq!(
+            parse_to_ast("```\nhello\n```\n"),
+            "Document(DEFAULT, Cat(CodeBlock(Empty, PreformattedLiteral(\"hello\\n\")), LineBreak))"
+        );
+    }
+
+    #[test]
+    fn code_block_with_type() {
+        assert_eq!(
+            parse_to_ast("```rust\nfn f() {}\n```\n"),
+            "Document(DEFAULT, Cat(CodeBlock(Literal(\"rust\"), PreformattedLiteral(\"fn f() {}\\n\")), LineBreak))"
+        );
+    }
+
+    // --- Links ---
+
+    #[test]
+    fn hyperlink() {
+        assert_eq!(
+            parse_to_ast("[text](http://example.com)"),
+            "Document(DEFAULT, HyperRef(Literal(\"text\"), Literal(\"http://example.com\")))"
+        );
+    }
+
+    #[test]
+    fn internal_link() {
+        assert_eq!(
+            parse_to_ast("[text](#anchor)"),
+            "Document(DEFAULT, DocRef(\"anchor\", Literal(\"text\")))"
+        );
+    }
+
+    #[test]
+    fn bare_brackets_not_link() {
+        assert_eq!(
+            parse_to_ast("[not a link]"),
+            "Document(DEFAULT, Cat(Cat(Literal(\"[\"), Literal(\"not a link\")), Literal(\"]\")))"
+        );
+    }
+
+    // --- Images ---
+
+    #[test]
+    fn image_basic() {
+        assert_eq!(
+            parse_to_ast("![caption](path/to/img.png)"),
+            "Document(DEFAULT, Image(Literal(\"caption\"), Literal(\"path/to/img.png\"), ImageSizeSpec(Literal(\"100\"), Literal(\"100\"))))"
+        );
+    }
+
+    #[test]
+    fn image_with_size() {
+        assert_eq!(
+            parse_to_ast("![alt|200x150](img.png)"),
+            "Document(DEFAULT, Image(Literal(\"alt\"), Literal(\"img.png\"), ImageSizeSpec(Literal(\"200\"), Literal(\"150\"))))"
+        );
+    }
+
+    // NOTE: a bare `!` not followed by `[` triggers an infinite loop in parse_image because the
+    // character is never consumed. This is a known pre-existing parser bug.
+
+    // --- Footnote / sidenotes / chapter marks ---
+
+    #[test]
+    fn footnote() {
+        assert_eq!(
+            parse_to_ast("^(note text)"),
+            "Document(DEFAULT, Footnote(Literal(\"note text\")))"
+        );
+    }
+
+    #[test]
+    fn caret_without_paren_is_literal() {
+        assert_eq!(
+            parse_to_ast("^x"),
+            "Document(DEFAULT, Cat(Literal(\"^\"), Literal(\"x\")))"
+        );
+    }
+
+    #[test]
+    fn right_sidenote() {
+        assert_eq!(
+            parse_to_ast(">(side)\n"),
+            "Document(DEFAULT, Cat(RightSidenote(Literal(\"side\")), LineBreak))"
+        );
+    }
+
+    #[test]
+    fn chapter_mark() {
+        assert_eq!(
+            parse_to_ast(">>(1)\n"),
+            "Document(DEFAULT, ChapterMark(Literal(\"1\")))"
+        );
+    }
+
+    #[test]
+    fn gt_without_paren_is_literal() {
+        assert_eq!(
+            parse_to_ast(">x"),
+            "Document(DEFAULT, Cat(Literal(\">\"), Literal(\"x\")))"
+        );
+    }
+
+    // --- Formatting: bold, italic, small caps ---
+
+    #[test]
+    fn bold() {
+        assert_eq!(
+            parse_to_ast("*bold*"),
+            "Document(DEFAULT, Bold(Literal(\"bold\")))"
+        );
+    }
+
+    #[test]
+    fn italic() {
+        assert_eq!(
+            parse_to_ast("_italic_"),
+            "Document(DEFAULT, Italic(Literal(\"italic\")))"
+        );
+    }
+
+    #[test]
+    fn small_caps() {
+        assert_eq!(
+            parse_to_ast("{sc}"),
+            "Document(DEFAULT, SmallCaps(Literal(\"sc\")))"
+        );
+    }
+
+    // --- Pass-through ---
+
+    #[test]
+    fn pass_through() {
+        assert_eq!(
+            parse_to_ast("//raw groff"),
+            "Document(DEFAULT, Literal(\"raw groff\"))"
+        );
+    }
+
+    #[test]
+    fn single_slash_is_literal() {
+        assert_eq!(
+            parse_to_ast("/x"),
+            "Document(DEFAULT, Cat(Literal(\"/\"), Literal(\"x\")))"
+        );
+    }
+
+    // --- Metadata block ---
+
+    #[test]
+    fn metadata_block() {
+        assert_eq!(
+            parse_to_ast("---\ntitle: My Doc\n---\n"),
+            "Document(DEFAULT, MetaDataBlock(Cat(Empty, MetaDataItem(\"title\", \"My Doc\"))))"
+        );
+    }
+
+    // --- Paragraphs and line breaks ---
+
+    #[test]
+    fn double_newline_produces_paragraph() {
+        assert_eq!(
+            parse_to_ast("a\n\nb"),
+            "Document(DEFAULT, Cat(Cat(Literal(\"a\"), Cat(LineBreak, Paragraph)), Literal(\"b\")))"
+        );
+    }
+
+    #[test]
+    fn single_newline_is_linebreak() {
+        assert_eq!(
+            parse_to_ast("a\nb"),
+            "Document(DEFAULT, Cat(Cat(Literal(\"a\"), LineBreak), Literal(\"b\")))"
+        );
+    }
+
+    // --- Color spec ---
+
+    #[test]
+    fn color_spec() {
+        assert_eq!(
+            parse_to_ast("\\{red}"),
+            "Document(DEFAULT, Color(Literal(\"red\")))"
+        );
+    }
+
+    #[test]
+    fn backslash_without_brace_is_literal() {
+        assert_eq!(
+            parse_to_ast("\\x"),
+            "Document(DEFAULT, Cat(Literal(\"\\\\\"), Literal(\"x\")))"
+        );
+    }
 }
