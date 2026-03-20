@@ -3,6 +3,14 @@ set -e
 
 OS="$(uname -s)"
 
+REINSTALL=0
+for arg in "$@"; do
+  case "$arg" in
+    --reinstall) REINSTALL=1 ;;
+    *) echo "unknown argument: $arg" 1>&2; exit 1 ;;
+  esac
+done
+
 # ── Locate groff font directory ────────────────────────────────────────────────
 echo "checking for groff..."
 if ! command -v groff &>/dev/null; then
@@ -108,8 +116,12 @@ install_font_variant() {
   local dest="$GROFF_FONT_DIR/$groff_name"
 
   if [[ -f "$dest" ]]; then
-    echo "  $groff_name already installed, skipping"
-    return 0
+    if [[ "$REINSTALL" -eq 0 ]]; then
+      echo "  $groff_name already installed, skipping (use --reinstall to force)"
+      return 0
+    fi
+    echo "  $groff_name already installed, reinstalling..."
+    rm -f "$dest" "$pfa"
   fi
 
   echo "  processing $groff_name ($font_spec)..."
