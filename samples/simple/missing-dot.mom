@@ -1,0 +1,26 @@
+.DOCTYPE DEFAULT
+.PRINTSTYLE TYPESET
+\" fill with your presets
+\" see samples/preambles/bringhurst.mom
+.START
+.FT B
+.EW 2
+.HEADING 1 "31. Oktober 2024"
+.EW 0
+.FT R
+.DRH
+.FT B
+.EW 2
+.HEADING 2 "Donnerstag - Urlaub Maria Alm"
+.EW 0
+.FT R
+.EW 2
+.HEADING 3 "Nacht und Schlaf"
+.EW 0
+.SP 1v
+.PP
+Ich bin heute um \[seven.oldstyle] Uhr wieder aufgestanden und fühle mich fit und erholt.
+.EW 2
+.HEADING 3 "Alkoholabstinenz"
+.EW 0
+.SP 1v

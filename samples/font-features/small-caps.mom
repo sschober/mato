@@ -3,6 +3,4 @@
 \" fill with your presets
 \" see samples/preambles/bringhurst.mom
 .START
-This is the first sentence.
-.PP
-This is the second sentence in a new paragraph.
+Real small \[c.sc]\[a.sc]\[p.sc]\[s.sc] are a rare beast. Let's see how \[B.sc]\[I.sc]\[G.sc] caps look.

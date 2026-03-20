@@ -1,0 +1,45 @@
+.DOCTYPE DEFAULT
+.PRINTSTYLE TYPESET
+\" fill with your presets
+\" see samples/preambles/bringhurst.mom
+.START
+.TITLE Refactoring diary: warp_at
+.AUTHOR Sven Schober
+.FT B
+.EW 2
+.HEADING 1 "Motivation"
+.EW 0
+.FT R
+.DRH
+.SP 1v
+.PP
+Currently, the function \*[CODE]wrap_at()\*[CODE OFF] is part of the \*[CODE]markdown\*[CODE OFF] \*[CODE]
+Renderer\*[CODE OFF]\&.
+.PP
+
+.QUOTE_STYLE INDENT 1
+.QUOTE
+.CODE
+fn wrap_at(&mut self, s: String, col: usize) -> String {
+    let mut result = String::new();
+    if s.starts_with(' ') {
+        result = " ".to_string();
+        self.char_index += 1;
+    }
+    for word in s.split(&[' ', '\\n']) {
+        if self.char_index + word.len() < col {
+            if !result.is_empty() && result != " " {
+                result = format!("{} {}", result, word);
+            } else {
+                result = format!("{}{}", result, word);
+            }
+            self.char_index += word.len();
+        } else {
+            result = format!("{}\\n{}", result, word);
+            self.char_index = word.len();
+        }
+        self.char_index += 1;
+    }
+    result
+}
+.QUOTE OFF

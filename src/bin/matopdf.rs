@@ -301,3 +301,172 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+mod golden_tests {
+    use mato::{config::Config, Render};
+    use std::path::{Path, PathBuf};
+
+    /// Transform a sample `.md` file to groff using the mom renderer,
+    /// including any sibling preamble file found next to the source.
+    fn to_groff(md_path: &str) -> String {
+        let mut config = Config::default();
+        config.source_file = md_path.to_string();
+        let input = std::fs::read_to_string(md_path)
+            .unwrap_or_else(|e| panic!("could not read {md_path}: {e}"));
+        let mut chain = super::create_default_chain(&config, true);
+        let mut render: Box<dyn Render + '_> = Box::new(super::groff::mom::new(&config));
+        mato::transform(&mut render, &mut chain, &config, &input)
+    }
+
+    fn golden_path(md_path: &str) -> PathBuf {
+        Path::new(md_path).with_extension("mom")
+    }
+
+    /// Assert that transforming `md_path` produces the content of the paired
+    /// `.mom` golden file.  Set `UPDATE_GOLDEN=1` to regenerate golden files
+    /// after an intentional output change.
+    fn assert_golden(md_path: &str) {
+        let actual = to_groff(md_path);
+        let golden = golden_path(md_path);
+
+        if std::env::var("UPDATE_GOLDEN").is_ok() {
+            std::fs::write(&golden, &actual)
+                .unwrap_or_else(|e| panic!("could not write {}: {e}", golden.display()));
+            return;
+        }
+
+        let expected = std::fs::read_to_string(&golden).unwrap_or_else(|_| {
+            panic!(
+                "golden file {} not found — run with UPDATE_GOLDEN=1 to create it",
+                golden.display()
+            )
+        });
+        assert_eq!(actual, expected, "groff output changed for {md_path}");
+    }
+
+    // simple/
+    #[test] fn simple_minimal()            { assert_golden("samples/simple/minimal.md"); }
+    #[test] fn simple_doc()                { assert_golden("samples/simple/doc.md"); }
+    #[test] fn simple_list()               { assert_golden("samples/simple/list.md"); }
+    #[test] fn simple_heading()            { assert_golden("samples/simple/heading.md"); }
+    #[test] fn simple_footnote()           { assert_golden("samples/simple/footnote.md"); }
+    #[test] fn simple_sidenote()           { assert_golden("samples/simple/sidenote.md"); }
+    #[test] fn simple_codeblock()          { assert_golden("samples/simple/codeblock.md"); }
+    #[test] fn simple_missing_dot()        { assert_golden("samples/simple/missing-dot.md"); }
+    #[test] fn simple_paragraph_no_break() { assert_golden("samples/simple/paragraph-no-break.md"); }
+
+    // font-features/
+    #[test] fn font_bold_italics_code()    { assert_golden("samples/font-features/bold-italics-code.md"); }
+    #[test] fn font_drop_caps()            { assert_golden("samples/font-features/drop-caps.md"); }
+    #[test] fn font_old_style_figures()    { assert_golden("samples/font-features/old-style-figures.md"); }
+    #[test] fn font_small_caps()           { assert_golden("samples/font-features/small-caps.md"); }
+
+    // references/
+    #[test] fn references()               { assert_golden("samples/references/references.md"); }
+
+    // showcase/
+    #[test] fn showcase()                 { assert_golden("samples/showcase/doc.md"); }
+
+    // refactorings/
+    #[test] fn refactoring_lose_context() { assert_golden("samples/refactorings/lose_the_context.md"); }
+    #[test] fn refactoring_warp_at()      { assert_golden("samples/refactorings/warp_at.md"); }
+
+    // chapters/ — CHAPTER doctype with custom sibling preamble.mom
+    #[test] fn chapters()                 { assert_golden("samples/chapters/chapters.md"); }
+
+    // slides/ — SLIDES doctype with custom sibling preamble.mom
+    #[test] fn slides()                   { assert_golden("samples/slides/presentation.md"); }
+
+    // Skipped: samples/images/ — image paths are resolved to absolute paths,
+    // making the groff output machine-specific.
+
+    // Skipped: samples/drawings/ — code blocks of type "pic" spawn an external
+    // `pic` process which may not be present in all environments.
+
+    // Skipped: samples/man/ — uses the man/mandoc renderer, not the mom renderer.
+}
+
+/// Smoke tests: verify that the `.mom` golden files produced by mato are
+/// accepted by `groff` without errors (exit 0, no stderr output).
+///
+/// These tests are marked `#[ignore]` because they require `groff` in PATH.
+/// Run them explicitly with:
+///
+///   cargo test --bin matopdf -- --ignored
+#[cfg(test)]
+mod groff_smoke_tests {
+    use mato::{config::Config, Render};
+    use std::process::{Command, Stdio};
+    use std::io::Write;
+
+    /// Render `md_path` to groff mom source and pipe it through `groff -Tpdf`.
+    /// Panics if groff exits non-zero or writes anything to stderr.
+    fn assert_groff_accepts(md_path: &str) {
+        if mato::find_in_path("groff").is_none() {
+            eprintln!("skipping {md_path}: groff not found in PATH");
+            return;
+        }
+
+        let mut config = Config::default();
+        config.source_file = md_path.to_string();
+        let input = std::fs::read_to_string(md_path)
+            .unwrap_or_else(|e| panic!("could not read {md_path}: {e}"));
+        let mut chain = super::create_default_chain(&config, true);
+        let mut render: Box<dyn Render + '_> = Box::new(super::groff::mom::new(&config));
+        let groff_src = mato::transform(&mut render, &mut chain, &config, &input);
+
+        let mut child = Command::new("groff")
+            .args(["-Tpdf", "-mom", &format!("-m{}", config.lang), "-K", "UTF-8"])
+            .stdin(Stdio::piped())
+            .stdout(Stdio::null())
+            .stderr(Stdio::piped())
+            .spawn()
+            .expect("failed to spawn groff");
+
+        {
+            let mut stdin = child.stdin.take().unwrap();
+            stdin.write_all(groff_src.as_bytes()).expect("failed to write to groff stdin");
+        }
+
+        let out = child.wait_with_output().expect("groff failed");
+        let stderr = String::from_utf8_lossy(&out.stderr);
+        assert!(
+            out.status.success() && stderr.is_empty(),
+            "groff reported errors for {md_path}:\n{stderr}"
+        );
+    }
+
+    // simple/
+    #[test] #[ignore] fn simple_minimal()            { assert_groff_accepts("samples/simple/minimal.md"); }
+    #[test] #[ignore] fn simple_doc()                { assert_groff_accepts("samples/simple/doc.md"); }
+    #[test] #[ignore] fn simple_list()               { assert_groff_accepts("samples/simple/list.md"); }
+    #[test] #[ignore] fn simple_heading()            { assert_groff_accepts("samples/simple/heading.md"); }
+    #[test] #[ignore] fn simple_footnote()           { assert_groff_accepts("samples/simple/footnote.md"); }
+    #[test] #[ignore] fn simple_sidenote()           { assert_groff_accepts("samples/simple/sidenote.md"); }
+    #[test] #[ignore] fn simple_codeblock()          { assert_groff_accepts("samples/simple/codeblock.md"); }
+    #[test] #[ignore] fn simple_missing_dot()        { assert_groff_accepts("samples/simple/missing-dot.md"); }
+    #[test] #[ignore] fn simple_paragraph_no_break() { assert_groff_accepts("samples/simple/paragraph-no-break.md"); }
+
+    // font-features/
+    #[test] #[ignore] fn font_bold_italics_code()    { assert_groff_accepts("samples/font-features/bold-italics-code.md"); }
+    #[test] #[ignore] fn font_drop_caps()            { assert_groff_accepts("samples/font-features/drop-caps.md"); }
+    #[test] #[ignore] fn font_old_style_figures()    { assert_groff_accepts("samples/font-features/old-style-figures.md"); }
+    #[test] #[ignore] fn font_small_caps()           { assert_groff_accepts("samples/font-features/small-caps.md"); }
+
+    // references/
+    #[test] #[ignore] fn references()               { assert_groff_accepts("samples/references/references.md"); }
+
+    // showcase/
+    #[test] #[ignore] fn showcase()                 { assert_groff_accepts("samples/showcase/doc.md"); }
+
+    // refactorings/
+    #[test] #[ignore] fn refactoring_lose_context() { assert_groff_accepts("samples/refactorings/lose_the_context.md"); }
+    #[test] #[ignore] fn refactoring_warp_at()      { assert_groff_accepts("samples/refactorings/warp_at.md"); }
+
+    // chapters/
+    #[test] #[ignore] fn chapters()                 { assert_groff_accepts("samples/chapters/chapters.md"); }
+
+    // slides/
+    #[test] #[ignore] fn slides()                   { assert_groff_accepts("samples/slides/presentation.md"); }
+}

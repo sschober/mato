@@ -1,0 +1,22 @@
+.DOCTYPE DEFAULT
+.PRINTSTYLE TYPESET
+\" fill with your presets
+\" see samples/preambles/bringhurst.mom
+.START
+Some line before:
+.QUOTE_STYLE INDENT 1
+.QUOTE
+.CODE
+this is a code block
+.QUOTE OFF
+Some line after
+.PP
+Further paragraph:
+.PP
+.QUOTE_STYLE INDENT 1
+.QUOTE
+.CODE
+A new code block with a free line around.
+.QUOTE OFF
+.PP
+and after.

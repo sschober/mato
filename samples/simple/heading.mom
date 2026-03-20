@@ -3,6 +3,11 @@
 \" fill with your presets
 \" see samples/preambles/bringhurst.mom
 .START
-This is the first sentence.
-.PP
-This is the second sentence in a new paragraph.
+.FT B
+.EW 2
+.HEADING 1 "A heading"
+.EW 0
+.FT R
+.DRH
+.SP 1v
+Some text in a pragraph.
