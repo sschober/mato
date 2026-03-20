@@ -18,6 +18,8 @@ fn main() {
     all_ok &= check_font_family("Minion Pro", &["MinionR", "MinionI", "MinionB", "MinionBI"], &devpdf_dirs);
     println!();
     all_ok &= check_font_family("Iosevka Curly Slab", &["IosevkaCurlySlabR", "IosevkaCurlySlabI", "IosevkaCurlySlabB", "IosevkaCurlySlabBI"], &devpdf_dirs);
+    println!();
+    all_ok &= check_font_family("Alegreya", &["AlegreyaR", "AlegreyaI", "AlegreyaB", "AlegreyaBI"], &devpdf_dirs);
 
     println!();
     if all_ok {

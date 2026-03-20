@@ -85,18 +85,28 @@ sedi() {
   fi
 }
 
-# Build an extended map file: system text.map + self-referential mappings for
-# .oldstyle and .taboldstyle glyphs (not present in the default text.map).
+# Build an extended map file: system text.map + mappings for oldstyle numeral
+# glyph names not present in the default text.map.
+#
+# Format: <PostScript-glyph-name> <groff-character-name>
+#
+# Fonts use different PostScript names for oldstyle figures:
+#   .oldstyle    — Minion Pro (e.g. eight.oldstyle)
+#   .taboldstyle — Minion Pro tabular variant
+#   .tosf        — Alegreya and many other OFL fonts (traditional oldstyle figures)
+#
+# All variants are mapped to the same groff character names (e.g. eight.oldstyle)
+# so mato's \[eight.oldstyle] escapes work regardless of which font is active.
 EXTENDED_TEXTMAP="$WORK_DIR/text.map"
 {
   cat "$TEXTMAP"
-  for suffix in oldstyle taboldstyle; do
-    for base in zero one two three four five six seven eight nine \
-                cent dollar Euro franc lira sterling yen \
-                colonmonetary florin franc numbersign percent perthousand \
-                estimated; do
-      echo "${base}.${suffix} ${base}.${suffix}"
-    done
+  for base in zero one two three four five six seven eight nine \
+              cent dollar Euro franc lira sterling yen \
+              colonmonetary florin franc numbersign percent perthousand \
+              estimated; do
+    echo "${base}.oldstyle    ${base}.oldstyle"
+    echo "${base}.taboldstyle ${base}.taboldstyle"
+    echo "${base}.tosf        ${base}.oldstyle"
   done
 } > "$EXTENDED_TEXTMAP"
 
@@ -352,4 +362,62 @@ if [[ ${#IOSEVKA_VARIANTS[@]} -gt 0 ]]; then
 else
   echo "IosevkaCurlySlab-Regular and IosevkaCurlySlab-Bold font files not found." 1>&2
   echo "Install the package (e.g. sudo pacman -S ttf-iosevka-curly-slab) and re-run." 1>&2
+fi
+
+# ── Alegreya ───────────────────────────────────────────────────────────────────
+echo ""
+echo "── Alegreya ──────────────────────────────────────────────────────────────────"
+echo "searching for Alegreya OTF fonts..."
+declare -A ALEGREYA_VARIANTS  # maps groff-name -> otf-path
+
+if [[ "$OS" == "Darwin" ]]; then
+  ALEGREYA_SEARCH_DIRS=(
+    "$HOME/Library/Fonts"
+    "/Library/Fonts"
+  )
+else
+  ALEGREYA_SEARCH_DIRS=(
+    "$HOME/.fonts"
+    "$HOME/.local/share/fonts"
+    "/usr/share/fonts"
+    "/usr/local/share/fonts"
+  )
+fi
+
+_scan_alegreya() {
+  for dir in "${ALEGREYA_SEARCH_DIRS[@]}"; do
+    [[ -d "$dir" ]] || continue
+    while IFS= read -r otf; do
+      local base
+      base=$(basename "$otf" .otf)
+      case "$base" in
+        Alegreya-Regular)  ALEGREYA_VARIANTS[AlegreyaR]="$otf" ;;
+        Alegreya-Bold)     ALEGREYA_VARIANTS[AlegreyaB]="$otf" ;;
+        Alegreya-Italic)   ALEGREYA_VARIANTS[AlegreyaI]="$otf" ;;
+        Alegreya-BoldItalic) ALEGREYA_VARIANTS[AlegreyaBI]="$otf" ;;
+      esac
+    done < <(find "$dir" -name "Alegreya-*.otf" 2>/dev/null)
+  done
+}
+
+_scan_alegreya
+
+if [[ ${#ALEGREYA_VARIANTS[@]} -gt 0 ]]; then
+  echo "found ${#ALEGREYA_VARIANTS[@]} variant(s): ${!ALEGREYA_VARIANTS[*]}"
+  for needed in AlegreyaR AlegreyaI AlegreyaB AlegreyaBI; do
+    if [[ -z "${ALEGREYA_VARIANTS[$needed]+x}" ]]; then
+      echo "warning: $needed not found (mom may fall back to a substitute)"
+    fi
+  done
+  for groff_name in "${!ALEGREYA_VARIANTS[@]}"; do
+    case "$groff_name" in
+      *I|*BI) opts="-i50" ;;
+      *)      opts="-i0" ;;
+    esac
+    install_font_variant "$groff_name" "${ALEGREYA_VARIANTS[$groff_name]}" "$opts"
+  done
+  echo "Alegreya done. Installed: ${!ALEGREYA_VARIANTS[*]}"
+else
+  echo "Alegreya: no OTF files found, skipping."
+  echo "Install the package (e.g. sudo pacman -S otf-alegreya) and re-run." 1>&2
 fi
