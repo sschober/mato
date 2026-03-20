@@ -1,0 +1,82 @@
+.DOCTYPE DEFAULT
+.PRINTSTYLE TYPESET
+\" fill with your presets
+\" see samples/preambles/bringhurst.mom
+.START
+.FT B
+.EW 2
+.HEADING 1 "Showcase"
+.EW 0
+.FT R
+.DRH
+.SP 1v
+.MN RIGHT
+.PT_SIZE +48
+S
+.MN OFF
+This document shows all the features, we have.
+.EW 2
+.HEADING 3 "Markup"
+.EW 0
+.SP 1v
+.PP
+\*[IT]Italic text\*[ROM], \*[BD]fat text\*[ROM], \*[CODE]code formatting\*[CODE OFF]\&.
+.EW 2
+.HEADING 3 "Listings and Side notes"
+.EW 0
+.SP 1v
+.PP
+The following is a listing:
+.PP
+
+.MN RIGHT
+.PT_SIZE -2
+A simple bash script
+.MN OFF
+
+.QUOTE_STYLE INDENT 1
+.QUOTE
+.CODE
+$ echo hello world
+hello world
+.QUOTE OFF
+.FT B
+.EW 2
+.HEADING 2 "Features"
+.EW 0
+.FT R
+.SP 1v
+.PP
+Let's describe, what we see.
+.EW 2
+.HEADING 3 "Enumeration"
+.EW 0
+.SP 1v
+.PP
+You can see:
+.PP
+.LIST
+.SHIFT_LIST 18p
+.PARA_INDENT 0
+.ITEM
+.PP
+The toplevel heading (Showcase).
+.LIST OFF
+
+.LIST
+.SHIFT_LIST 18p
+.PARA_INDENT 0
+.ITEM
+.PP
+A sub level heading (Features).
+.LIST OFF
+
+.LIST
+.SHIFT_LIST 18p
+.PARA_INDENT 0
+.ITEM
+.PP
+A right chapter mark (S)
+.LIST OFF
+
+.PP

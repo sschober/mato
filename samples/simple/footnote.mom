@@ -3,6 +3,8 @@
 \" fill with your presets
 \" see samples/preambles/bringhurst.mom
 .START
-This is the first sentence.
-.PP
-This is the second sentence in a new paragraph.
+This is a sentence\c
+.FOOTNOTE
+And this is a footnote.
+.FOOTNOTE END
+ that is quite long.

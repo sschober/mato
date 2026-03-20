@@ -1,0 +1,28 @@
+.DOCTYPE DEFAULT
+.PRINTSTYLE TYPESET
+\" fill with your presets
+\" see samples/preambles/bringhurst.mom
+.START
+.TITLE Test
+.AUTHOR Sven Schober
+.FT B
+.EW 2
+.HEADING 1 "Showcase"
+.EW 0
+.FT R
+.DRH
+.SP 1v
+.PP
+This is a test text, to test the formatting \*[BD]characteristics\*[ROM] of matofmt. It should automatically wrap text at column \[six.oldstyle]\[nine.oldstyle]. 
+This is the next sentence, which should also wrap around correctly.
+If there is a link \c
+.PDF_WWW_LINK https://github.com/sschober/mato "like this"\c
+the url should not be broken 
+.FT B
+.EW 2
+.HEADING 1 "A Heading"
+.EW 0
+.FT R
+.DRH
+.SP 1v
+A heading should also reset the \*[CODE]char_index\*[CODE OFF] counter.

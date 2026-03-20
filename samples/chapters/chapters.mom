@@ -1,0 +1,59 @@
+.DOCTYPE CHAPTER HEADER "\*[$TITLE]" "" "" FOOTER "\*[$AUTHOR]" "" ""
+.PRINTSTYLE TYPESET
+.PAGE 5.8i 9i 1i 1i .75i .75i
+.PAPER A5
+.FAMILY Minion
+.PT_SIZE 11
+.AUTOLEAD 2
+.HEADING_STYLE 1 CAPS FONT R 
+.HEADING_STYLE 2 CAPS FONT R SIZE -4 
+.HEADING_STYLE 3 FONT I SIZE -1 
+.CODE_SIZE 80
+.CODE_FAMILY IosevkaCurlySlab
+.MN_INIT SYMMETRIC L_WIDTH 4P FONTSTYLE MinionI SIZE -1
+.PARA_INDENT 1.5m
+.NEWCOLOR grey RGB #dddddd
+.CHAPTER_STYLE CAPS FONT R SIZE +10 
+.CHAPTER_TITLE_STYLE CAPS FONT R SIZE +5
+.COVER_TITLE_STYLE CAPS FONT R SIZE +15
+.COVER_AUTHOR_STYLE SIZE +5
+.TOC_HEADER_STYLE FAMILY Minion FONT R CAPS SIZE +8.TITLE "Why MaTo?"
+.AUTHOR "Sven Schober"
+.COVER TITLE AUTHOR
+.AUTO_RELOCATE_TOC AFTER_COVER
+.CHAPTER_TITLE "Introduction"
+.START
+.SPACE -.7v
+.EW 2
+.HEADING 3 "Motivation"
+.EW 0
+
+.SP 1v
+.PP
+Why write a new tool? The chapter does not appear.
+.PP
+But why?
+.COLLATE
+.CHAPTER_TITLE "Main"
+.START
+.SPACE -.7v
+.EW 2
+.HEADING 3 "Mato"
+.EW 0
+
+.SP 1v
+.PP
+In this chapter, I will go into details about mato.
+.COLLATE
+.CHAPTER_TITLE "Conclusions"
+.START
+.SPACE -.7v
+.EW 2
+.HEADING 3 "Ending Words"
+.EW 0
+
+.SP 1v
+.PP
+In this chapter, I will go into details about mato.
+.PP
+.TOC

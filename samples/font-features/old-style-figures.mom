@@ -1,0 +1,15 @@
+.DOCTYPE DEFAULT
+.PRINTSTYLE TYPESET
+\" fill with your presets
+\" see samples/preambles/bringhurst.mom
+.START
+.FT B
+.EW 2
+.HEADING 1 "Heading with 0123456789 numerals"
+.EW 0
+.FT R
+.DRH
+.SP 1v
+.PP
+This is text and these are figures \[zero.oldstyle]\[one.oldstyle]\[two.oldstyle]\[three.oldstyle]\[four.oldstyle]\[five.oldstyle]\[six.oldstyle]\[seven.oldstyle]\[eight.oldstyle]\[nine.oldstyle]. 
+They should jump up and down.

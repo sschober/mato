@@ -1,0 +1,36 @@
+.DOCTYPE DEFAULT
+.PRINTSTYLE TYPESET
+\" fill with your presets
+\" see samples/preambles/bringhurst.mom
+.START
+.FT B
+.EW 2
+.HEADING 1 "Drop Caps"
+.EW 0
+.FT R
+.DRH
+.SP 1v
+.PP
+
+.DROPCAP T 3
+his is an example of drop caps in use.
+We need to provide enough text for them to
+fill three lines of text, which I set as
+a default length. They are produced by
+wrapping the first letter of a paragraph
+in \*[CODE]%\*[CODE OFF] characters.
+.PP
+
+.DROPCAP I 3
+n the middle of a line % characters should
+be parsed as literals.
+.FT B
+.EW 2
+.HEADING 2 "Heading"
+.EW 0
+.FT R
+.SP 1v
+.PP
+
+.DROPCAP A 3
+t the beginning of a new paragraph.

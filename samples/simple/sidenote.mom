@@ -1,0 +1,13 @@
+.DOCTYPE DEFAULT
+.PRINTSTYLE TYPESET
+\" fill with your presets
+\" see samples/preambles/bringhurst.mom
+.START
+Here is a sentence,
+.MN RIGHT
+.PT_SIZE -2
+And here a right side note
+.MN OFF
+that goes on for
+quite a while and seems to never end, though, in reality it will at
+some point definitely end.

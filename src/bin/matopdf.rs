@@ -301,3 +301,88 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+mod golden_tests {
+    use mato::{config::Config, Render};
+    use std::path::{Path, PathBuf};
+
+    /// Transform a sample `.md` file to groff using the mom renderer,
+    /// including any sibling preamble file found next to the source.
+    fn to_groff(md_path: &str) -> String {
+        let mut config = Config::default();
+        config.source_file = md_path.to_string();
+        let input = std::fs::read_to_string(md_path)
+            .unwrap_or_else(|e| panic!("could not read {md_path}: {e}"));
+        let mut chain = super::create_default_chain(&config, true);
+        let mut render: Box<dyn Render + '_> = Box::new(super::groff::mom::new(&config));
+        mato::transform(&mut render, &mut chain, &config, &input)
+    }
+
+    fn golden_path(md_path: &str) -> PathBuf {
+        Path::new(md_path).with_extension("mom")
+    }
+
+    /// Assert that transforming `md_path` produces the content of the paired
+    /// `.mom` golden file.  Set `UPDATE_GOLDEN=1` to regenerate golden files
+    /// after an intentional output change.
+    fn assert_golden(md_path: &str) {
+        let actual = to_groff(md_path);
+        let golden = golden_path(md_path);
+
+        if std::env::var("UPDATE_GOLDEN").is_ok() {
+            std::fs::write(&golden, &actual)
+                .unwrap_or_else(|e| panic!("could not write {}: {e}", golden.display()));
+            return;
+        }
+
+        let expected = std::fs::read_to_string(&golden).unwrap_or_else(|_| {
+            panic!(
+                "golden file {} not found — run with UPDATE_GOLDEN=1 to create it",
+                golden.display()
+            )
+        });
+        assert_eq!(actual, expected, "groff output changed for {md_path}");
+    }
+
+    // simple/
+    #[test] fn simple_minimal()            { assert_golden("samples/simple/minimal.md"); }
+    #[test] fn simple_doc()                { assert_golden("samples/simple/doc.md"); }
+    #[test] fn simple_list()               { assert_golden("samples/simple/list.md"); }
+    #[test] fn simple_heading()            { assert_golden("samples/simple/heading.md"); }
+    #[test] fn simple_footnote()           { assert_golden("samples/simple/footnote.md"); }
+    #[test] fn simple_sidenote()           { assert_golden("samples/simple/sidenote.md"); }
+    #[test] fn simple_codeblock()          { assert_golden("samples/simple/codeblock.md"); }
+    #[test] fn simple_missing_dot()        { assert_golden("samples/simple/missing-dot.md"); }
+    #[test] fn simple_paragraph_no_break() { assert_golden("samples/simple/paragraph-no-break.md"); }
+
+    // font-features/
+    #[test] fn font_bold_italics_code()    { assert_golden("samples/font-features/bold-italics-code.md"); }
+    #[test] fn font_drop_caps()            { assert_golden("samples/font-features/drop-caps.md"); }
+    #[test] fn font_old_style_figures()    { assert_golden("samples/font-features/old-style-figures.md"); }
+    #[test] fn font_small_caps()           { assert_golden("samples/font-features/small-caps.md"); }
+
+    // references/
+    #[test] fn references()               { assert_golden("samples/references/references.md"); }
+
+    // showcase/
+    #[test] fn showcase()                 { assert_golden("samples/showcase/doc.md"); }
+
+    // refactorings/
+    #[test] fn refactoring_lose_context() { assert_golden("samples/refactorings/lose_the_context.md"); }
+    #[test] fn refactoring_warp_at()      { assert_golden("samples/refactorings/warp_at.md"); }
+
+    // chapters/ — CHAPTER doctype with custom sibling preamble.mom
+    #[test] fn chapters()                 { assert_golden("samples/chapters/chapters.md"); }
+
+    // slides/ — SLIDES doctype with custom sibling preamble.mom
+    #[test] fn slides()                   { assert_golden("samples/slides/presentation.md"); }
+
+    // Skipped: samples/images/ — image paths are resolved to absolute paths,
+    // making the groff output machine-specific.
+
+    // Skipped: samples/drawings/ — code blocks of type "pic" spawn an external
+    // `pic` process which may not be present in all environments.
+
+    // Skipped: samples/man/ — uses the man/mandoc renderer, not the mom renderer.
+}
