@@ -279,25 +279,25 @@ mod tests {
     fn list_1() {
         assert_eq!(
             matogro("* list item\n"),
-            ".DOCTYPE DEFAULT\n.START\n.LIST\n.SHIFT_LIST 18p\n.ITEM\nlist item\n.LIST OFF\n"
+            ".DOCTYPE DEFAULT\n.START\n.LIST\n.SHIFT_LIST 18p\n.PARA_INDENT 0\n.ITEM\n.PP\nlist item\n.LIST OFF\n"
         );
     }
     #[test]
     fn list_2() {
         assert_eq!(
             matogro("* list item 1\n* list item 2\n"),
-            ".DOCTYPE DEFAULT\n.START\n.LIST\n.SHIFT_LIST 18p\n.ITEM\nlist item 1\n.ITEM\nlist item 2\n.LIST OFF\n"
+            ".DOCTYPE DEFAULT\n.START\n.LIST\n.SHIFT_LIST 18p\n.PARA_INDENT 0\n.ITEM\n.PP\nlist item 1\n.ITEM\n.PP\nlist item 2\n.LIST OFF\n"
         );
     }
     #[test]
     fn nested_list() {
-        assert_eq!(matogro("* list item 1\n  * list item 2\n"), ".DOCTYPE DEFAULT\n.START\n.LIST\n.SHIFT_LIST 18p\n.ITEM\nlist item 1\n.LIST\n.SHIFT_LIST 18p\n.ITEM\nlist item 2\n.LIST OFF\n.LIST OFF\n");
+        assert_eq!(matogro("* list item 1\n  * list item 2\n"), ".DOCTYPE DEFAULT\n.START\n.LIST\n.SHIFT_LIST 18p\n.PARA_INDENT 0\n.ITEM\n.PP\nlist item 1\n.LIST\n.SHIFT_LIST 18p\n.PARA_INDENT 0\n.ITEM\n.PP\nlist item 2\n.LIST OFF\n.LIST OFF\n");
     }
     #[test]
     fn list_1_multiline_item() {
         assert_eq!(
             matogro("* list item\n  which continues on next line\n"),
-            ".DOCTYPE DEFAULT\n.START\n.LIST\n.SHIFT_LIST 18p\n.ITEM\nlist item\nwhich continues on next line\n.LIST OFF\n"
+            ".DOCTYPE DEFAULT\n.START\n.LIST\n.SHIFT_LIST 18p\n.PARA_INDENT 0\n.ITEM\n.PP\nlist item\nwhich continues on next line\n.LIST OFF\n"
         );
     }
 }

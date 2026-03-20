@@ -238,6 +238,111 @@ fn render<P: Process>(r: &mut Box<dyn Render + '_>, exp: Tree, _p: &mut P) -> St
     r.render(exp)
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::opts;
+
+    // --- establish_log_level ---
+
+    fn parse_flags(flags: &[&str]) -> opts::ParserResult {
+        let p = opts::Parser::new();
+        let mut args = vec!["cmd".to_string()];
+        args.extend(flags.iter().map(|s| s.to_string()));
+        p.parse(args)
+    }
+
+    #[test]
+    fn log_level_default_is_zero() {
+        let r = parse_flags(&[]);
+        assert_eq!(establish_log_level(&r), 0);
+    }
+
+    #[test]
+    fn log_level_verbose_is_one() {
+        let r = parse_flags(&["--verbose"]);
+        assert_eq!(establish_log_level(&r), 1);
+    }
+
+    #[test]
+    fn log_level_debug_is_two() {
+        let r = parse_flags(&["--debug"]);
+        assert_eq!(establish_log_level(&r), 2);
+    }
+
+    #[test]
+    fn log_level_trace_is_three() {
+        let r = parse_flags(&["--trace"]);
+        assert_eq!(establish_log_level(&r), 3);
+    }
+
+    // --- replace_file_extension ---
+
+    #[test]
+    fn replace_extension_changes_suffix() {
+        let result = replace_file_extension("doc.md", "pdf");
+        assert_eq!(result, std::path::PathBuf::from("doc.pdf"));
+    }
+
+    #[test]
+    fn replace_extension_on_path_with_dirs() {
+        let result = replace_file_extension("/home/user/docs/file.md", "groff");
+        assert_eq!(
+            result,
+            std::path::PathBuf::from("/home/user/docs/file.groff")
+        );
+    }
+
+    // --- parent_dir ---
+
+    #[test]
+    fn parent_dir_returns_containing_directory() {
+        assert_eq!(parent_dir("/home/user/file.md"), std::path::Path::new("/home/user"));
+    }
+
+    // --- locate_and_load_preamble ---
+
+    #[test]
+    fn skip_preamble_returns_empty_string() {
+        let mut config = Config::default();
+        config.source_file = "/some/file.md".to_string();
+        config.skip_preamble = true;
+        let result = locate_and_load_preamble(&config, "preamble.mom", "DEFAULT");
+        assert_eq!(result, "");
+    }
+
+    #[test]
+    fn falls_back_to_default_preamble_when_no_file_found() {
+        let mut config = Config::default();
+        // Point to a directory that definitely has no preamble.mom
+        config.source_file = "/nonexistent/path/file.md".to_string();
+        config.skip_preamble = false;
+        // Unset XDG_CONFIG_HOME so we don't accidentally pick up a real one
+        std::env::remove_var("XDG_CONFIG_HOME");
+        let result = locate_and_load_preamble(&config, "preamble.mom", "MY_DEFAULT");
+        assert_eq!(result, "MY_DEFAULT");
+    }
+
+    #[test]
+    fn loads_sibling_preamble_when_present() {
+        let dir = std::env::temp_dir().join("mato_test_preamble");
+        std::fs::create_dir_all(&dir).unwrap();
+        let source = dir.join("doc.md");
+        let preamble = dir.join("preamble.mom");
+        std::fs::write(&source, "# Hello").unwrap();
+        std::fs::write(&preamble, "SIBLING_PREAMBLE").unwrap();
+
+        let mut config = Config::default();
+        config.source_file = source.to_str().unwrap().to_string();
+        config.skip_preamble = false;
+
+        let result = locate_and_load_preamble(&config, "preamble.mom", "DEFAULT");
+        // Clean up
+        let _ = std::fs::remove_dir_all(&dir);
+        assert_eq!(result, "SIBLING_PREAMBLE");
+    }
+}
+
 /// Searches the directories in `PATH` for an executable named `name`.
 /// Returns the full path if found, `None` otherwise.
 pub fn find_in_path(name: &str) -> Option<PathBuf> {

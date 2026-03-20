@@ -130,3 +130,165 @@ impl Process for Canonicalizer {
 pub fn new(replace_numerals: bool) -> Box<dyn Process> {
     Box::new(Canonicalizer { replace_numerals })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::syntax::{bold, empty, lit, prelit};
+    use crate::Tree;
+
+    fn canonicalize(exp: Tree) -> Tree {
+        let mut c = Canonicalizer {
+            replace_numerals: false,
+        };
+        c.process(exp)
+    }
+
+    fn canonicalize_with_numerals(exp: Tree) -> Tree {
+        let mut c = Canonicalizer {
+            replace_numerals: true,
+        };
+        c.process(exp)
+    }
+
+    // --- Empty node removal ---
+
+    #[test]
+    fn removes_empty_from_cat() {
+        // Cat(Empty, Literal) should collapse to just Literal
+        let input = empty().cat(lit("hello"));
+        let result = canonicalize(input);
+        assert_eq!(format!("{result:?}"), "Literal(\"hello\")");
+    }
+
+    #[test]
+    fn preserves_non_empty_cat() {
+        let input = lit("a").cat(lit("b"));
+        let result = canonicalize(input);
+        assert_eq!(format!("{result:?}"), "Cat(Literal(\"a\"), Literal(\"b\"))");
+    }
+
+    // --- Bold/Italic folding into BoldItalic ---
+
+    #[test]
+    fn bold_wrapping_italic_becomes_bold_italic() {
+        let input = Tree::Bold(Box::new(Tree::Italic(Box::new(lit("text")))));
+        let result = canonicalize(input);
+        assert_eq!(format!("{result:?}"), "BoldItalic(Literal(\"text\"))");
+    }
+
+    #[test]
+    fn italic_wrapping_bold_becomes_bold_italic() {
+        let input = Tree::Italic(Box::new(Tree::Bold(Box::new(lit("text")))));
+        let result = canonicalize(input);
+        assert_eq!(format!("{result:?}"), "BoldItalic(Literal(\"text\"))");
+    }
+
+    #[test]
+    fn bold_inside_italic_context_becomes_bold_italic() {
+        // When an outer italic context is tracked, a nested Bold becomes BoldItalic
+        let input = Tree::Italic(Box::new(bold(lit("text"))));
+        let result = canonicalize(input);
+        assert_eq!(format!("{result:?}"), "BoldItalic(Literal(\"text\"))");
+    }
+
+    #[test]
+    fn plain_bold_stays_bold() {
+        let input = bold(lit("text"));
+        let result = canonicalize(input);
+        assert_eq!(format!("{result:?}"), "Bold(Literal(\"text\"))");
+    }
+
+    #[test]
+    fn plain_italic_stays_italic() {
+        let input = Tree::Italic(Box::new(lit("text")));
+        let result = canonicalize(input);
+        assert_eq!(format!("{result:?}"), "Italic(Literal(\"text\"))");
+    }
+
+    // --- Old-style numeral replacement ---
+
+    #[test]
+    fn replaces_digits_with_oldstyle() {
+        let input = Tree::Document(
+            crate::syntax::DocType::DEFAULT,
+            Box::new(lit("abc 123 def")),
+        );
+        let result = canonicalize_with_numerals(input);
+        assert_eq!(
+            format!("{result:?}"),
+            "Document(DEFAULT, Literal(\"abc \\\\[one.oldstyle]\\\\[two.oldstyle]\\\\[three.oldstyle] def\"))"
+        );
+    }
+
+    #[test]
+    fn numerals_not_replaced_when_disabled() {
+        let input = Tree::Document(
+            crate::syntax::DocType::DEFAULT,
+            Box::new(lit("abc 123")),
+        );
+        let result = canonicalize(input);
+        assert_eq!(format!("{result:?}"), "Document(DEFAULT, Literal(\"abc 123\"))");
+    }
+
+    #[test]
+    fn numerals_not_replaced_inside_list_items() {
+        // replace_numerals is temporarily disabled inside list items
+        let item_content = lit("item 42");
+        let input = Tree::Document(
+            crate::syntax::DocType::DEFAULT,
+            Box::new(Tree::List(
+                Box::new(Tree::ListItem(Box::new(item_content), 0)),
+                0,
+            )),
+        );
+        let result = canonicalize_with_numerals(input);
+        // The "42" inside the list item should not be replaced
+        assert!(format!("{result:?}").contains("\"item 42\""));
+    }
+
+    // --- Small caps replacement ---
+
+    #[test]
+    fn small_caps_alphabetic_chars_get_sc_suffix() {
+        let input = Tree::SmallCaps(Box::new(lit("Ab")));
+        let result = canonicalize(input);
+        assert_eq!(
+            format!("{result:?}"),
+            "SmallCaps(Literal(\"\\\\[A.sc]\\\\[b.sc]\"))"
+        );
+    }
+
+    #[test]
+    fn small_caps_non_alphabetic_chars_unchanged() {
+        let input = Tree::SmallCaps(Box::new(lit("1 + 2")));
+        let result = canonicalize(input);
+        assert_eq!(format!("{result:?}"), "SmallCaps(Literal(\"1 + 2\"))");
+    }
+
+    // --- Preformatted literal escaping ---
+
+    #[test]
+    fn prelit_backslash_is_doubled() {
+        let input = prelit("a\\b");
+        let result = canonicalize(input);
+        assert_eq!(format!("{result:?}"), "PreformattedLiteral(\"a\\\\\\\\b\")");
+    }
+
+    #[test]
+    fn prelit_caret_is_escaped() {
+        let input = prelit("a^b");
+        let result = canonicalize(input);
+        assert_eq!(format!("{result:?}"), "PreformattedLiteral(\"a\\\\[ha]b\")");
+    }
+
+    #[test]
+    fn prelit_dot_at_line_start_is_escaped() {
+        let input = prelit("a\n.foo");
+        let result = canonicalize(input);
+        assert_eq!(
+            format!("{result:?}"),
+            "PreformattedLiteral(\"a\\n\\\\&.foo\")"
+        );
+    }
+}
