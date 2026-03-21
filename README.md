@@ -9,7 +9,7 @@
 
 [^2]: Ah, is that even a word? I think, you get what I mean.
 
-![mato logo](assets/logo.png)
+![mato logo](assets/logo.svg)
 
 With `matopdf`, you can transform markdown formatted text into PDFs,
 and even more.
