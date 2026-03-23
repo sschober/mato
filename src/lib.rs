@@ -318,8 +318,9 @@ mod tests {
         // Point to a directory that definitely has no preamble.mom
         config.source_file = "/nonexistent/path/file.md".to_string();
         config.skip_preamble = false;
-        // Unset XDG_CONFIG_HOME so we don't accidentally pick up a real one
-        std::env::remove_var("XDG_CONFIG_HOME");
+        // Point XDG_CONFIG_HOME to a nonexistent path so neither it nor the
+        // $HOME/.config fallback can accidentally pick up a real preamble.
+        std::env::set_var("XDG_CONFIG_HOME", "/nonexistent/xdg_config_home");
         let result = locate_and_load_preamble(&config, "preamble.mom", "MY_DEFAULT");
         assert_eq!(result, "MY_DEFAULT");
     }
