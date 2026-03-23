@@ -3,7 +3,9 @@ use std::path::{Path, PathBuf};
 fn main() {
     check_groff();
     println!();
-    let devpdf_dirs = find_devpdf_dirs();
+
+    let site_font_devpdf = find_site_font_devpdf();
+    let devpdf_dirs = find_devpdf_dirs(site_font_devpdf.as_deref());
     if devpdf_dirs.is_empty() {
         println!("❌ no groff devpdf font directories found");
         std::process::exit(1);
@@ -12,18 +14,46 @@ fn main() {
     for dir in &devpdf_dirs {
         println!("  {}", dir.display());
     }
+    match &site_font_devpdf {
+        Some(p) => println!("📂 local site-font:  {}", p.display()),
+        None => println!("⚠️  could not determine local site-font directory"),
+    }
     println!();
 
     let mut all_ok = true;
-    all_ok &= check_font_family("Minion Pro", &["MinionR", "MinionI", "MinionB", "MinionBI"], &devpdf_dirs);
+    let mut has_warnings = false;
+    let (ok, warn) = check_font_family(
+        "Minion Pro",
+        &["MinionR", "MinionI", "MinionB", "MinionBI"],
+        &devpdf_dirs,
+        site_font_devpdf.as_deref(),
+    );
+    all_ok &= ok;
+    has_warnings |= warn;
     println!();
-    all_ok &= check_font_family("Iosevka Curly Slab", &["IosevkaCurlySlabR", "IosevkaCurlySlabI", "IosevkaCurlySlabB", "IosevkaCurlySlabBI"], &devpdf_dirs);
+    let (ok, warn) = check_font_family(
+        "Iosevka Curly Slab",
+        &["IosevkaCurlySlabR", "IosevkaCurlySlabI", "IosevkaCurlySlabB", "IosevkaCurlySlabBI"],
+        &devpdf_dirs,
+        site_font_devpdf.as_deref(),
+    );
+    all_ok &= ok;
+    has_warnings |= warn;
     println!();
-    all_ok &= check_font_family("Alegreya", &["AlegreyaR", "AlegreyaI", "AlegreyaB", "AlegreyaBI"], &devpdf_dirs);
+    let (ok, warn) = check_font_family(
+        "Alegreya",
+        &["AlegreyaR", "AlegreyaI", "AlegreyaB", "AlegreyaBI"],
+        &devpdf_dirs,
+        site_font_devpdf.as_deref(),
+    );
+    all_ok &= ok;
+    has_warnings |= warn;
 
     println!();
-    if all_ok {
+    if all_ok && !has_warnings {
         println!("✅ all fonts ok");
+    } else if all_ok {
+        println!("⚠️  all fonts found but some are not in local site-font — run mato-install-fonts.sh");
     } else {
         println!("❌ some fonts are missing — run mato-install-fonts.sh to install them");
         std::process::exit(1);
@@ -50,33 +80,73 @@ fn check_groff() {
     }
 }
 
-fn check_font_family(label: &str, fonts: &[&str], devpdf_dirs: &[PathBuf]) -> bool {
+/// Returns (all_found, has_warnings).
+/// has_warnings is true when any font is found outside the local site-font dir.
+fn check_font_family(
+    label: &str,
+    fonts: &[&str],
+    devpdf_dirs: &[PathBuf],
+    site_font_devpdf: Option<&Path>,
+) -> (bool, bool) {
     println!("{label}:");
     let mut all_found = true;
+    let mut has_warnings = false;
     for &font in fonts {
-        let found = devpdf_dirs
-            .iter()
-            .find(|dir| dir.join(font).is_file());
+        let found = devpdf_dirs.iter().find(|dir| dir.join(font).is_file());
         match found {
-            Some(dir) => println!("  ✅ {font}  ({})", dir.join(font).display()),
+            Some(dir) => {
+                let in_site_font = site_font_devpdf.is_some_and(|sf| sf == dir.as_path());
+                if in_site_font {
+                    println!("  ✅ {font}  ({})", dir.join(font).display());
+                } else {
+                    println!(
+                        "  ⚠️  {font}  ({}) — not in local site-font, may be wiped on groff upgrade",
+                        dir.join(font).display()
+                    );
+                    has_warnings = true;
+                }
+            }
             None => {
                 println!("  ❌ {font}");
                 all_found = false;
             }
         }
     }
-    all_found
+    (all_found, has_warnings)
+}
+
+/// Finds the local site-font devpdf directory.
+/// On macOS: derives the prefix from the groff binary path
+///   (e.g. /opt/homebrew/bin/groff → /opt/homebrew/etc/groff/site-font/devpdf).
+/// On Linux: uses the conventional /usr/local/share/groff/site-font/devpdf.
+fn find_site_font_devpdf() -> Option<PathBuf> {
+    if cfg!(target_os = "macos") {
+        let groff = which("groff")?;
+        // groff binary is at <prefix>/bin/groff; site-font is at <prefix>/etc/groff/site-font
+        let prefix = groff.parent()?.parent()?;
+        Some(prefix.join("etc/groff/site-font/devpdf"))
+    } else {
+        Some(PathBuf::from("/usr/local/share/groff/site-font/devpdf"))
+    }
 }
 
 /// Returns all devpdf directories found under standard groff font search paths.
-fn find_devpdf_dirs() -> Vec<PathBuf> {
+/// The local site-font devpdf is always listed first when present.
+fn find_devpdf_dirs(site_font_devpdf: Option<&Path>) -> Vec<PathBuf> {
     let mut dirs = Vec::new();
+
+    // Prepend site-font so it is checked first (and matched for the ✅/⚠️ distinction)
+    if let Some(sf) = site_font_devpdf {
+        if sf.is_dir() && !dirs.contains(&sf.to_path_buf()) {
+            dirs.push(sf.to_path_buf());
+        }
+    }
 
     // Respect GROFF_FONT_PATH if set (colon-separated list of directories)
     if let Ok(env_path) = std::env::var("GROFF_FONT_PATH") {
         for base in env_path.split(':').filter(|s| !s.is_empty()) {
             let p = PathBuf::from(base).join("devpdf");
-            if p.is_dir() {
+            if p.is_dir() && !dirs.contains(&p) {
                 dirs.push(p);
             }
         }
