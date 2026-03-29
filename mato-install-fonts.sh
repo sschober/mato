@@ -483,3 +483,73 @@ else
   echo "Alegreya: no OTF files found, skipping."
   echo "Install the package (e.g. sudo pacman -S otf-alegreya) and re-run." 1>&2
 fi
+
+# ── Grenze Gothisch ────────────────────────────────────────────────────────────
+echo ""
+echo "── Grenze Gothisch ───────────────────────────────────────────────────────────"
+echo "searching for Grenze Gothisch OTF fonts..."
+GRENZEGOTHISCH_KEYS=()  # tracks which groff-names have been found (bash 3.2 compat)
+
+if [[ "$OS" == "Darwin" ]]; then
+  GRENZEGOTHISCH_SEARCH_DIRS=(
+    "$HOME/Library/Fonts"
+    "/Library/Fonts"
+  )
+else
+  GRENZEGOTHISCH_SEARCH_DIRS=(
+    "$HOME/.fonts"
+    "$HOME/.local/share/fonts"
+    "/usr/share/fonts"
+    "/usr/local/share/fonts"
+  )
+fi
+
+_scan_grenzegothisch() {
+  GRENZEGOTHISCH_KEYS=()
+  for dir in "${GRENZEGOTHISCH_SEARCH_DIRS[@]}"; do
+    [[ -d "$dir" ]] || continue
+    local _before=${#GRENZEGOTHISCH_KEYS[@]}
+    # Look for both .otf files and variable-weight .ttf files (e.g. GrenzeGotisch[wght].ttf)
+    while IFS= read -r font; do
+      [[ -z "$font" ]] && continue
+      local base
+      base=$(basename "$font")
+      # Remove common font file extensions and variable-weight suffixes
+      base=${base%.otf}
+      base=${base%.ttf}
+      base=${base%\[wght\]}
+      case "$base" in
+        GrenzeGothisch-Regular)    GRENZEGOTHISCH_GrenzeGothischR="$font";  GRENZEGOTHISCH_KEYS+=(GrenzeGothischR)  ;;
+        GrenzeGothisch-Bold)       GRENZEGOTHISCH_GrenzeGothischB="$font";  GRENZEGOTHISCH_KEYS+=(GrenzeGothischB)  ;;
+        GrenzeGothisch-Italic)     GRENZEGOTHISCH_GrenzeGothischI="$font";  GRENZEGOTHISCH_KEYS+=(GrenzeGothischI)  ;;
+        GrenzeGothisch-BoldItalic) GRENZEGOTHISCH_GrenzeGothischBI="$font"; GRENZEGOTHISCH_KEYS+=(GrenzeGothischBI) ;;
+        GrenzeGotisch)             GRENZEGOTHISCH_GrenzeGothischR="$font";  GRENZEGOTHISCH_KEYS+=(GrenzeGothischR)  ;;
+      esac
+    done < <(find "$dir" \( -name "GrenzeGothisch-*.otf" -o -name "GrenzeGotisch*.ttf" \) 2>/dev/null)
+    [[ ${#GRENZEGOTHISCH_KEYS[@]} -gt $_before ]] && break
+  done
+}
+
+_scan_grenzegothisch
+
+if [[ ${#GRENZEGOTHISCH_KEYS[@]} -gt 0 ]]; then
+  echo "found ${#GRENZEGOTHISCH_KEYS[@]} variant(s): ${GRENZEGOTHISCH_KEYS[*]}"
+  for needed in GrenzeGothischR GrenzeGothischI GrenzeGothischB GrenzeGothischBI; do
+    _v="GRENZEGOTHISCH_${needed}"
+    if [[ -z "${!_v}" ]]; then
+      echo "warning: $needed not found (mom may fall back to a substitute)"
+    fi
+  done
+  for groff_name in "${GRENZEGOTHISCH_KEYS[@]}"; do
+    case "$groff_name" in
+      *I|*BI) opts="-i50" ;;
+      *)      opts="-i0" ;;
+    esac
+    _v="GRENZEGOTHISCH_${groff_name}"
+    install_font_variant "$groff_name" "${!_v}" "$opts"
+  done
+  echo "Grenze Gothisch done. Installed: ${GRENZEGOTHISCH_KEYS[*]}"
+else
+  echo "Grenze Gothisch: no font files found, skipping."
+  echo "Install the package (e.g. sudo pacman -S otf-grenze-gothisch) and re-run." 1>&2
+fi

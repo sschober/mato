@@ -48,6 +48,15 @@ fn main() {
     );
     all_ok &= ok;
     has_warnings |= warn;
+    println!();
+    let (ok, warn) = check_font_family(
+        "Grenze Gothisch",
+        &["GrenzeGothischR", "GrenzeGothischI", "GrenzeGothischB", "GrenzeGothischBI"],
+        &devpdf_dirs,
+        site_font_devpdf.as_deref(),
+    );
+    all_ok &= ok;
+    has_warnings |= warn;
 
     println!();
     if all_ok && !has_warnings {
