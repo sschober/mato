@@ -100,7 +100,6 @@ impl TermCli {
                 };
                 let termpdf_pane = editor_pane
                     .split(&format!("termpdf.py {target_file}"))
-                    .top_level()
                     .right()
                     .exec();
                 termpdf_pane.id.parse::<usize>().unwrap()
