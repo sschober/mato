@@ -63,14 +63,16 @@ fn main() -> std::io::Result<()> {
     // CREATE empty pdf if none is there already
     mato::create_empty_if_not_exists(&format!("{}", target_file_path.display()));
 
-    // LAUNCH matopdf
-    let mato_handle = term_cli.exec_matopdf(&source_file, &lang, editor_handle);
-    mato_dbg!("mato handle: {}", mato_handle);
-
-    // LAUNCH `termpdf.py`
+    // LAUNCH `termpdf.py` — right-split of editor first so its full height
+    // is not constrained by the log pane below
     let termpdf_handle =
         term_cli.exec_termpdf(&format!("{}", target_file_path.display()), editor_handle);
     mato_dbg!("termpdf handle: {}", termpdf_handle);
+
+    // LAUNCH matopdf — bottom-split of editor so the log pane sits only
+    // under the editor column, not spanning the full window width
+    let mato_handle = term_cli.exec_matopdf(&source_file, &lang, editor_handle);
+    mato_dbg!("mato handle: {}", mato_handle);
 
     // FOCUS the EDITOR
     // split and spawn move focus to the newly created panes,
