@@ -204,7 +204,16 @@ impl Renderer<'_> {
                 format!(".COLOR {}\n", rnd!(*b_exp))
             }
             Tree::ChapterMark(b_exp) => {
-                format!(".MN RIGHT\n.PT_SIZE +48\n{}\n.MN OFF", rnd!(*b_exp))
+                let content = rnd!(*b_exp);
+                let watermark_content = if let Some(stripped) = content.strip_prefix(".COLOR ") {
+                    stripped.splitn(2, '\n').nth(1).unwrap_or("").to_string()
+                } else {
+                    content.clone()
+                };
+                format!(
+                    ".MN RIGHT\n.PT_SIZE +48\n{}\n.MN OFF\n.COLOR lightgrey\n\\v'15c'\\h'0c'\\s[500]{}\\s[0]\\v'-15c'\\h'-0c'\n.COLOR black",
+                    content, watermark_content
+                )
             }
             Tree::RightSidenote(b_exp) => {
                 format!("\n.MN RIGHT\n.PT_SIZE -2\n{}\n.MN OFF\n", rnd!(*b_exp))

@@ -70,22 +70,23 @@ impl TermCli {
         }
     }
 
-    pub fn exec_matopdf(&self, source_file: &str, lang: &str, t_handle: usize) -> usize {
+    pub fn exec_matopdf(&self, source_file: &str, lang: &str, timing_chart: bool, t_handle: usize) -> usize {
+        let timing_flag = if timing_chart { " --timing-chart" } else { "" };
         match self {
             Self::WezTerm => {
                 let editor_pane = WTPane {
                     id: t_handle.to_string(),
                 };
                 let mato_pane = editor_pane
-                    .split(format!("matopdf -w -V -l {lang} {source_file}").as_str())
-                    .percent(10)
+                    .split(format!("matopdf -w -V -l {lang}{timing_flag} {source_file}").as_str())
+                    .percent(15)
                     .bottom()
                     .exec();
                 mato_pane.id.parse::<usize>().unwrap()
             }
             Self::Alacritty => {
                 let window = AlaCli::new()
-                    .spawn_window(&format!("matopdf -w -V -l {lang} {source_file}"));
+                    .spawn_window(&format!("matopdf -w -V -l {lang}{timing_flag} {source_file}"));
                 window.pid as usize
             }
             _ => 0,

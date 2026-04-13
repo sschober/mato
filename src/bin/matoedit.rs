@@ -71,7 +71,7 @@ fn main() -> std::io::Result<()> {
 
     // LAUNCH matopdf — bottom-split of editor so the log pane sits only
     // under the editor column, not spanning the full window width
-    let mato_handle = term_cli.exec_matopdf(&source_file, &lang, editor_handle);
+    let mato_handle = term_cli.exec_matopdf(&source_file, &lang, true, editor_handle);
     mato_dbg!("mato handle: {}", mato_handle);
 
     // FOCUS the EDITOR

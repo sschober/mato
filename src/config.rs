@@ -20,6 +20,8 @@ pub struct Config {
     pub use_standard_gropdf: bool,
     /// pass -d to gropdf_zig
     pub gropdf_zig_debug: bool,
+    /// display timing as bar chart
+    pub timing_chart: bool,
 }
 
 impl Config {
@@ -35,6 +37,7 @@ impl Config {
             skip_preamble: false,
             use_standard_gropdf: false,
             gropdf_zig_debug: false,
+            timing_chart: false,
         }
     }
 

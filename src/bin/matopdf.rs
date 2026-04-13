@@ -1,4 +1,5 @@
 use std::env;
+use std::io::Write;
 
 use std::fs;
 
@@ -55,6 +56,11 @@ fn main() -> std::io::Result<()> {
         "gropdf-zig-debug",
         "Pass -d to gropdf_zig for debug output."
     ));
+    let opt_timing_chart = p.add_opt(opt_flag!(
+        "c",
+        "timing-chart",
+        "Display timing breakdown as a horizontal bar chart."
+    ));
 
     let parsed_opts = p.parse(env::args().collect());
     parsed_opts.handle_standard_flags("matopdf", env!("CARGO_PKG_VERSION"));
@@ -77,6 +83,7 @@ fn main() -> std::io::Result<()> {
     }
     config.use_standard_gropdf = opt_standard_gropdf.is_set(&parsed_opts);
     config.gropdf_zig_debug = opt_gropdf_zig_debug.is_set(&parsed_opts);
+    config.timing_chart = opt_timing_chart.is_set(&parsed_opts);
     mato_dbg!("config: {:#?}", config);
 
     if config.watch {
@@ -91,6 +98,80 @@ fn main() -> std::io::Result<()> {
     Ok(())
 }
 
+fn print_timing_chart(phases: &[(&str, std::time::Duration)]) {
+    let terminal_width = std::env::var("COLUMNS")
+        .ok()
+        .and_then(|s| s.parse::<usize>().ok())
+        .unwrap_or(80);
+    let label_width = 1;
+    let time_labels: Vec<String> = phases
+        .iter()
+        .map(|(_, duration)| {
+            if *duration < std::time::Duration::from_millis(1) {
+                "<1ms".to_string()
+            } else if *duration < std::time::Duration::from_secs(1) {
+                format!("{}ms", ((*duration).as_micros() + 999) / 1000)
+            } else {
+                format!("{}s", (*duration).as_secs() + if (*duration).subsec_nanos() > 0 { 1 } else { 0 })
+            }
+        })
+        .collect();
+    let time_width = time_labels.iter().map(|label| label.len()).max().unwrap_or(0);
+    let bar_width = terminal_width.saturating_sub(label_width + 1 + 1 + time_width);
+    let max_time = phases.iter().map(|(_, d)| *d).max().unwrap_or_default();
+    eprintln!("Timing breakdown:");
+    for (index, ((name, duration), time_label)) in phases.iter().zip(time_labels.iter()).enumerate() {
+        let label = match *name {
+            "Transform" => "🧠",
+            "Groff -Z" => "⚙",
+            "Gropdf" => "🖨",
+            "Writing" => "💾",
+            _ => " ",
+        };
+        let bar_len = if max_time.as_secs_f64() > 0.0 {
+            let len = (duration.as_secs_f64() / max_time.as_secs_f64()) * bar_width as f64;
+            if duration.is_zero() { 0.0 } else { len }
+        } else {
+            0.0
+        };
+        let full_blocks = bar_len.floor() as usize;
+        let mut remainder = if bar_len > 0.0 {
+            ((bar_len.fract() * 8.0).round() as usize).min(7)
+        } else {
+            0
+        };
+        if full_blocks == 0 && bar_len > 0.0 && remainder == 0 {
+            remainder = 1;
+        }
+        let partial_char = match remainder {
+            0 => "",
+            1 => "▏",
+            2 => "▎",
+            3 => "▍",
+            4 => "▌",
+            5 => "▋",
+            6 => "▊",
+            7 => "▉",
+            _ => "",
+        };
+        let bar = format!("{}{}", "█".repeat(full_blocks), partial_char);
+        let line = format!(
+            "{:<label_width$} {} {:>time_width$}",
+            label,
+            format!("{:<width$}", bar, width = bar_width),
+            time_label,
+            label_width = label_width,
+            time_width = time_width
+        );
+        if index + 1 == phases.len() {
+            eprint!("{}", line);
+            std::io::stderr().flush().ok();
+        } else {
+            eprintln!("{}", line);
+        }
+    }
+}
+
 /// matopdf is implementing a pipeline, first reading the input, then
 /// transforming the input using a chain, rendering the transformed input into groff
 /// and lastly using groff to render a pdf
@@ -102,7 +183,10 @@ fn matopdf(config: &Config) {
     // MD -> GROFF
     let start = Instant::now();
     let groff_output = mato::transform(&mut render, &mut chain, config, &input);
-    mato_inf!("transformed in:\t\t{:?}", start.elapsed());
+    let transform_time = start.elapsed();
+    if !config.timing_chart {
+        mato_inf!("transformed in:\t\t{:?}", transform_time);
+    }
 
     if config.dump_groff {
         println!("{groff_output}");
@@ -129,13 +213,28 @@ fn matopdf(config: &Config) {
         if let Some(ref path) = gropdf_zig {
             mato_dbg!("using gropdf_zig:\t{}", path.display());
         }
-        let start = Instant::now();
-        let pdf_output = mato::grotopdf(config, &groff_output, gropdf_zig.as_deref());
-        mato_inf!("rendering total:\t{:?}", start.elapsed());
+        let (pdf_output, render_times) = mato::grotopdf(config, &groff_output, gropdf_zig.as_deref());
+        if !config.timing_chart {
+            mato_inf!("rendering total:\t{:?}", render_times.iter().sum::<std::time::Duration>());
+        }
 
         let start = Instant::now();
         fs::write(&pdf_target_file, pdf_output).expect("Unable to write output pdf");
-        mato_inf!("written in:\t\t{:?} ", start.elapsed());
+        let writing_time = start.elapsed();
+        if config.timing_chart {
+            // Print bar graph
+            let mut phases = vec![("Transform", transform_time)];
+            if gropdf_zig.is_some() {
+                phases.push(("Groff -Z", render_times[0]));
+                phases.push(("Gropdf", render_times[1]));
+            } else {
+                phases.push(("Groff", render_times[0]));
+            }
+            phases.push(("Writing", writing_time));
+            print_timing_chart(&phases);
+        } else {
+            eprint!("written in:\t\t{:?}", writing_time);
+        }
     }
 }
 
@@ -236,7 +335,7 @@ mod tests {
     fn chapter_mark() {
         assert_eq!(
             matogro(">>(c)\n"),
-            ".DOCTYPE DEFAULT\n.START\n.MN RIGHT\n.PT_SIZE +48\nc\n.MN OFF"
+            ".DOCTYPE DEFAULT\n.START\n.MN RIGHT\n.PT_SIZE +48\nc\n.MN OFF\n\\v'10c'\\h'3c'\\s[120]\\m[gray]c\\m[]\\s[0]\\v'-10c'\\h'-3c'"
         );
     }
     #[test]

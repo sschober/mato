@@ -1,0 +1,73 @@
+x T ps
+x res 72000 1 1
+x init
+p1
+V12000
+H72000
+x font 5 TR
+f5
+s10000
+md
+DFd
+V12000
+H72000
+x X ps: exec 0 setlinejoin
+V12000
+H72000
+x X ps: exec 0 setlinecap
+wh2500
+V12000
+H74500
+x X ps: def
++grops begin
++/decornone { grops begin /X { } def /Y { } def /y2 -1 def end } def
++/decorline { grops begin u neg /uld exch def u /ulw exch def
++             /X { currentpoint /y0 exch def /x0 exch def } def
++             /Y { currentpoint /y1 exch def /x1 exch def
++                  drawline /x2 x1 def /y2 y1 def } def end } def
++/drawline { gsave ulw setlinewidth 0 setlinecap x1 y1 uld sub moveto
++            y2 y0 eq { x2 y2 } { x0 y0 } ifelse uld sub lineto stroke
++            grestore } def
++decornone
++/uld 0 def
++/ulw 0 def
++/A { X show Y } def
++/B { 0 SC 3 -1 roll X widthshow Y } def
++/C { 0 exch X ashow Y } def
++/D { 0 exch 0 SC 5 2 roll X awidthshow Y } def
++/E { 0 rmoveto X show Y } def
++/F { 0 rmoveto 0 SC 3 -1 roll X widthshow Y } def
++/G { 0 rmoveto 0 exch X ashow Y } def
++/H { 0 rmoveto 0 exch 0 SC 5 2 roll X awidthshow Y } def
++/I { 0 exch rmoveto X show Y } def
++/J { 0 exch rmoveto 0 SC 3 -1 roll X widthshow Y } def
++/K { 0 exch rmoveto 0 exch X ashow Y } def
++/L { 0 exch rmoveto 0 exch 0 SC 5 2 roll X awidthshow Y } def
++/M { rmoveto X show Y } def
++/N { rmoveto 0 SC 3 -1 roll X widthshow Y } def
++/O { rmoveto 0 exch X ashow Y } def
++/P { rmoveto 0 exch 0 SC 5 2 roll X awidthshow Y } def
++/Q { moveto X show Y } def
++/R { moveto 0 SC 3 -1 roll X widthshow Y } def
++/S { moveto 0 exch X ashow Y } def
++/T { moveto 0 exch 0 SC 5 2 roll X awidthshow Y } def
++end
++
+wh2500
+Dt 500 0
+n12000 0
+V51000
+H72000
+x font 0 CR
+f0
+s11000
+V51000
+H72000
+x X ps: exec 0 setlinejoin
+V51000
+H72000
+x X ps: exec 0 setlinecap
+n0 0
+x trailer
+V595000
+x stop

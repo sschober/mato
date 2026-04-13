@@ -364,7 +364,7 @@ pub fn find_in_path(name: &str) -> Option<PathBuf> {
 /// When `custom_gropdf` is `Some(path)`, a two-stage pipeline is used:
 /// `groff -Z` produces intermediate ditroff output which is then piped into the
 /// provided postprocessor binary instead of the standard `gropdf` perl implementation.
-pub fn grotopdf(config: &Config, input: &str, custom_gropdf: Option<&Path>) -> Vec<u8> {
+pub fn grotopdf(config: &Config, input: &str, custom_gropdf: Option<&Path>) -> (Vec<u8>, Vec<std::time::Duration>) {
     // calling `groff` directly instead of `mompdf` has a performance
     // adavantage, but will handle forwar references not correctly.
     // see https://www.schaffter.ca/mom/pdf/mom-pdf.pdf and there
@@ -405,7 +405,8 @@ pub fn grotopdf(config: &Config, input: &str, custom_gropdf: Option<&Path>) -> V
         if !troff_output.stderr.is_empty() {
             let _ = io::stderr().write(&troff_output.stderr);
         }
-        if crate::log::get_log_level() >= 1 { eprintln!("groff -Z:\t\t{:?}", start.elapsed()); }
+        let groff_z_time = start.elapsed();
+        if crate::log::get_log_level() >= 1 { eprintln!("groff -Z:\t\t{:?}", groff_z_time); }
 
         // Stage 2: pipe the ditroff output into the custom gropdf binary.
         let start = Instant::now();
@@ -436,8 +437,9 @@ pub fn grotopdf(config: &Config, input: &str, custom_gropdf: Option<&Path>) -> V
         if !output.stderr.is_empty() {
             let _ = io::stderr().write(&output.stderr);
         }
-        if crate::log::get_log_level() >= 1 { eprintln!("gropdf_zig:\t\t{:?}", start.elapsed()); }
-        output.stdout
+        let gropdf_time = start.elapsed();
+        if crate::log::get_log_level() >= 1 { eprintln!("gropdf_zig:\t\t{:?}", gropdf_time); }
+        (output.stdout, vec![groff_z_time, gropdf_time])
     } else {
         let start = Instant::now();
         let mut child = Command::new("/usr/bin/env")
@@ -464,7 +466,8 @@ pub fn grotopdf(config: &Config, input: &str, custom_gropdf: Option<&Path>) -> V
         if !output.stderr.is_empty() {
             let _ = io::stderr().write(&output.stderr);
         }
-        if crate::log::get_log_level() >= 1 { eprintln!("groff:\t\t\t{:?}", start.elapsed()); }
-        output.stdout
+        let groff_time = start.elapsed();
+        if crate::log::get_log_level() >= 1 { eprintln!("groff:\t\t\t{:?}", groff_time); }
+        (output.stdout, vec![groff_time])
     }
 }
