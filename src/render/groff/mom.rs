@@ -91,7 +91,11 @@ impl Renderer<'_> {
                         // end alread with one
                         let new_line = if result.ends_with("\n") { "" } else { "\n" };
                         // eprintln!("new_line: '{}'", new_line);
-                        result = format!("{result}{new_line}.START\n");
+                        // mom's HY_SET inside .START resets hym to 36pt and hy to 14.
+                        // Re-apply sensible defaults after .START:
+                        //   .hym 0  — don't skip hyphenation based on remaining space
+                        //   .hy 1   — enable hyphenation without the 2-char prefix/suffix blocks
+                        result = format!("{result}{new_line}.START\n.hym 0\n.hy 1\n");
                     }
                 }
                 format!("{}{}", result, rnd_pf!(*be, parent_format))
