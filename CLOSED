@@ -1,0 +1,27 @@
+# Closed TODOs
+#
+
+* Improved hyphenation settings: currently, german requires setting explicit
+hyphenation codes. These should be introduced automatically, when german
+language files are selected.
+  DONE: added a hyphenation_setup() function in src/render/groff/mom.rs that
+  matches on config.lang and emits .hla / .hpf / .hym 0 / .hy 1 after .START.
+  German ("den") loads hyphen.den, English ("en") loads hyphen.en, anything
+  else falls back to .hym 0 / .hy 1 only. .hy 1 was kept deliberately to allow
+  short 2-char stubs, overriding mom's conservative .hy 14 default.
+
+* `man` rendering backend
+  DONE: implemented in src/render/groff/man.rs and mandoc.rs
+
+* Brackets in footnotes are not working properly: the closing
+bracket ends the footnote prematurely. Did not witness this
+yesterday.
+  DISCARDED: the original note already expressed doubt ("did not witness this
+  yesterday"); footnote tests pass and no evidence of the bug remains in the
+  code.
+
+* git integration - depending on the editor used, this might be a
+bit redundant: we could invoke `git add` and `git commit` on each
+rendering.
+  DISCARDED: superseded by editor integration (matoedit); the original note
+  already flagged it as potentially redundant.

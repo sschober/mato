@@ -1,18 +1,8 @@
 # TODOs
 #
 
-* Improved hyphenation settings: currently, german requires setting explicit
-hyphenation codes. These should be introduced automatically, when german
-language files are selected.
-
 * Better error reporting (maybe with the anyhow crate): currently,
 mato is panicing all over the place.
-
-* Brackets in footnotes are not working properly: the closing
-bracket ends the footnote prematurely. Did not witness this
-yesterday.
-
-* `man` rendering backend
 
 * `mato` command - similar to `groff` in that regard, that it
 supports different backends for selection with:
@@ -20,7 +10,3 @@ supports different backends for selection with:
     - `-T man` for man
 
 * support multiple markdown file in `matopdf`
-
-* git integration - depending on the editor used, this might be a
-bit redundant: we could invoke `git add` and `git commit` on each
-rendering.

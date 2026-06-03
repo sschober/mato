@@ -3,6 +3,8 @@
 \" fill with your presets
 \" see samples/preambles/bringhurst.mom
 .START
+.hym 0
+.hy 1
 This is the first sentence.
 .PP
 This is the second sentence in a new paragraph.

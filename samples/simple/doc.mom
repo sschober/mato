@@ -3,6 +3,8 @@
 \" fill with your presets
 \" see samples/preambles/bringhurst.mom
 .START
+.hym 0
+.hy 1
 .TITLE Test
 .AUTHOR Sven Schober
 .FT B

@@ -252,20 +252,20 @@ mod tests {
 
     #[test]
     fn literal() {
-        assert_eq!(matogro("hallo"), ".DOCTYPE DEFAULT\n.START\nhallo");
+        assert_eq!(matogro("hallo"), ".DOCTYPE DEFAULT\n.START\n.hym 0\n.hy 1\nhallo");
     }
     #[test]
     fn italic() {
         assert_eq!(
             matogro("_hallo_"),
-            ".DOCTYPE DEFAULT\n.START\n\\*[IT]hallo\\*[ROM]"
+            ".DOCTYPE DEFAULT\n.START\n.hym 0\n.hy 1\n\\*[IT]hallo\\*[ROM]"
         );
     }
     #[test]
     fn bold() {
         assert_eq!(
             matogro("*hallo*"),
-            ".DOCTYPE DEFAULT\n.START\n\\*[BD]hallo\\*[ROM]"
+            ".DOCTYPE DEFAULT\n.START\n.hym 0\n.hy 1\n\\*[BD]hallo\\*[ROM]"
         );
     }
 
@@ -273,7 +273,7 @@ mod tests {
     fn complex_code() {
         assert_eq!(
             matogro("`    -P /opt/homebrew/Cellar/groff/1.22.4_1/share/groff/`"),
-            ".DOCTYPE DEFAULT\n.START\n\\*[CODE]    -P /opt/homebrew/Cellar/groff/1.22.4_1/share/groff/\\*[CODE OFF]"
+            ".DOCTYPE DEFAULT\n.START\n.hym 0\n.hy 1\n\\*[CODE]    -P /opt/homebrew/Cellar/groff/1.22.4_1/share/groff/\\*[CODE OFF]"
         );
     }
 
@@ -281,14 +281,14 @@ mod tests {
     fn link() {
         assert_eq!(
             matogro("some text [link text](http://example.com)"),
-            ".DOCTYPE DEFAULT\n.START\nsome text \\c\n.PDF_WWW_LINK http://example.com \"link text\"\\c\n"
+            ".DOCTYPE DEFAULT\n.START\n.hym 0\n.hy 1\nsome text \\c\n.PDF_WWW_LINK http://example.com \"link text\"\\c\n"
         );
     }
     #[test]
     fn not_link() {
         assert_eq!(
             matogro("some text [link text]"),
-            ".DOCTYPE DEFAULT\n.START\nsome text [link text]"
+            ".DOCTYPE DEFAULT\n.START\n.hym 0\n.hy 1\nsome text [link text]"
         );
     }
 
@@ -298,7 +298,7 @@ mod tests {
             matogro(
                 "# heading\n\n## subheading"
             ),
-            ".DOCTYPE DEFAULT\n.START\n.FT B\n.EW 2\n.HEADING 1 \"heading\"\n.EW 0\n.FT R\n.DRH\n.FT B\n.EW 2\n.HEADING 2 \"subheading\"\n.EW 0\n.FT R"
+            ".DOCTYPE DEFAULT\n.START\n.hym 0\n.hy 1\n.FT B\n.EW 2\n.HEADING 1 \"heading\"\n.EW 0\n.FT R\n.DRH\n.FT B\n.EW 2\n.HEADING 2 \"subheading\"\n.EW 0\n.FT R"
         );
     }
 
@@ -306,14 +306,14 @@ mod tests {
     fn heading_and_paragraph() {
         assert_eq!(
             matogro("# heading\n\nA new paragraph"),
-            ".DOCTYPE DEFAULT\n.START\n.FT B\n.EW 2\n.HEADING 1 \"heading\"\n.EW 0\n.FT R\n.DRH\n.SP 1v\n.PP\nA new paragraph"
+            ".DOCTYPE DEFAULT\n.START\n.hym 0\n.hy 1\n.FT B\n.EW 2\n.HEADING 1 \"heading\"\n.EW 0\n.FT R\n.DRH\n.SP 1v\n.PP\nA new paragraph"
         );
     }
     #[test]
     fn paragraph_and_heading() {
         assert_eq!(
             matogro("A new paragraph\n\n# heading"),
-            ".DOCTYPE DEFAULT\n.START\nA new paragraph\n.FT B\n.EW 2\n.HEADING 1 \"heading\"\n.EW 0\n.FT R\n.DRH"
+            ".DOCTYPE DEFAULT\n.START\n.hym 0\n.hy 1\nA new paragraph\n.FT B\n.EW 2\n.HEADING 1 \"heading\"\n.EW 0\n.FT R\n.DRH"
         );
     }
 
@@ -321,82 +321,82 @@ mod tests {
     fn code_block() {
         assert_eq!(
             matogro("```\nPP\n```\n"),
-            ".DOCTYPE DEFAULT\n.START\n.QUOTE_STYLE INDENT 1\n.QUOTE\n.CODE\nPP\n.QUOTE OFF\n"
+            ".DOCTYPE DEFAULT\n.START\n.hym 0\n.hy 1\n.QUOTE_STYLE INDENT 1\n.QUOTE\n.CODE\nPP\n.QUOTE OFF\n"
         );
     }
     #[test]
     fn code_escape_literal() {
         assert_eq!(
             matogro("`.PP`"),
-            ".DOCTYPE DEFAULT\n.START\n\\*[CODE]\\&.PP\\*[CODE OFF]"
+            ".DOCTYPE DEFAULT\n.START\n.hym 0\n.hy 1\n\\*[CODE]\\&.PP\\*[CODE OFF]"
         );
     }
     #[test]
     fn chapter_mark() {
         assert_eq!(
             matogro(">>(c)\n"),
-            ".DOCTYPE DEFAULT\n.START\n.MN RIGHT\n.PT_SIZE +48\nc\n.MN OFF\n\\v'10c'\\h'3c'\\s[120]\\m[gray]c\\m[]\\s[0]\\v'-10c'\\h'-3c'"
+            ".DOCTYPE DEFAULT\n.START\n.hym 0\n.hy 1\n.MN RIGHT\n.PT_SIZE +48\nc\n.MN OFF\n.COLOR lightgrey\n\\v'15c'\\h'0c'\\s[500]c\\s[0]\\v'-15c'\\h'-0c'\n.COLOR black"
         );
     }
     #[test]
     fn not_chapter_mark() {
-        assert_eq!(matogro(">>c"), ".DOCTYPE DEFAULT\n.START\n>>c");
+        assert_eq!(matogro(">>c"), ".DOCTYPE DEFAULT\n.START\n.hym 0\n.hy 1\n>>c");
     }
     #[test]
     fn right_side_note() {
         assert_eq!(
             matogro(">(side)\n"),
-            ".DOCTYPE DEFAULT\n.START\n\n.MN RIGHT\n.PT_SIZE -2\nside\n.MN OFF\n\n"
+            ".DOCTYPE DEFAULT\n.START\n.hym 0\n.hy 1\n\n.MN RIGHT\n.PT_SIZE -2\nside\n.MN OFF\n\n"
         );
     }
     #[test]
     fn not_right_side_note() {
-        assert_eq!(matogro(">side"), ".DOCTYPE DEFAULT\n.START\n>side");
+        assert_eq!(matogro(">side"), ".DOCTYPE DEFAULT\n.START\n.hym 0\n.hy 1\n>side");
     }
     #[test]
     fn foot_note() {
         assert_eq!(
             matogro("^(side)\n"),
-            ".DOCTYPE DEFAULT\n.START\n\\c\n.FOOTNOTE\nside\n.FOOTNOTE END\n\n"
+            ".DOCTYPE DEFAULT\n.START\n.hym 0\n.hy 1\n\\c\n.FOOTNOTE\nside\n.FOOTNOTE END\n\n"
         );
     }
     #[test]
     fn em_dash() {
         assert_eq!(
             matogro("word---word"),
-            ".DOCTYPE DEFAULT\n.START\nword\\(emword"
+            ".DOCTYPE DEFAULT\n.START\n.hym 0\n.hy 1\nword\\(emword"
         );
     }
     #[test]
     fn en_dash() {
         assert_eq!(
             matogro("word--word"),
-            ".DOCTYPE DEFAULT\n.START\nword\\(enword"
+            ".DOCTYPE DEFAULT\n.START\n.hym 0\n.hy 1\nword\\(enword"
         );
     }
     #[test]
     fn list_1() {
         assert_eq!(
             matogro("* list item\n"),
-            ".DOCTYPE DEFAULT\n.START\n.LIST\n.SHIFT_LIST 18p\n.PARA_INDENT 0\n.ITEM\n.PP\nlist item\n.LIST OFF\n"
+            ".DOCTYPE DEFAULT\n.START\n.hym 0\n.hy 1\n.LIST\n.SHIFT_LIST 18p\n.PARA_INDENT 0\n.ITEM\n.PP\nlist item\n.LIST OFF\n"
         );
     }
     #[test]
     fn list_2() {
         assert_eq!(
             matogro("* list item 1\n* list item 2\n"),
-            ".DOCTYPE DEFAULT\n.START\n.LIST\n.SHIFT_LIST 18p\n.PARA_INDENT 0\n.ITEM\n.PP\nlist item 1\n.ITEM\n.PP\nlist item 2\n.LIST OFF\n"
+            ".DOCTYPE DEFAULT\n.START\n.hym 0\n.hy 1\n.LIST\n.SHIFT_LIST 18p\n.PARA_INDENT 0\n.ITEM\n.PP\nlist item 1\n.ITEM\n.PP\nlist item 2\n.LIST OFF\n"
         );
     }
     #[test]
     fn nested_list() {
-        assert_eq!(matogro("* list item 1\n  * list item 2\n"), ".DOCTYPE DEFAULT\n.START\n.LIST\n.SHIFT_LIST 18p\n.PARA_INDENT 0\n.ITEM\n.PP\nlist item 1\n.LIST\n.SHIFT_LIST 18p\n.PARA_INDENT 0\n.ITEM\n.PP\nlist item 2\n.LIST OFF\n.LIST OFF\n");
+        assert_eq!(matogro("* list item 1\n  * list item 2\n"), ".DOCTYPE DEFAULT\n.START\n.hym 0\n.hy 1\n.LIST\n.SHIFT_LIST 18p\n.PARA_INDENT 0\n.ITEM\n.PP\nlist item 1\n.LIST\n.SHIFT_LIST 18p\n.PARA_INDENT 0\n.ITEM\n.PP\nlist item 2\n.LIST OFF\n.LIST OFF\n");
     }
     #[test]
     fn list_1_multiline_item() {
         assert_eq!(
             matogro("* list item\n  which continues on next line\n"),
-            ".DOCTYPE DEFAULT\n.START\n.LIST\n.SHIFT_LIST 18p\n.PARA_INDENT 0\n.ITEM\n.PP\nlist item\nwhich continues on next line\n.LIST OFF\n"
+            ".DOCTYPE DEFAULT\n.START\n.hym 0\n.hy 1\n.LIST\n.SHIFT_LIST 18p\n.PARA_INDENT 0\n.ITEM\n.PP\nlist item\nwhich continues on next line\n.LIST OFF\n"
         );
     }
 }

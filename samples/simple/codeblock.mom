@@ -3,6 +3,8 @@
 \" fill with your presets
 \" see samples/preambles/bringhurst.mom
 .START
+.hym 0
+.hy 1
 Some line before:
 .QUOTE_STYLE INDENT 1
 .QUOTE

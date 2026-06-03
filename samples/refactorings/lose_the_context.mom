@@ -3,6 +3,8 @@
 \" fill with your presets
 \" see samples/preambles/bringhurst.mom
 .START
+.hym 0
+.hy 1
 .FT B
 .EW 2
 .HEADING 1 "Lose the evil Context"
@@ -15,6 +17,9 @@
 .COLOR mato_dark_red
 C
 .MN OFF
+.COLOR lightgrey
+\v'15c'\h'0c'\s[500]C\s[0]\v'-15c'\h'-0c'
+.COLOR black
 .FT B
 .EW 2
 .HEADING 2 "Motivation"

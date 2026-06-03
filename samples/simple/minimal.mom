@@ -3,6 +3,8 @@
 \" fill with your presets
 \" see samples/preambles/bringhurst.mom
 .START
+.hym 0
+.hy 1
 This file contains only two
 paragraphs of text. It can be
 used to test verify some

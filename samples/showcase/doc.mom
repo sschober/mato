@@ -3,6 +3,8 @@
 \" fill with your presets
 \" see samples/preambles/bringhurst.mom
 .START
+.hym 0
+.hy 1
 .FT B
 .EW 2
 .HEADING 1 "Showcase"
@@ -14,6 +16,9 @@
 .PT_SIZE +48
 S
 .MN OFF
+.COLOR lightgrey
+\v'15c'\h'0c'\s[500]S\s[0]\v'-15c'\h'-0c'
+.COLOR black
 This document shows all the features, we have.
 .EW 2
 .HEADING 3 "Markup"

@@ -3,6 +3,8 @@
 \" fill with your presets
 \" see samples/preambles/bringhurst.mom
 .START
+.hym 0
+.hy 1
 This is normal text.
 .PP
 This is \*[IT]italic\*[ROM] text.

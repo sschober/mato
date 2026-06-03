@@ -3,6 +3,8 @@
 \" fill with your presets
 \" see samples/preambles/bringhurst.mom
 .START
+.hym 0
+.hy 1
 .FT B
 .EW 2
 .HEADING 1 "Mato"
@@ -16,6 +18,9 @@
 .COLOR mato_dark_blue
 m
 .MN OFF
+.COLOR lightgrey
+\v'15c'\h'0c'\s[500]m\s[0]\v'-15c'\h'-0c'
+.COLOR black
 .FT B
 .EW 2
 .HEADING 2 NAMED intro "Introduction "

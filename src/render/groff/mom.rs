@@ -29,6 +29,14 @@ pub fn new(config: &Config) -> Renderer<'_> {
 
 const PREAMBLE_FILE_NAME: &str = "preamble.mom";
 
+fn hyphenation_setup(lang: &str) -> &'static str {
+    match lang {
+        "den" => ".hla den\n.hpf hyphen.den\n.hym 0\n.hy 1\n",
+        "en"  => ".hla en\n.hpf hyphen.en\n.hym 0\n.hy 1\n",
+        _     => ".hym 0\n.hy 1\n",
+    }
+}
+
 impl Display for DocType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_fmt(format_args!(".DOCTYPE {:?}{}", self, match self {
@@ -93,9 +101,10 @@ impl Renderer<'_> {
                         // eprintln!("new_line: '{}'", new_line);
                         // mom's HY_SET inside .START resets hym to 36pt and hy to 14.
                         // Re-apply sensible defaults after .START:
-                        //   .hym 0  — don't skip hyphenation based on remaining space
-                        //   .hy 1   — enable hyphenation without the 2-char prefix/suffix blocks
-                        result = format!("{result}{new_line}.START\n.hym 0\n.hy 1\n");
+                        //   .hla/.hpf — load language-specific hyphenation patterns
+                        //   .hym 0    — don't skip hyphenation based on remaining space
+                        //   .hy 1     — enable hyphenation without the 2-char prefix/suffix blocks
+                        result = format!("{result}{new_line}.START\n{}", hyphenation_setup(&self.config.lang));
                     }
                 }
                 format!("{}{}", result, rnd_pf!(*be, parent_format))
