@@ -27,17 +27,21 @@ impl TermCli {
         if env::var("WEZTERM_PANE").is_ok() {
             TermCli::WezTerm
         } else if env::var("KITTY_WINDOW_ID").is_ok() {
-            panic!("kitty not supported.");
+            crate::die!("kitty is not supported");
         } else if env::var("ALACRITTY_WINDOW_ID").is_ok() {
             TermCli::Alacritty
         } else {
-            panic!("unknown terminal not supported.");
+            crate::die!("no supported terminal detected (not WezTerm, Alacritty, or Kitty)");
         }
     }
 
     pub fn get_active_windows_handle(&self) -> usize {
         match self {
-            Self::WezTerm => WTCli::new().active_pane().id.parse::<usize>().unwrap(),
+            Self::WezTerm => {
+                let id = WTCli::new().active_pane().id;
+                id.parse::<usize>()
+                    .unwrap_or_else(|e| crate::die!("cannot parse WezTerm pane id '{}': {e}", id))
+            }
             // alacritty has no remote api — the editor runs in the current terminal
             Self::Alacritty => 0,
             _ => 0,
@@ -59,7 +63,8 @@ impl TermCli {
             Self::WezTerm => {
                 let wt_cli = WTCli::new();
                 let editor_pane = wt_cli.spawn(&format!("{} {}", get_editor(), source_file));
-                editor_pane.id.parse::<usize>().unwrap()
+                editor_pane.id.parse::<usize>()
+                    .unwrap_or_else(|e| crate::die!("cannot parse WezTerm pane id '{}': {e}", editor_pane.id))
             }
             Self::Alacritty => {
                 let window = AlaCli::new()
@@ -82,7 +87,8 @@ impl TermCli {
                     .percent(15)
                     .bottom()
                     .exec();
-                mato_pane.id.parse::<usize>().unwrap()
+                mato_pane.id.parse::<usize>()
+                    .unwrap_or_else(|e| crate::die!("cannot parse WezTerm pane id '{}': {e}", mato_pane.id))
             }
             Self::Alacritty => {
                 let window = AlaCli::new()
@@ -103,13 +109,14 @@ impl TermCli {
                     .split(&format!("termpdf.py {target_file}"))
                     .right()
                     .exec();
-                termpdf_pane.id.parse::<usize>().unwrap()
+                termpdf_pane.id.parse::<usize>()
+                    .unwrap_or_else(|e| crate::die!("cannot parse WezTerm pane id '{}': {e}", termpdf_pane.id))
             }
             Self::Alacritty => {
                 std::process::Command::new("xdg-open")
                     .arg(target_file)
                     .spawn()
-                    .expect("failed to open pdf");
+                    .unwrap_or_else(|e| crate::die!("failed to open PDF with xdg-open: {e}"));
                 0
             }
             _ => 0,

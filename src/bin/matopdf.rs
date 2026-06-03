@@ -195,9 +195,8 @@ fn matopdf(config: &Config) {
         let path_target_file =
             mato::replace_file_extension(&config.source_file, TARGET_FILE_EXTENSION_GRO);
         mato_dbg!("dumping groff output to: {}", path_target_file.display());
-        fs::write(path_target_file.clone(), groff_output.clone()).unwrap_or_else(|_| {
-            panic!("Unable to write groff file: {}", path_target_file.display());
-        });
+        fs::write(&path_target_file, &groff_output)
+            .unwrap_or_else(|e| die!("cannot write groff file '{}': {e}", path_target_file.display()));
     }
 
     let pdf_target_file =
@@ -219,7 +218,8 @@ fn matopdf(config: &Config) {
         }
 
         let start = Instant::now();
-        fs::write(&pdf_target_file, pdf_output).expect("Unable to write output pdf");
+        fs::write(&pdf_target_file, pdf_output)
+            .unwrap_or_else(|e| die!("cannot write PDF '{}': {e}", pdf_target_file.display()));
         let writing_time = start.elapsed();
         if config.timing_chart {
             // Print bar graph

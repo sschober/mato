@@ -35,11 +35,10 @@ impl ImageConverter<'_> {
                 let mut resolved_path = p.clone();
                 if !p.starts_with('/') {
                     let parent_dir_path = crate::parent_dir(&self.config.source_file);
-                    resolved_path = parent_dir_path
-                        .join(p)
-                        .as_os_str()
+                    let joined = parent_dir_path.join(&p);
+                    resolved_path = joined
                         .to_str()
-                        .unwrap()
+                        .unwrap_or_else(|| crate::die!("image path contains invalid UTF-8: {}", joined.display()))
                         .to_string();
                 }
                 m_dbg!("resolved path: {}", resolved_path);
@@ -73,15 +72,19 @@ impl ImageConverter<'_> {
 
         if needs_conversion {
             m_dbg!("converting svg to pdf: {}", path);
+            let pdf_str = pdf_path.to_str()
+                .unwrap_or_else(|| crate::die!("PDF path contains invalid UTF-8: {}", pdf_path.display()));
             Command::new("rsvg-convert")
-                .args(["-f", "pdf", "-o", pdf_path.to_str().unwrap(), path])
+                .args(["-f", "pdf", "-o", pdf_str, path])
                 .status()
-                .expect("failed to run rsvg-convert");
+                .unwrap_or_else(|e| crate::die!("failed to run rsvg-convert: {e}"));
         } else {
             m_dbg!("svg pdf cache hit: {}", pdf_path.display());
         }
 
-        pdf_path.to_str().unwrap().to_string()
+        pdf_path.to_str()
+            .unwrap_or_else(|| crate::die!("PDF path contains invalid UTF-8: {}", pdf_path.display()))
+            .to_string()
     }
 }
 impl Process for ImageConverter<'_> {

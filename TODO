@@ -1,9 +1,6 @@
 # TODOs
 #
 
-* Better error reporting (maybe with the anyhow crate): currently,
-mato is panicing all over the place.
-
 * `mato` command - similar to `groff` in that regard, that it
 supports different backends for selection with:
     - `-T mom` for mom

@@ -42,7 +42,7 @@ fn process_pic(content: Tree) -> Tree {
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
-        .expect("Failed to spawn pic");
+        .unwrap_or_else(|e| crate::die!("failed to spawn pic: {e}"));
     let code_block_contents = match content {
         Tree::PreformattedLiteral(value) => value,
         Tree::Literal(value) => value,
@@ -51,17 +51,20 @@ fn process_pic(content: Tree) -> Tree {
     let pic_input = format!(".PS\n{code_block_contents}\n.PE\n");
     {
         // this lexical block is only here to let stdin run out of scope to be closed...
-        let mut stdin = child.stdin.take().expect("Failed to open stdin for pdfmom");
+        let mut stdin = child.stdin.take()
+            .unwrap_or_else(|| crate::die!("failed to open stdin for pic"));
         stdin
             .write_all(pic_input.as_bytes())
-            .expect("Failed to write to stdin of pdfmom");
+            .unwrap_or_else(|e| crate::die!("failed to write to pic stdin: {e}"));
     }
     // ... otherwise this call would not terminate
-    let output = child.wait_with_output().expect("Failed to read stdout");
+    let output = child.wait_with_output()
+        .unwrap_or_else(|e| crate::die!("failed to read pic output: {e}"));
     if !output.stderr.is_empty() {
         let _ = io::stderr().write(&output.stderr);
     }
-    let rendered_pic = String::from_utf8(output.stdout).unwrap();
+    let rendered_pic = String::from_utf8(output.stdout)
+        .unwrap_or_else(|e| crate::die!("pic output is not valid UTF-8: {e}"));
     m_trc!("rendered: {}", rendered_pic);
     lit(&rendered_pic)
 }

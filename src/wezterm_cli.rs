@@ -4,11 +4,10 @@ use std::env;
 
 /// acquires and returns the current directory as a `String``
 fn current_dir() -> String {
-    env::current_dir()
-        .unwrap()
-        .as_os_str()
-        .to_str()
-        .unwrap()
+    let dir = env::current_dir()
+        .unwrap_or_else(|e| crate::die!("cannot determine current directory: {e}"));
+    dir.to_str()
+        .unwrap_or_else(|| crate::die!("current directory path contains invalid UTF-8"))
         .to_string()
 }
 
@@ -39,7 +38,8 @@ impl WTCli {
     }
 
     pub fn active_pane(&self) -> WTPane {
-        let pane_id = env::var("WEZTERM_PANE").unwrap();
+        let pane_id = env::var("WEZTERM_PANE")
+            .unwrap_or_else(|_| crate::die!("WEZTERM_PANE is not set — is this running inside WezTerm?"));
         WTPane { id: pane_id }
     }
 }

@@ -44,7 +44,7 @@ fn read_all_from_stdin() -> String {
     let lines = io::stdin().lines();
     let mut result = String::new();
     for line in lines {
-        result.push_str(line.unwrap().as_str());
+        result.push_str(line.unwrap_or_else(|e| die!("error reading stdin: {e}")).as_str());
         result.push('\n');
     }
     result
@@ -55,7 +55,8 @@ pub fn read_input(source_file: &str) -> String {
     let input = if source_file.is_empty() {
         read_all_from_stdin()
     } else {
-        std::fs::read_to_string(source_file).unwrap()
+        std::fs::read_to_string(source_file)
+            .unwrap_or_else(|e| die!("cannot read '{}': {e}", source_file))
     };
     m_dbg!("input read in:\t\t{:?}", start.elapsed());
     input
@@ -94,7 +95,8 @@ pub fn locate_and_load_preamble(config: &Config, name: &str, default_preamble: &
     let sibbling_preamble = crate::parent_dir(&config.source_file).join(name);
     if sibbling_preamble.as_path().is_file() {
         m_dbg!("found sibbling preamble: {}", sibbling_preamble.display());
-        fs::read_to_string(sibbling_preamble).unwrap()
+        fs::read_to_string(&sibbling_preamble)
+            .unwrap_or_else(|e| die!("cannot read preamble '{}': {e}", sibbling_preamble.display()))
     } else {
         // no sibbling preamble
         // 1. try XDG_CONFIG_HOME
@@ -120,7 +122,8 @@ pub fn locate_and_load_preamble(config: &Config, name: &str, default_preamble: &
                 let user_peamble_path = mato_config_path.join(name);
                 if user_peamble_path.exists() {
                     m_dbg!("found user preamble: {:?}", user_peamble_path);
-                    return fs::read_to_string(user_peamble_path).unwrap();
+                    return fs::read_to_string(&user_peamble_path)
+                        .unwrap_or_else(|e| die!("cannot read preamble '{}': {e}", user_peamble_path.display()));
                 }
             } else {
                 m_dbg!("mato config path not found: {:?}", mato_config_path);
@@ -132,7 +135,7 @@ pub fn locate_and_load_preamble(config: &Config, name: &str, default_preamble: &
 }
 
 pub fn parent_dir(file_name: &str) -> &Path {
-    Path::new(file_name).parent().unwrap()
+    Path::new(file_name).parent().unwrap_or(Path::new("."))
 }
 
 /// replaces file extension in `file_name` with `extension`
@@ -147,7 +150,8 @@ pub fn create_if_not_exists(file_name: &str) {
     let path_source_file = Path::new(file_name);
     if !path_source_file.is_file() {
         m_dbg!("creating {}", file_name);
-        File::create(file_name).unwrap();
+        File::create(file_name)
+            .unwrap_or_else(|e| die!("cannot create '{}': {e}", file_name));
     }
 }
 
@@ -157,8 +161,10 @@ pub fn create_empty_if_not_exists(file_name: &str) {
     let path_source_file = Path::new(file_name);
     if !path_source_file.is_file() {
         m_dbg!("creating empty pdf {}", file_name);
-        let mut pdf = File::create(file_name).unwrap();
-        pdf.write_all(EMPTY_PDF).unwrap();
+        let mut pdf = File::create(file_name)
+            .unwrap_or_else(|e| die!("cannot create '{}': {e}", file_name));
+        pdf.write_all(EMPTY_PDF)
+            .unwrap_or_else(|e| die!("cannot write '{}': {e}", file_name));
     }
 }
 
@@ -169,7 +175,7 @@ fn spawn(cmd: Vec<&str>) {
     Command::new("/usr/bin/env")
         .args(cmd)
         .status()
-        .expect("error executing spawn command");
+        .unwrap_or_else(|e| die!("failed to execute command: {e}"));
 }
 
 /// executes the given `cmd` as a sub process, blocks and
@@ -179,17 +185,14 @@ fn exec(cmd: Vec<&str>) -> String {
     let out = Command::new("/usr/bin/env")
         .args(cmd)
         .output()
-        .expect("error executing spawn command")
+        .unwrap_or_else(|e| die!("failed to execute command: {e}"))
         .stdout;
-    if !out.is_empty() {
-        String::from_utf8(out)
-            .unwrap()
-            .strip_suffix('\n')
-            .unwrap()
-            .to_string()
-    } else {
-        String::new()
+    if out.is_empty() {
+        return String::new();
     }
+    let s = String::from_utf8(out)
+        .unwrap_or_else(|e| die!("command output is not valid UTF-8: {e}"));
+    s.strip_suffix('\n').unwrap_or(&s).to_string()
 }
 
 /// top-level helper method to transform a given input string into a target language specified by the passed in renderer
@@ -207,7 +210,8 @@ pub fn transform<P: Process>(
     if config.dump_dot_file {
         let path_target_file = replace_file_extension(&config.source_file, "dot");
         m_trc!("dumping processed tree to: {:?}", path_target_file);
-        fs::write(path_target_file, format!("{tree}")).expect("Unable to write groff file");
+        fs::write(&path_target_file, format!("{tree}"))
+            .unwrap_or_else(|e| die!("cannot write '{}': {e}", path_target_file.display()));
     } else {
         m_trc!("processed:\n{:?}", tree);
     }
@@ -387,21 +391,21 @@ pub fn grotopdf(config: &Config, input: &str, custom_gropdf: Option<&Path>) -> (
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .spawn()
-            .expect("Failed to spawn groff -Z");
+            .unwrap_or_else(|e| die!("failed to spawn groff -Z: {e}"));
 
         {
             let mut stdin = troff_child
                 .stdin
                 .take()
-                .expect("Failed to open stdin for groff -Z");
+                .unwrap_or_else(|| die!("failed to open stdin for groff -Z"));
             stdin
                 .write_all(input.as_bytes())
-                .expect("Failed to write to stdin of groff -Z");
+                .unwrap_or_else(|e| die!("failed to write to groff -Z stdin: {e}"));
         }
 
         let troff_output = troff_child
             .wait_with_output()
-            .expect("Failed to read stdout of groff -Z");
+            .unwrap_or_else(|e| die!("failed to read groff -Z output: {e}"));
         if !troff_output.stderr.is_empty() {
             let _ = io::stderr().write(&troff_output.stderr);
         }
@@ -419,21 +423,21 @@ pub fn grotopdf(config: &Config, input: &str, custom_gropdf: Option<&Path>) -> (
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .spawn()
-            .expect("Failed to spawn gropdf_zig");
+            .unwrap_or_else(|e| die!("failed to spawn gropdf_zig: {e}"));
 
         {
             let mut stdin = gropdf_child
                 .stdin
                 .take()
-                .expect("Failed to open stdin for gropdf_zig");
+                .unwrap_or_else(|| die!("failed to open stdin for gropdf_zig"));
             stdin
                 .write_all(&troff_output.stdout)
-                .expect("Failed to write to stdin of gropdf_zig");
+                .unwrap_or_else(|e| die!("failed to write to gropdf_zig stdin: {e}"));
         }
 
         let output = gropdf_child
             .wait_with_output()
-            .expect("Failed to read stdout of gropdf_zig");
+            .unwrap_or_else(|e| die!("failed to read gropdf_zig output: {e}"));
         if !output.stderr.is_empty() {
             let _ = io::stderr().write(&output.stderr);
         }
@@ -452,17 +456,19 @@ pub fn grotopdf(config: &Config, input: &str, custom_gropdf: Option<&Path>) -> (
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .spawn()
-            .expect("Failed to spawn pdfmom");
+            .unwrap_or_else(|e| die!("failed to spawn groff: {e}"));
 
         {
             // this lexical block is only here to let stdin run out of scope to be closed...
-            let mut stdin = child.stdin.take().expect("Failed to open stdin for pdfmom");
+            let mut stdin = child.stdin.take()
+                .unwrap_or_else(|| die!("failed to open stdin for groff"));
             stdin
                 .write_all(input.as_bytes())
-                .expect("Failed to write to stdin of pdfmom");
+                .unwrap_or_else(|e| die!("failed to write to groff stdin: {e}"));
         }
         // ... otherwise this call would not terminate
-        let output = child.wait_with_output().expect("Failed to read stdout");
+        let output = child.wait_with_output()
+            .unwrap_or_else(|e| die!("failed to read groff output: {e}"));
         if !output.stderr.is_empty() {
             let _ = io::stderr().write(&output.stderr);
         }

@@ -1,6 +1,14 @@
 # Closed TODOs
 #
 
+* Better error reporting (maybe with the anyhow crate): currently,
+mato is panicing all over the place.
+  DONE: replaced all user-facing unwrap()/panic!()/expect() calls with die!()
+  throughout lib.rs, the bins, and process/. The die! macro itself was fixed to
+  use $crate:: (so it works inside the library, not only from binaries) and
+  wrapped in double braces (so it composes in expression context). anyhow was
+  not needed — die! already does the right thing for a CLI tool.
+
 * Improved hyphenation settings: currently, german requires setting explicit
 hyphenation codes. These should be introduced automatically, when german
 language files are selected.

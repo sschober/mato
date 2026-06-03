@@ -20,10 +20,10 @@ macro_rules! mato_err {
 
 #[macro_export]
 macro_rules! die {
-    ($( $args:expr ), *) => {
-        mato::mato_err!( $( $args ),* );
+    ($( $args:expr ), *) => {{
+        $crate::mato_err!( $( $args ),* );
         std::process::exit(1);
-    };
+    }};
 }
 
 #[macro_export]

@@ -4,11 +4,10 @@ use std::env;
 use std::process::Command;
 
 fn current_dir() -> String {
-    env::current_dir()
-        .unwrap()
-        .as_os_str()
-        .to_str()
-        .unwrap()
+    let dir = env::current_dir()
+        .unwrap_or_else(|e| crate::die!("cannot determine current directory: {e}"));
+    dir.to_str()
+        .unwrap_or_else(|| crate::die!("current directory path contains invalid UTF-8"))
         .to_string()
 }
 
@@ -33,7 +32,7 @@ impl AlaCli {
             .args(["--working-directory", &current_dir()])
             .args(["-e", &shell(), "-c", cmd])
             .spawn()
-            .expect("failed to spawn alacritty window");
+            .unwrap_or_else(|e| crate::die!("failed to spawn alacritty: {e}"));
         AlaWindow { pid: child.id() }
     }
 }
