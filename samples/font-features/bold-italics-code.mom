@@ -5,6 +5,7 @@
 .START
 .hym 0
 .hy 1
+.kp 1
 This is normal text.
 .PP
 This is \*[IT]italic\*[ROM] text.
@@ -18,3 +19,4 @@ This is \*[BDI]bold and italic\*[ROM] text.
 This is \*[BD]bold first and \*[BDI]then bold and italic\*[BD] and then only bold again\*[ROM] and back to normal.
 .PP
 This is \*[IT]bold first and \*[BDI]then bold and italic\*[IT] and then only bold again\*[ROM] and back to normal.
+.br

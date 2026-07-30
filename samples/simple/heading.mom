@@ -5,6 +5,7 @@
 .START
 .hym 0
 .hy 1
+.kp 1
 .FT B
 .EW 2
 .HEADING 1 "A heading"
@@ -13,3 +14,4 @@
 .DRH
 .SP 1v
 Some text in a pragraph.
+.br

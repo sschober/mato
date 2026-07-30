@@ -5,6 +5,7 @@
 .START
 .hym 0
 .hy 1
+.kp 1
 .LIST
 .SHIFT_LIST 18p
 .PARA_INDENT 0
@@ -18,3 +19,4 @@ list
 .PP
 example
 .LIST OFF
+.br

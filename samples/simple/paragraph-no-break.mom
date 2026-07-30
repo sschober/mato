@@ -5,6 +5,8 @@
 .START
 .hym 0
 .hy 1
+.kp 1
 This is the first sentence.
 .PP
 This is the second sentence in a new paragraph.
+.br

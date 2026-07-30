@@ -5,6 +5,7 @@
 .START
 .hym 0
 .hy 1
+.kp 1
 .FT B
 .EW 2
 .HEADING 1 "Heading with 0123456789 numerals"
@@ -15,3 +16,4 @@
 .PP
 This is text and these are figures \[zero.oldstyle]\[one.oldstyle]\[two.oldstyle]\[three.oldstyle]\[four.oldstyle]\[five.oldstyle]\[six.oldstyle]\[seven.oldstyle]\[eight.oldstyle]\[nine.oldstyle]. 
 They should jump up and down.
+.br

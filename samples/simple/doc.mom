@@ -5,6 +5,7 @@
 .START
 .hym 0
 .hy 1
+.kp 1
 .TITLE Test
 .AUTHOR Sven Schober
 .FT B
@@ -28,3 +29,4 @@ the url should not be broken
 .DRH
 .SP 1v
 A heading should also reset the \*[CODE]char_index\*[CODE OFF] counter.
+.br

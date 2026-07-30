@@ -5,6 +5,7 @@
 .START
 .hym 0
 .hy 1
+.kp 1
 .FT B
 .EW 2
 .HEADING 1 "Lose the evil Context"
@@ -212,3 +213,4 @@ At some point in the past, I decided to investigate the possibilites
 of reducing the amount of information stored in the context object.
 .PP
 This member is the result of this endeavours.
+.br

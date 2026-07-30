@@ -5,6 +5,7 @@
 .START
 .hym 0
 .hy 1
+.kp 1
 .TITLE Refactoring diary: warp_at
 .AUTHOR Sven Schober
 .FT B
@@ -45,3 +46,4 @@ fn wrap_at(&mut self, s: String, col: usize) -> String {
     result
 }
 .QUOTE OFF
+.br

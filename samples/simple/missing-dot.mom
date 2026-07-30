@@ -5,6 +5,7 @@
 .START
 .hym 0
 .hy 1
+.kp 1
 .FT B
 .EW 2
 .HEADING 1 "31. Oktober 2024"
@@ -26,3 +27,4 @@ Ich bin heute um \[seven.oldstyle] Uhr wieder aufgestanden und fühle mich fit u
 .HEADING 3 "Alkoholabstinenz"
 .EW 0
 .SP 1v
+.br

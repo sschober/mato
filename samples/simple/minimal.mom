@@ -5,6 +5,7 @@
 .START
 .hym 0
 .hy 1
+.kp 1
 This file contains only two
 paragraphs of text. It can be
 used to test verify some
@@ -14,3 +15,4 @@ The is the second paragraph.
 It contains a few sentences.
 Use mato to inspect, what
 groff source code resides.
+.br

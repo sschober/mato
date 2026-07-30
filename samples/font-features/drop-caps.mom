@@ -5,6 +5,7 @@
 .START
 .hym 0
 .hy 1
+.kp 1
 .FT B
 .EW 2
 .HEADING 1 "Drop Caps"
@@ -36,3 +37,4 @@ be parsed as literals.
 
 .DROPCAP A 3
 t the beginning of a new paragraph.
+.br

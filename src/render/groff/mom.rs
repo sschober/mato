@@ -31,9 +31,9 @@ const PREAMBLE_FILE_NAME: &str = "preamble.mom";
 
 fn hyphenation_setup(lang: &str) -> &'static str {
     match lang {
-        "den" => ".hla den\n.hpf hyphen.den\n.hym 0\n.hy 1\n",
-        "en"  => ".hla en\n.hpf hyphen.en\n.hym 0\n.hy 1\n",
-        _     => ".hym 0\n.hy 1\n",
+        "den" => ".hla den\n.hpf hyphen.den\n.hym 0\n.hy 1\n.kp 1\n",
+        "en"  => ".hla en\n.hpf hyphen.en\n.hym 0\n.hy 1\n.kp 1\n",
+        _     => ".hym 0\n.hy 1\n.kp 1\n",
     }
 }
 
@@ -92,6 +92,10 @@ impl Renderer<'_> {
                 if !self.ctx.is_empty() && !self.ctx.contains_key("pdf title") {
                     result = format!("{result}.PDF_TITLE \"\\*[$TITLE]\"\n")
                 }
+                // Whether .kp 1 (Knuth-Plass) got enabled below for this doc type —
+                // used after rendering the body to decide whether the trailing-.br
+                // workaround (see below) is needed.
+                let kp_enabled = !matches!(dt, DocType::CHAPTER | DocType::SLIDES);
                 match dt {
                     DocType::CHAPTER | DocType::SLIDES => (),
                     _ => {
@@ -107,7 +111,26 @@ impl Renderer<'_> {
                         result = format!("{result}{new_line}.START\n{}", hyphenation_setup(&self.config.lang));
                     }
                 }
-                format!("{}{}", result, rnd_pf!(*be, parent_format))
+                let body = rnd_pf!(*be, parent_format);
+                // K-P paragraph-break processes a whole paragraph's lines in one
+                // troff call, without returning control to top-level input
+                // processing between lines. If the document's very last paragraph
+                // straddles a page boundary, that page-bottom trap fires while
+                // still nested inside troff's own end-of-input trap (mom's
+                // TERMINATE macro, itself entered via `.em`), so the normal
+                // end-of-trap flush is skipped and the tail of the paragraph is
+                // silently dropped — the PDF just ends early with no error.
+                // A trailing, explicit `.br` forces that flush to happen during
+                // ordinary (non-nested) input processing instead, before
+                // TERMINATE ever runs, sidestepping the nested-trap case
+                // entirely. Harmless no-op when there's nothing left to flush.
+                let trailer = if kp_enabled {
+                    let sep = if body.ends_with('\n') { "" } else { "\n" };
+                    format!("{sep}.br\n")
+                } else {
+                    String::new()
+                };
+                format!("{}{}{}", result, body, trailer)
             }
             Tree::Paragraph() => ".PP\n".to_string(),
             Tree::LineBreak() => "\n".to_string(),
@@ -134,7 +157,7 @@ impl Renderer<'_> {
             ),
             Tree::InlineCode(b_exp) => format!("\\*[CODE]{}\\*[CODE OFF]", rnd!(*b_exp)),
             Tree::Heading(b_exp, level, name) => {
-                match self.doc_type {
+                let heading_out = match self.doc_type {
                     DocType::CHAPTER => {
                         if level == 0 {
                             format!(
@@ -211,7 +234,8 @@ impl Renderer<'_> {
                             )
                         }
                     }
-                }
+                };
+                heading_out
             }
             Tree::Color(b_exp) => {
                 format!(".COLOR {}\n", rnd!(*b_exp))
